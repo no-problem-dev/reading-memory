@@ -4,6 +4,7 @@ struct UserBook: Identifiable, Codable {
     let id: String
     let userId: String
     let bookId: String
+    let book: Book?
     let status: ReadingStatus
     let rating: Double?
     let startDate: Date?
@@ -38,6 +39,7 @@ struct UserBook: Identifiable, Codable {
         case id
         case userId
         case bookId
+        case book
         case status
         case rating
         case startDate
@@ -52,6 +54,7 @@ struct UserBook: Identifiable, Codable {
     init(id: String = UUID().uuidString,
          userId: String,
          bookId: String,
+         book: Book? = nil,
          status: ReadingStatus = .wantToRead,
          rating: Double? = nil,
          startDate: Date? = nil,
@@ -64,6 +67,7 @@ struct UserBook: Identifiable, Codable {
         self.id = id
         self.userId = userId
         self.bookId = bookId
+        self.book = book
         self.status = status
         self.rating = rating
         self.startDate = startDate

@@ -24,8 +24,8 @@ final class ServiceContainer {
     }
     
     @MainActor
-    func makeBookDetailViewModel(userBook: UserBook, book: Book) -> BookDetailViewModel {
-        return BookDetailViewModel(userBook: userBook, book: book)
+    func makeBookDetailViewModel(userBook: UserBook) -> BookDetailViewModel {
+        return BookDetailViewModel(userBook: userBook)
     }
     
     @MainActor
@@ -41,6 +41,23 @@ final class ServiceContainer {
     @MainActor
     func makeBookChatViewModel(userBook: UserBook) -> BookChatViewModel {
         return BookChatViewModel(userBook: userBook)
+    }
+    
+    // Repository accessors
+    func getBookRepository() -> BookRepository {
+        return bookRepository
+    }
+    
+    func getUserBookRepository() -> UserBookRepository {
+        return userBookRepository
+    }
+    
+    func getBookChatRepository() -> BookChatRepository {
+        return bookChatRepository
+    }
+    
+    func getUserProfileRepository() -> UserProfileRepository {
+        return userProfileRepository
     }
 }
 
@@ -83,11 +100,9 @@ class BookDetailViewModel: BaseViewModel {
     private let bookChatRepository = BookChatRepository.shared
     
     var currentUserBook: UserBook
-    private let book: Book
     
-    init(userBook: UserBook, book: Book) {
+    init(userBook: UserBook) {
         self.currentUserBook = userBook
-        self.book = book
         super.init()
     }
     

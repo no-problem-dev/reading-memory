@@ -19,7 +19,7 @@ struct MainTabView: View {
     
     var body: some View {
         TabView {
-            BookListView()
+            BookShelfView()
                 .tabItem {
                     Image(systemName: "books.vertical")
                     Text("本棚")
