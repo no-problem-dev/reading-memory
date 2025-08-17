@@ -1,0 +1,19 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(ls:*)",
+      "mcp__notion__fetch",
+      "Bash(mkdir:*)",
+      "Bash(tree:*)",
+      "mcp__serena__activate_project",
+      "mcp__serena__find_file",
+      "mcp__serena__think_about_collected_information",
+      "Bash(rm:*)",
+      "Bash(git init:*)",
+      "Bash(git branch:*)",
+      "Bash(mv:*)",
+      "Bash(git add:*)"
+    ],
+    "deny": []
+  }
+}

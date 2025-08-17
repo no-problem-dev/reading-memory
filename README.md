@@ -1,0 +1,89 @@
+# 読書メモリー (Reading Memory)
+
+> 「本と過ごした時間を、ずっと大切に」
+
+読書メモリーは、本との出会いと対話を美しく記録し、読書体験を特別な思い出として残すiOSアプリです。
+
+## 📚 プロジェクト概要
+
+- **ビジョン**: 読んだ本すべてが、あなたの思い出になる
+- **ミッション**: 本を愛する人々に、読書をもっと豊かで意味のある体験に変える
+- **ターゲット**: 成長志向のビジネスパーソン、知的好奇心旺盛な読書家
+
+## 🚀 主要機能
+
+### コア機能（MVP）
+1. **本とおしゃべり** - チャット形式で気づきを記録
+2. **メモリーシェルフ** - 美しいビジュアルで本棚を再現
+3. **読書ダイアリー** - 読書習慣の可視化
+
+### 将来機能
+- AI要約・対話機能
+- 複数の本の知識を横断検索（RAG）
+- 選択的な読書体験の共有
+
+## 🛠 技術スタック
+
+- **フロントエンド**: iOS (SwiftUI)
+- **バックエンド**: Firebase (Firestore, Auth, Storage, Functions)
+- **AI**: Vertex AI / Gemini API
+- **言語**: Swift 5.9+, TypeScript 5.0+
+
+## 📖 ドキュメント
+
+- [プロジェクト概要](docs/overview/project-overview.md)
+- [サービスコンセプト](docs/overview/service-concept.md)
+- [市場調査レポート](docs/business/market-research.md)
+- [技術仕様書](docs/technical/technical-specification.md)
+- [データモデル設計](docs/technical/data-model.md)
+- [開発ガイドライン](docs/development/development-guide.md)
+- [セットアップ手順](docs/development/setup.md)
+
+## 🎯 開発フェーズ
+
+### Phase 1: MVP（1ヶ月）
+- ✅ 認証機能（Google/Apple）
+- ✅ 本の登録（手動入力）
+- ✅ テキストメモ機能
+- ✅ 基本的なステータス管理
+
+### Phase 2: 検索と写真（2週間）
+- 📚 ISBN検索
+- 📚 写真添付
+- 📚 Cloud Functions による本の検索
+
+### Phase 3: AI機能（3週間）
+- 🤖 AI チャット応答
+- 🤖 読書統計
+- 🤖 データエクスポート
+
+## 💰 ビジネスモデル
+
+- **無料版**: 月10冊まで登録可能
+- **プレミアム版**: 月額600-800円（無制限登録、AI機能）
+- **目標指標**: 有料転換率 3-5%、月次継続率 60%以上
+
+## 📊 成功指標（初年度）
+
+- ダウンロード数: 50,000
+- MAU: 15,000
+- 有料会員数: 750人
+- 月間売上: 60万円
+
+## 🏗 プロジェクト構成
+
+```
+reading-memory/
+├── docs/                    # ドキュメント
+│   ├── overview/           # プロジェクト概要
+│   ├── technical/          # 技術仕様
+│   ├── development/        # 開発ガイド
+│   └── business/           # ビジネス関連
+├── ios/                    # iOSアプリ (SwiftUI)
+├── functions/              # Cloud Functions
+└── README.md
+```
+
+## 📝 ライセンス
+
+© 2025 読書メモリープロジェクト
