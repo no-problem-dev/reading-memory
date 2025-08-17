@@ -19,7 +19,8 @@
       "Bash(git push:*)",
       "Bash(git submodule add:*)",
       "Bash(gh repo delete:*)",
-      "Bash(find:*)"
+      "Bash(find:*)",
+      "Bash(git pull:*)"
     ],
     "deny": []
   }
