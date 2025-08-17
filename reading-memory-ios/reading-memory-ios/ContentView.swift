@@ -9,6 +9,7 @@ struct ContentView: View {
                 .environment(authViewModel)
         } else {
             AuthView()
+                .environment(authViewModel)
         }
     }
 }
@@ -36,7 +37,7 @@ struct MainTabView: View {
                     Text("統計")
                 }
             
-            Text("設定")
+            SettingsView()
                 .tabItem {
                     Image(systemName: "gear")
                     Text("設定")

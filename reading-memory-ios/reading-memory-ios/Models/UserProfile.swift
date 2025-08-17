@@ -1,0 +1,45 @@
+import Foundation
+
+struct UserProfile: Identifiable, Codable {
+    let id: String // Same as userId
+    let displayName: String
+    let profileImageUrl: String?
+    let bio: String?
+    let favoriteGenres: [String]
+    let readingGoal: Int? // Books per year
+    let isPublic: Bool
+    let createdAt: Date
+    let updatedAt: Date
+    
+    enum CodingKeys: String, CodingKey {
+        case id
+        case displayName
+        case profileImageUrl
+        case bio
+        case favoriteGenres
+        case readingGoal
+        case isPublic
+        case createdAt
+        case updatedAt
+    }
+    
+    init(id: String,
+         displayName: String,
+         profileImageUrl: String? = nil,
+         bio: String? = nil,
+         favoriteGenres: [String] = [],
+         readingGoal: Int? = nil,
+         isPublic: Bool = false,
+         createdAt: Date = Date(),
+         updatedAt: Date = Date()) {
+        self.id = id
+        self.displayName = displayName
+        self.profileImageUrl = profileImageUrl
+        self.bio = bio
+        self.favoriteGenres = favoriteGenres
+        self.readingGoal = readingGoal
+        self.isPublic = isPublic
+        self.createdAt = createdAt
+        self.updatedAt = updatedAt
+    }
+}

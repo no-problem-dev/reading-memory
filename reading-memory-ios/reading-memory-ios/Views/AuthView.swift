@@ -2,7 +2,7 @@ import SwiftUI
 import AuthenticationServices
 
 struct AuthView: View {
-    @State private var authViewModel = AuthViewModel()
+    @Environment(AuthViewModel.self) private var authViewModel
     
     var body: some View {
         ZStack {
@@ -53,13 +53,16 @@ struct AuthView: View {
                     
                     SignInWithAppleButton(
                         onRequest: { request in
-                            request.requestedScopes = [.fullName, .email]
+                            let appleRequest = authViewModel.startSignInWithAppleFlow()
+                            request.requestedScopes = appleRequest.requestedScopes
+                            request.nonce = appleRequest.nonce
                         },
                         onCompletion: { result in
                             switch result {
-                            case .success(_):
-                                // TODO: Handle Apple Sign In
-                                break
+                            case .success(let authorization):
+                                Task {
+                                    await authViewModel.signInWithApple(authorization: authorization)
+                                }
                             case .failure(let error):
                                 authViewModel.errorMessage = error.localizedDescription
                             }
@@ -81,9 +84,12 @@ struct AuthView: View {
                     .scaleEffect(1.5)
             }
         }
-        .alert("エラー", isPresented: .constant(authViewModel.errorMessage != nil)) {
+        .alert("エラー", isPresented: Binding(
+            get: { authViewModel.showError },
+            set: { _ in authViewModel.clearError() }
+        )) {
             Button("OK") {
-                authViewModel.errorMessage = nil
+                authViewModel.clearError()
             }
         } message: {
             Text(authViewModel.errorMessage ?? "")

@@ -4,5 +4,16 @@
 <dict>
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
+    <key>GIDClientID</key>
+    <string>969134479773-84mkgs8hphuuqh5e5kq40u6dj7101gs9.apps.googleusercontent.com</string>
+    <key>CFBundleURLTypes</key>
+    <array>
+      <dict>
+        <key>CFBundleURLSchemes</key>
+        <array>
+          <string>com.googleusercontent.apps.969134479773-84mkgs8hphuuqh5e5kq40u6dj7101gs9</string>
+        </array>
+      </dict>
+    </array>
 </dict>
 </plist>
