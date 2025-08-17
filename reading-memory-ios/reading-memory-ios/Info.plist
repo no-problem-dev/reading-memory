@@ -6,6 +6,8 @@
 	<false/>
     <key>GIDClientID</key>
     <string>969134479773-84mkgs8hphuuqh5e5kq40u6dj7101gs9.apps.googleusercontent.com</string>
+    <key>NSCameraUsageDescription</key>
+    <string>本のバーコードをスキャンするためにカメラを使用します</string>
     <key>CFBundleURLTypes</key>
     <array>
       <dict>

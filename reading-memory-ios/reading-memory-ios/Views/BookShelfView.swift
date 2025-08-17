@@ -4,6 +4,9 @@ struct BookShelfView: View {
     @State private var viewModel = BookShelfViewModel()
     @State private var selectedFilter: UserBook.ReadingStatus? = nil
     @State private var selectedSort: SortOption = .dateAdded
+    @State private var showingAddBook = false
+    @State private var showingAddBookOptions = false
+    @State private var showingBarcodeScanner = false
     
     enum SortOption: String, CaseIterable {
         case dateAdded = "追加日"
@@ -21,13 +24,66 @@ struct BookShelfView: View {
                 } else {
                     BookShelfGridView(books: viewModel.filteredBooks)
                 }
+                
+                // Floating Action Button
+                if !viewModel.filteredBooks.isEmpty {
+                    VStack {
+                        Spacer()
+                        HStack {
+                            Spacer()
+                            Button {
+                                showingAddBookOptions = true
+                            } label: {
+                                Image(systemName: "plus")
+                                    .font(.title2)
+                                    .fontWeight(.semibold)
+                                    .foregroundColor(.white)
+                                    .frame(width: 56, height: 56)
+                                    .background(Color.blue)
+                                    .clipShape(Circle())
+                                    .shadow(color: .black.opacity(0.3), radius: 4, x: 0, y: 2)
+                            }
+                            .padding(.trailing, 20)
+                            .padding(.bottom, 20)
+                        }
+                    }
+                }
             }
             .navigationTitle("本棚")
             .navigationBarTitleDisplayMode(.large)
             .toolbar {
+                ToolbarItem(placement: .navigationBarLeading) {
+                    if !viewModel.filteredBooks.isEmpty {
+                        Button {
+                            showingAddBookOptions = true
+                        } label: {
+                            Image(systemName: "plus")
+                        }
+                    }
+                }
+                
                 ToolbarItem(placement: .navigationBarTrailing) {
                     filterMenu
                 }
+            }
+            .sheet(isPresented: $showingAddBook) {
+                NavigationStack {
+                    BookRegistrationView()
+                }
+            }
+            .sheet(isPresented: $showingBarcodeScanner) {
+                BarcodeScannerView()
+            }
+            .confirmationDialog("本を追加", isPresented: $showingAddBookOptions) {
+                Button("バーコードでスキャン", action: {
+                    showingBarcodeScanner = true
+                })
+                Button("手動で入力", action: {
+                    showingAddBook = true
+                })
+                Button("キャンセル", role: .cancel) { }
+            } message: {
+                Text("どの方法で本を追加しますか？")
             }
             .task {
                 await viewModel.loadBooks()
@@ -108,28 +164,51 @@ struct BookShelfView: View {
 }
 
 struct EmptyBookShelfView: View {
+    @State private var showingAddBook = false
+    
     var body: some View {
-        VStack(spacing: 20) {
-            Image(systemName: "books.vertical")
-                .font(.system(size: 80))
-                .foregroundColor(.gray)
+        VStack(spacing: 24) {
+            VStack(spacing: 16) {
+                Image(systemName: "books.vertical")
+                    .font(.system(size: 80))
+                    .foregroundStyle(.blue.gradient)
+                
+                VStack(spacing: 8) {
+                    Text("本棚はまだ空です")
+                        .font(.title2)
+                        .fontWeight(.bold)
+                    
+                    Text("読みたい本や読んだ本を\n追加して読書記録を始めましょう")
+                        .font(.body)
+                        .foregroundColor(.secondary)
+                        .multilineTextAlignment(.center)
+                        .lineLimit(nil)
+                }
+            }
             
-            Text("本棚はまだ空です")
-                .font(.title2)
-                .fontWeight(.semibold)
-            
-            Text("読みたい本や読んだ本を\n追加してみましょう")
-                .font(.body)
-                .foregroundColor(.secondary)
-                .multilineTextAlignment(.center)
-            
-            NavigationLink(destination: BookRegistrationView()) {
-                Label("本を追加", systemImage: "plus.circle.fill")
-                    .padding(.horizontal, 20)
-                    .padding(.vertical, 12)
-                    .background(Color.blue)
-                    .foregroundColor(.white)
-                    .cornerRadius(10)
+            VStack(spacing: 12) {
+                Button {
+                    showingAddBook = true
+                } label: {
+                    Label("本を追加", systemImage: "plus.circle.fill")
+                        .font(.headline)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 16)
+                        .background(Color.blue)
+                        .foregroundColor(.white)
+                        .cornerRadius(12)
+                }
+                
+                Text("本のタイトルで検索したり、\nバーコードをスキャンして簡単追加")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+            }
+            .padding(.horizontal, 32)
+        }
+        .sheet(isPresented: $showingAddBook) {
+            NavigationStack {
+                BookRegistrationView()
             }
         }
     }

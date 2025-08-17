@@ -1,0 +1,15 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    // ユーザーは自分のフォルダ内のファイルのみアクセス可能
+    match /users/{userId}/{allPaths=**} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+    
+    // 本の画像は認証済みユーザーが読み取り可能
+    match /books/{bookId}/{allPaths=**} {
+      allow read: if request.auth != null;
+      allow write: if false; // Cloud Functionsからのみ書き込み可能
+    }
+  }
+}

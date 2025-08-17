@@ -13,6 +13,13 @@ struct BookRegistrationView: View {
     @State private var description = ""
     @State private var showDatePicker = false
     @State private var hasPublishedDate = false
+    @State private var coverUrl: String?
+    
+    let prefilledBook: Book?
+    
+    init(prefilledBook: Book? = nil) {
+        self.prefilledBook = prefilledBook
+    }
     
     var body: some View {
         NavigationStack {
@@ -61,6 +68,20 @@ struct BookRegistrationView: View {
                             .frame(minHeight: 100)
                     }
                 }
+                
+                if let url = coverUrl, !url.isEmpty {
+                    Section("表紙画像") {
+                        AsyncImage(url: URL(string: url)) { image in
+                            image
+                                .resizable()
+                                .aspectRatio(contentMode: .fit)
+                                .frame(maxHeight: 200)
+                        } placeholder: {
+                            ProgressView()
+                                .frame(maxHeight: 200)
+                        }
+                    }
+                }
             }
             .navigationTitle("本を登録")
             .navigationBarTitleDisplayMode(.inline)
@@ -95,6 +116,23 @@ struct BookRegistrationView: View {
                 Text(viewModel.errorMessage ?? "不明なエラーが発生しました")
             }
         }
+        .onAppear {
+            if let book = prefilledBook {
+                title = book.title
+                author = book.author
+                isbn = book.isbn ?? ""
+                publisher = book.publisher ?? ""
+                if let date = book.publishedDate {
+                    publishedDate = date
+                    hasPublishedDate = true
+                }
+                if let pages = book.pageCount {
+                    pageCount = String(pages)
+                }
+                description = book.description ?? ""
+                coverUrl = book.coverImageUrl
+            }
+        }
     }
     
     private func saveBook() {
@@ -106,7 +144,8 @@ struct BookRegistrationView: View {
                 publisher: publisher.isEmpty ? nil : publisher.trimmingCharacters(in: .whitespacesAndNewlines),
                 publishedDate: hasPublishedDate ? publishedDate : nil,
                 pageCount: Int(pageCount),
-                description: description.isEmpty ? nil : description.trimmingCharacters(in: .whitespacesAndNewlines)
+                description: description.isEmpty ? nil : description.trimmingCharacters(in: .whitespacesAndNewlines),
+                coverImageUrl: coverUrl
             )
             
             let success = await viewModel.registerBook(book)
