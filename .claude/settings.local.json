@@ -20,7 +20,10 @@
       "Bash(git submodule add:*)",
       "Bash(gh repo delete:*)",
       "Bash(find:*)",
-      "Bash(git pull:*)"
+      "Bash(git pull:*)",
+      "Bash(xcodebuild:*)",
+      "Bash(xcrun simctl list:*)",
+      "mcp__serena__write_memory"
     ],
     "deny": []
   }
