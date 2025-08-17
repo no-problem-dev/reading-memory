@@ -3,6 +3,7 @@ import Foundation
 enum AppError: LocalizedError {
     // MARK: - Authentication Errors
     case authenticationFailed(String)
+    case authenticationRequired
     case userNotFound
     case sessionExpired
     case invalidCredentials
@@ -37,6 +38,8 @@ enum AppError: LocalizedError {
         // Authentication
         case .authenticationFailed(let message):
             return "認証に失敗しました: \(message)"
+        case .authenticationRequired:
+            return "ログインが必要です"
         case .userNotFound:
             return "ユーザーが見つかりません"
         case .sessionExpired:

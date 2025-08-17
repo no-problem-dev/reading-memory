@@ -8,9 +8,9 @@ import CryptoKit
 @MainActor
 @Observable
 final class AuthViewModel: BaseViewModel {
+    private let authService = AuthService.shared
     var currentUser: User?
     
-    private var authStateHandler: AuthStateDidChangeListenerHandle?
     private var currentNonce: String?
     
     override init() {
@@ -19,7 +19,7 @@ final class AuthViewModel: BaseViewModel {
     }
     
     private func setupAuthListener() {
-        authStateHandler = Auth.auth().addStateDidChangeListener { [weak self] _, firebaseUser in
+        authService.startAuthStateListener { [weak self] firebaseUser in
             if let firebaseUser = firebaseUser {
                 let provider = firebaseUser.providerData.first?.providerID ?? "password"
                 self?.currentUser = User(
@@ -38,10 +38,7 @@ final class AuthViewModel: BaseViewModel {
     }
     
     func cleanupAuthListener() {
-        if let authStateHandler = authStateHandler {
-            Auth.auth().removeStateDidChangeListener(authStateHandler)
-            self.authStateHandler = nil
-        }
+        authService.stopAuthStateListener()
     }
     
     func signInWithGoogle() async {
@@ -80,7 +77,7 @@ final class AuthViewModel: BaseViewModel {
     func signOut() async {
         await withLoadingNoThrow { [weak self] in
             guard let self = self else { return }
-            try Auth.auth().signOut()
+            try authService.signOut()
             GIDSignIn.sharedInstance.signOut()
             currentUser = nil
         }

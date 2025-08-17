@@ -8,19 +8,19 @@ help:
 
 .PHONY: ios-build
 ios-build:
-	cd reading-memory-ios && xcodebuild -scheme reading-memory-ios -sdk iphonesimulator -destination 'platform=iOS Simulator,name=iPhone 15 Pro' -configuration Debug build
+	xcodebuild -project reading-memory-ios/reading-memory-ios.xcodeproj -scheme reading-memory-ios -sdk iphonesimulator -destination 'platform=iOS Simulator,name=iPhone 15 Pro' -configuration Debug build
 
 .PHONY: ios-build-device
 ios-build-device:
-	cd reading-memory-ios && xcodebuild -scheme reading-memory-ios -sdk iphoneos -configuration Debug build
+	xcodebuild -project reading-memory-ios/reading-memory-ios.xcodeproj -scheme reading-memory-ios -sdk iphoneos -configuration Debug build
 
 .PHONY: ios-clean
 ios-clean:
-	cd reading-memory-ios && xcodebuild -scheme reading-memory-ios clean
+	xcodebuild -project reading-memory-ios/reading-memory-ios.xcodeproj -scheme reading-memory-ios clean
 
 .PHONY: ios-run
 ios-run:
-	cd reading-memory-ios && xcodebuild -scheme reading-memory-ios -sdk iphonesimulator -destination 'platform=iOS Simulator,name=iPhone 15 Pro' -configuration Debug build
+	xcodebuild -project reading-memory-ios/reading-memory-ios.xcodeproj -scheme reading-memory-ios -sdk iphonesimulator -destination 'platform=iOS Simulator,name=iPhone 15 Pro' -configuration Debug build
 	xcrun simctl boot "iPhone 15 Pro" || true
 	open -a Simulator
-	cd reading-memory-ios && xcodebuild -scheme reading-memory-ios -sdk iphonesimulator -destination 'platform=iOS Simulator,name=iPhone 15 Pro' -configuration Debug install
+	xcodebuild -project reading-memory-ios/reading-memory-ios.xcodeproj -scheme reading-memory-ios -sdk iphonesimulator -destination 'platform=iOS Simulator,name=iPhone 15 Pro' -configuration Debug install

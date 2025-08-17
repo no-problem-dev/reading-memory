@@ -22,7 +22,7 @@ final class UserProfileRepository: BaseRepository {
     }
     
     func updateUserProfile(_ profile: UserProfile) async throws {
-        var updatedProfile = UserProfile(
+        let updatedProfile = UserProfile(
             id: profile.id,
             displayName: profile.displayName,
             profileImageUrl: profile.profileImageUrl,

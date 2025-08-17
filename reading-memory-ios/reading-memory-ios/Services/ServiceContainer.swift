@@ -1,43 +1,41 @@
 import Foundation
 import FirebaseFirestore
 
-@MainActor
 final class ServiceContainer {
     static let shared = ServiceContainer()
     
     private init() {}
     
-    // MARK: - Repositories
-    lazy var bookRepository = BookRepository.shared
-    lazy var userBookRepository = UserBookRepository.shared
-    lazy var bookChatRepository = BookChatRepository.shared
-    lazy var userProfileRepository = UserProfileRepository.shared
+    // Repositories
+    private lazy var bookRepository = BookRepository.shared
+    private lazy var userBookRepository = UserBookRepository.shared
+    private lazy var bookChatRepository = BookChatRepository.shared
+    private lazy var userProfileRepository = UserProfileRepository.shared
     
-    // MARK: - ViewModels
+    // ViewModels
+    @MainActor
     func makeAuthViewModel() -> AuthViewModel {
         return AuthViewModel()
     }
     
+    @MainActor
     func makeBookListViewModel() -> BookListViewModel {
-        return BookListViewModel(
-            bookRepository: bookRepository,
-            userBookRepository: userBookRepository
-        )
+        return BookListViewModel()
     }
     
-    func makeBookDetailViewModel(userBookId: String) -> BookDetailViewModel {
-        return BookDetailViewModel(
-            userBookId: userBookId,
-            userBookRepository: userBookRepository,
-            bookChatRepository: bookChatRepository
-        )
+    @MainActor
+    func makeBookDetailViewModel(userBook: UserBook, book: Book) -> BookDetailViewModel {
+        return BookDetailViewModel(userBook: userBook, book: book)
     }
     
-    func makeProfileViewModel(userId: String) -> ProfileViewModel {
-        return ProfileViewModel(
-            userId: userId,
-            userProfileRepository: userProfileRepository
-        )
+    @MainActor
+    func makeProfileViewModel() -> ProfileViewModel {
+        return ProfileViewModel()
+    }
+    
+    @MainActor
+    func makeBookRegistrationViewModel() -> BookRegistrationViewModel {
+        return BookRegistrationViewModel()
     }
 }
 
@@ -45,47 +43,84 @@ final class ServiceContainer {
 @MainActor
 @Observable
 class BookListViewModel: BaseViewModel {
-    private let bookRepository: BookRepository
-    private let userBookRepository: UserBookRepository
+    private let authService = AuthService.shared
+    private let bookRepository = BookRepository.shared
+    private let userBookRepository = UserBookRepository.shared
     
-    var userBooks: [UserBook] = []
+    var userBooks: [(userBook: UserBook, book: Book)] = []
     
-    init(bookRepository: BookRepository, userBookRepository: UserBookRepository) {
-        self.bookRepository = bookRepository
-        self.userBookRepository = userBookRepository
-        super.init()
+    func loadUserBooks() async {
+        await withLoadingNoThrow { [weak self] in
+            guard let self = self,
+                  let userId = self.authService.currentUser?.uid else {
+                throw AppError.authenticationRequired
+            }
+            
+            let userBooksList = try await self.userBookRepository.getUserBooks(for: userId)
+            var booksData: [(UserBook, Book)] = []
+            
+            for userBook in userBooksList {
+                if let book = try await self.bookRepository.getBook(by: userBook.bookId) {
+                    booksData.append((userBook, book))
+                }
+            }
+            
+            self.userBooks = booksData.sorted { $0.0.updatedAt > $1.0.updatedAt }
+        }
     }
 }
 
 @MainActor
 @Observable
 class BookDetailViewModel: BaseViewModel {
-    private let userBookId: String
-    private let userBookRepository: UserBookRepository
-    private let bookChatRepository: BookChatRepository
+    private let authService = AuthService.shared
+    private let userBookRepository = UserBookRepository.shared
+    private let bookChatRepository = BookChatRepository.shared
     
-    var userBook: UserBook?
-    var chats: [BookChat] = []
+    var currentUserBook: UserBook
+    private let book: Book
     
-    init(userBookId: String, userBookRepository: UserBookRepository, bookChatRepository: BookChatRepository) {
-        self.userBookId = userBookId
-        self.userBookRepository = userBookRepository
-        self.bookChatRepository = bookChatRepository
+    init(userBook: UserBook, book: Book) {
+        self.currentUserBook = userBook
+        self.book = book
         super.init()
+    }
+    
+    func updateUserBook(_ updatedUserBook: UserBook) {
+        self.currentUserBook = updatedUserBook
+    }
+    
+    func deleteUserBook() async -> Bool {
+        var result = false
+        await withLoadingNoThrow { [weak self] in
+            guard let self = self,
+                  let userId = self.authService.currentUser?.uid else {
+                throw AppError.authenticationRequired
+            }
+            
+            try await self.userBookRepository.deleteUserBook(userId: userId, userBookId: self.currentUserBook.id)
+            result = true
+        }
+        return result
     }
 }
 
 @MainActor
 @Observable
 class ProfileViewModel: BaseViewModel {
-    private let userId: String
-    private let userProfileRepository: UserProfileRepository
+    private let authService = AuthService.shared
+    private let userProfileRepository = UserProfileRepository.shared
     
     var userProfile: UserProfile?
     
-    init(userId: String, userProfileRepository: UserProfileRepository) {
-        self.userId = userId
-        self.userProfileRepository = userProfileRepository
-        super.init()
+    func loadProfile() async {
+        await withLoadingNoThrow { [weak self] in
+            guard let self = self,
+                  let userId = self.authService.currentUser?.uid else {
+                throw AppError.authenticationRequired
+            }
+            
+            self.userProfile = try await self.userProfileRepository.getUserProfile(userId: userId)
+        }
     }
 }

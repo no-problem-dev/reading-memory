@@ -47,7 +47,7 @@ final class UserBookRepository: BaseRepository {
     }
     
     func updateUserBook(_ userBook: UserBook) async throws {
-        var updatedUserBook = UserBook(
+        let updatedUserBook = UserBook(
             id: userBook.id,
             userId: userBook.userId,
             bookId: userBook.bookId,
