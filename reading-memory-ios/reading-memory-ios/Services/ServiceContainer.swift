@@ -37,6 +37,11 @@ final class ServiceContainer {
     func makeBookRegistrationViewModel() -> BookRegistrationViewModel {
         return BookRegistrationViewModel()
     }
+    
+    @MainActor
+    func makeBookChatViewModel(userBook: UserBook) -> BookChatViewModel {
+        return BookChatViewModel(userBook: userBook)
+    }
 }
 
 // MARK: - ViewModels (Placeholder for future implementation)

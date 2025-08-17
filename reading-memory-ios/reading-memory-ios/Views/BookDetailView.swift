@@ -26,6 +26,31 @@ struct BookDetailView: View {
                 // 読書ステータスと評価
                 statusAndRatingSection
                 
+                // チャットメモへのボタン
+                NavigationLink(destination: BookChatView(userBook: viewModel.currentUserBook)) {
+                    HStack {
+                        Image(systemName: "bubble.left.and.bubble.right")
+                            .font(.title2)
+                            .foregroundStyle(.blue)
+                        VStack(alignment: .leading) {
+                            Text("チャットメモ")
+                                .font(.headline)
+                                .foregroundStyle(.primary)
+                            Text("本との対話を記録しよう")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                        Spacer()
+                        Image(systemName: "chevron.right")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                    .padding()
+                    .background(Color(.systemGray6))
+                    .cornerRadius(12)
+                }
+                .buttonStyle(PlainButtonStyle())
+                
                 if let notes = viewModel.currentUserBook.notes, !notes.isEmpty {
                     Divider()
                     notesSection(notes: notes)
