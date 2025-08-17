@@ -2,14 +2,65 @@ import SwiftUI
 
 struct ContentView: View {
     @State private var authViewModel = AuthViewModel()
+    @State private var needsProfileSetup = false
+    @State private var isCheckingProfile = true
     
     var body: some View {
-        if authViewModel.currentUser != nil {
-            MainTabView()
+        Group {
+            if isCheckingProfile {
+                // Loading state while checking profile
+                VStack {
+                    ProgressView()
+                        .scaleEffect(1.5)
+                    Text("読み込み中...")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .padding(.top, 8)
+                }
+            } else if authViewModel.currentUser == nil {
+                AuthView()
+                    .environment(authViewModel)
+            } else if needsProfileSetup {
+                ProfileSetupView {
+                    needsProfileSetup = false
+                }
                 .environment(authViewModel)
-        } else {
-            AuthView()
-                .environment(authViewModel)
+            } else {
+                MainTabView()
+                    .environment(authViewModel)
+            }
+        }
+        .task {
+            await checkUserProfile()
+        }
+        .onChange(of: authViewModel.currentUser) { oldUser, newUser in
+            if oldUser != newUser {
+                Task {
+                    await checkUserProfile()
+                }
+            }
+        }
+    }
+    
+    @MainActor
+    private func checkUserProfile() async {
+        guard let currentUser = authViewModel.currentUser else {
+            isCheckingProfile = false
+            needsProfileSetup = false
+            return
+        }
+        
+        do {
+            let userProfileRepository = UserProfileRepository.shared
+            let profile = try await userProfileRepository.getUserProfile(userId: currentUser.id)
+            
+            needsProfileSetup = (profile == nil)
+            isCheckingProfile = false
+            
+        } catch {
+            // If there's an error checking profile, assume setup is needed
+            needsProfileSetup = true
+            isCheckingProfile = false
         }
     }
 }
@@ -31,10 +82,10 @@ struct MainTabView: View {
                     Text("読書中")
                 }
             
-            Text("統計")
+            ProfileView()
                 .tabItem {
-                    Image(systemName: "chart.bar")
-                    Text("統計")
+                    Image(systemName: "person.circle")
+                    Text("プロフィール")
                 }
             
             SettingsView()

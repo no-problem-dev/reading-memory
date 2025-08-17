@@ -1,6 +1,6 @@
 import Foundation
 
-struct User: Identifiable {
+struct User: Identifiable, Equatable {
     let id: String
     let email: String
     let displayName: String

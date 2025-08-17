@@ -29,6 +29,11 @@ enum AppError: LocalizedError {
     case permissionDenied
     case unauthorized
     
+    // MARK: - File Upload Errors
+    case imageUploadFailed
+    case fileTooLarge
+    case unsupportedFileType
+    
     // MARK: - General Errors
     case unknown
     case custom(String)
@@ -80,6 +85,14 @@ enum AppError: LocalizedError {
             return "アクセス権限がありません"
         case .unauthorized:
             return "認証が必要です"
+            
+        // File Upload
+        case .imageUploadFailed:
+            return "画像のアップロードに失敗しました"
+        case .fileTooLarge:
+            return "ファイルサイズが大きすぎます"
+        case .unsupportedFileType:
+            return "サポートされていないファイル形式です"
             
         // General
         case .unknown:

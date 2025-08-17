@@ -124,23 +124,3 @@ class BookDetailViewModel: BaseViewModel {
         return result
     }
 }
-
-@MainActor
-@Observable
-class ProfileViewModel: BaseViewModel {
-    private let authService = AuthService.shared
-    private let userProfileRepository = UserProfileRepository.shared
-    
-    var userProfile: UserProfile?
-    
-    func loadProfile() async {
-        await withLoadingNoThrow { [weak self] in
-            guard let self = self,
-                  let userId = self.authService.currentUser?.uid else {
-                throw AppError.authenticationRequired
-            }
-            
-            self.userProfile = try await self.userProfileRepository.getUserProfile(userId: userId)
-        }
-    }
-}
