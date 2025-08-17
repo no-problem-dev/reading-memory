@@ -12,7 +12,14 @@
       "Bash(git init:*)",
       "Bash(git branch:*)",
       "Bash(mv:*)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(gh repo create:*)",
+      "Bash(git remote add:*)",
+      "Bash(git push:*)",
+      "Bash(git submodule add:*)",
+      "Bash(gh repo delete:*)",
+      "Bash(find:*)"
     ],
     "deny": []
   }

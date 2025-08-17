@@ -34,10 +34,8 @@ Carthage/Checkouts
 # Swift Package Manager
 .build/
 .swiftpm/
-Package.resolved
 
 # Firebase
-GoogleService-Info.plist
 google-services.json
 
 # Environment variables
