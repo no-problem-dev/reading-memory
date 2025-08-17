@@ -18,22 +18,9 @@
 		191E8F012E5192D600681E21 /* reading-memory-ios.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "reading-memory-ios.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
-/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
-		191E8F132E5192F100681E21 /* Exceptions for "reading-memory-ios" folder in "reading-memory-ios" target */ = {
-			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
-			membershipExceptions = (
-				Info.plist,
-			);
-			target = 191E8F002E5192D600681E21 /* reading-memory-ios */;
-		};
-/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
-
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		191E8F032E5192D600681E21 /* reading-memory-ios */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			exceptions = (
-				191E8F132E5192F100681E21 /* Exceptions for "reading-memory-ios" folder in "reading-memory-ios" target */,
-			);
 			path = "reading-memory-ios";
 			sourceTree = "<group>";
 		};
