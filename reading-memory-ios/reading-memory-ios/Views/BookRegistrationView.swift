@@ -137,16 +137,40 @@ struct BookRegistrationView: View {
     
     private func saveBook() {
         Task {
-            let book = Book.new(
-                isbn: isbn.isEmpty ? nil : isbn.trimmingCharacters(in: .whitespacesAndNewlines),
-                title: title.trimmingCharacters(in: .whitespacesAndNewlines),
-                author: author.trimmingCharacters(in: .whitespacesAndNewlines),
-                publisher: publisher.isEmpty ? nil : publisher.trimmingCharacters(in: .whitespacesAndNewlines),
-                publishedDate: hasPublishedDate ? publishedDate : nil,
-                pageCount: Int(pageCount),
-                description: description.isEmpty ? nil : description.trimmingCharacters(in: .whitespacesAndNewlines),
-                coverImageUrl: coverUrl
-            )
+            let book: Book
+            
+            if let prefilledBook = prefilledBook {
+                // API経由の本の場合、dataSourceとvisibilityを保持
+                book = Book(
+                    id: prefilledBook.id,
+                    isbn: isbn.isEmpty ? prefilledBook.isbn : isbn.trimmingCharacters(in: .whitespacesAndNewlines),
+                    title: title.trimmingCharacters(in: .whitespacesAndNewlines),
+                    author: author.trimmingCharacters(in: .whitespacesAndNewlines),
+                    publisher: publisher.isEmpty ? prefilledBook.publisher : publisher.trimmingCharacters(in: .whitespacesAndNewlines),
+                    publishedDate: hasPublishedDate ? publishedDate : prefilledBook.publishedDate,
+                    pageCount: Int(pageCount) ?? prefilledBook.pageCount,
+                    description: description.isEmpty ? prefilledBook.description : description.trimmingCharacters(in: .whitespacesAndNewlines),
+                    coverImageUrl: coverUrl ?? prefilledBook.coverImageUrl,
+                    dataSource: prefilledBook.dataSource,  // 重要: 元のdataSourceを保持
+                    visibility: prefilledBook.visibility,   // 重要: 元のvisibilityを保持
+                    createdAt: prefilledBook.createdAt,
+                    updatedAt: Date()
+                )
+            } else {
+                // 手動入力の本の場合
+                book = Book.new(
+                    isbn: isbn.isEmpty ? nil : isbn.trimmingCharacters(in: .whitespacesAndNewlines),
+                    title: title.trimmingCharacters(in: .whitespacesAndNewlines),
+                    author: author.trimmingCharacters(in: .whitespacesAndNewlines),
+                    publisher: publisher.isEmpty ? nil : publisher.trimmingCharacters(in: .whitespacesAndNewlines),
+                    publishedDate: hasPublishedDate ? publishedDate : nil,
+                    pageCount: Int(pageCount),
+                    description: description.isEmpty ? nil : description.trimmingCharacters(in: .whitespacesAndNewlines),
+                    coverImageUrl: coverUrl,
+                    dataSource: .manual,    // 手動入力
+                    visibility: .private    // 非公開
+                )
+            }
             
             let success = await viewModel.registerBook(book)
             if success {
