@@ -27,6 +27,8 @@ class BaseViewModel {
         do {
             try await action()
         } catch {
+            print("DEBUG: Error in withLoadingNoThrow: \(error)")
+            print("DEBUG: Error localized: \(error.localizedDescription)")
             handleError(error)
         }
     }

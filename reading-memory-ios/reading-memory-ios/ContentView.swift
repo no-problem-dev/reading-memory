@@ -82,6 +82,12 @@ struct MainTabView: View {
                     Text("読書中")
                 }
             
+            StatisticsView()
+                .tabItem {
+                    Image(systemName: "chart.bar.fill")
+                    Text("統計")
+                }
+            
             ProfileView()
                 .tabItem {
                     Image(systemName: "person.circle")

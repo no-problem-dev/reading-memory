@@ -1,6 +1,5 @@
 import SwiftUI
 import AVFoundation
-import FirebaseFunctions
 
 struct BarcodeScannerView: View {
     @Environment(\.dismiss) private var dismiss
@@ -10,6 +9,8 @@ struct BarcodeScannerView: View {
     @State private var showManualEntry = false
     @State private var showError = false
     @State private var errorMessage = ""
+    @State private var showBookRegistration = false
+    @State private var foundBook: Book?
     
     var body: some View {
         NavigationStack {
@@ -86,6 +87,11 @@ struct BarcodeScannerView: View {
         } message: {
             Text(errorMessage)
         }
+        .fullScreenCover(isPresented: $showBookRegistration) {
+            if let book = foundBook {
+                BookRegistrationView(prefilledBook: book)
+            }
+        }
         .overlay {
             if isSearching {
                 Color.black.opacity(0.7)
@@ -114,37 +120,28 @@ struct BarcodeScannerView: View {
         }
         
         Task {
-            do {
-                let functions = Functions.functions(region: "asia-northeast1")
-                let result = try await functions.httpsCallable("searchBookByISBN").call(["isbn": isbn])
+            // 統合検索サービスを使用
+            let searchService = UnifiedBookSearchService.shared
+            let books = await searchService.searchByISBN(isbn)
+            
+            await MainActor.run {
+                isSearching = false
                 
-                if let data = result.data as? [String: Any],
-                   let bookInfo = parseBookInfo(from: data) {
-                    await MainActor.run {
-                        isSearching = false
-                        navigateToBookDetail(bookInfo)
-                    }
+                if let book = books.first {
+                    // API から取得した本は public として扱う
+                    foundBook = book
+                    showBookRegistration = true
                 } else {
-                    await MainActor.run {
-                        isSearching = false
-                        showError(message: "書籍情報の取得に失敗しました")
-                    }
-                }
-            } catch {
-                await MainActor.run {
-                    isSearching = false
-                    if let functionsError = error as? FunctionsErrorCode {
-                        switch functionsError {
-                        case .notFound:
-                            showError(message: "該当する書籍が見つかりませんでした")
-                        case .unauthenticated:
-                            showError(message: "認証が必要です")
-                        default:
-                            showError(message: "エラーが発生しました: \(error.localizedDescription)")
-                        }
-                    } else {
-                        showError(message: "エラーが発生しました: \(error.localizedDescription)")
-                    }
+                    // 見つからない場合は手動入力を促す
+                    let manualBook = Book.new(
+                        isbn: isbn,
+                        title: "",
+                        author: "",
+                        dataSource: .manual,
+                        visibility: .private
+                    )
+                    foundBook = manualBook
+                    showBookRegistration = true
                 }
             }
         }
@@ -169,7 +166,7 @@ struct BarcodeScannerView: View {
             publishedDate = formatter.date(from: dateString)
         }
         
-        return Book(
+        return Book.new(
             isbn: isbn,
             title: title,
             author: author,
@@ -179,18 +176,6 @@ struct BarcodeScannerView: View {
             description: description,
             coverImageUrl: coverUrl
         )
-    }
-    
-    private func navigateToBookDetail(_ book: Book) {
-        // BookRegistrationViewを表示して、取得した情報を事前入力
-        let registrationView = BookRegistrationView(prefilledBook: book)
-        let hostingController = UIHostingController(rootView: registrationView)
-        
-        if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
-           let window = windowScene.windows.first,
-           let rootViewController = window.rootViewController {
-            rootViewController.present(hostingController, animated: true)
-        }
     }
     
     private func showError(message: String) {

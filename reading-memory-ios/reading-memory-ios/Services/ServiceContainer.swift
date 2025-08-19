@@ -82,7 +82,8 @@ class BookListViewModel: BaseViewModel {
             var booksData: [(UserBook, Book)] = []
             
             for userBook in userBooksList {
-                if let book = try await self.bookRepository.getBook(by: userBook.bookId) {
+                if let bookId = userBook.bookId,
+                   let book = try await self.bookRepository.getBook(by: bookId) {
                     booksData.append((userBook, book))
                 }
             }

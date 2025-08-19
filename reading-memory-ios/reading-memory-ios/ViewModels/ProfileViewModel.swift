@@ -1,6 +1,5 @@
 import Foundation
 import FirebaseAuth
-import FirebaseStorage
 import PhotosUI
 import SwiftUI
 
@@ -9,7 +8,6 @@ final class ProfileViewModel: BaseViewModel {
     private let userProfileRepository = UserProfileRepository.shared
     private let userBookRepository = UserBookRepository.shared
     private let bookChatRepository = BookChatRepository.shared
-    private let storage = Storage.storage()
     
     var userProfile: UserProfile?
     var statistics: ProfileStatistics = ProfileStatistics()
@@ -97,9 +95,9 @@ final class ProfileViewModel: BaseViewModel {
             
             // Calculate basic statistics
             statistics.totalBooks = userBooks.count
-            statistics.completedBooks = userBooks.filter { $0.status == UserBook.ReadingStatus.completed }.count
-            statistics.readingBooks = userBooks.filter { $0.status == UserBook.ReadingStatus.reading }.count
-            statistics.wantToReadBooks = userBooks.filter { $0.status == UserBook.ReadingStatus.wantToRead }.count
+            statistics.completedBooks = userBooks.filter { $0.status == .completed }.count
+            statistics.readingBooks = userBooks.filter { $0.status == .reading }.count
+            statistics.wantToReadBooks = userBooks.filter { $0.status == .wantToRead }.count
             
             // Calculate average rating
             let ratedBooks = userBooks.filter { $0.rating != nil && $0.rating! > 0 }
@@ -211,21 +209,16 @@ final class ProfileViewModel: BaseViewModel {
     
     @MainActor
     private func uploadProfileImage(selectedPhoto: PhotosPickerItem, userId: String) async throws -> String {
-        guard let data = try await selectedPhoto.loadTransferable(type: Data.self) else {
+        guard let data = try await selectedPhoto.loadTransferable(type: Data.self),
+              let image = UIImage(data: data) else {
             throw AppError.imageUploadFailed
         }
         
-        // Create a reference to the file
-        let imageName = "\(userId)_\(UUID().uuidString).jpg"
-        let storageRef = storage.reference().child("profile_images/\(imageName)")
-        
-        // Upload the file
-        let _ = try await storageRef.putDataAsync(data)
-        
-        // Get the download URL
-        let downloadURL = try await storageRef.downloadURL()
-        
-        return downloadURL.absoluteString
+        let storageService = StorageService.shared
+        return try await storageService.uploadImage(
+            image,
+            path: .profileImage(userId: userId)
+        )
     }
     
     @MainActor

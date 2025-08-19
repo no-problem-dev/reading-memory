@@ -2,9 +2,9 @@ import Foundation
 import FirebaseFirestore
 import FirebaseAuth
 
-final class BookChatRepository: BaseRepository {
-    typealias T = BookChat
-    let collectionName = "chats"
+final class BookChatRepository {
+    private let db = Firestore.firestore()
+    private let collectionName = "chats"
     
     static let shared = BookChatRepository()
     
@@ -22,19 +22,30 @@ final class BookChatRepository: BaseRepository {
             .limit(to: limit)
             .getDocuments()
         
-        let chats = try snapshot.documents.compactMap { document in
-            try documentToModel(document)
+        let chats: [BookChat] = snapshot.documents.compactMap { document in
+            guard let dto = try? document.data(as: BookChatDTO.self) else { return nil }
+            return dto.toDomain(id: document.documentID)
         }
         
-        return chats.reversed()
+        return chats.reversed() // 時系列順に戻す
     }
     
     func addChat(_ chat: BookChat, userId: String) async throws -> BookChat {
-        let data = try modelToData(chat)
-        try await chatsCollection(userId: userId, userBookId: chat.userBookId)
-            .document(chat.id)
-            .setData(data)
-        return chat
+        let dto = BookChatDTO(from: chat)
+        let encoder = Firestore.Encoder()
+        var data = try encoder.encode(dto)
+        
+        // サーバータイムスタンプを使用
+        data["createdAt"] = FieldValue.serverTimestamp()
+        
+        // 新しいドキュメントを作成（IDは自動生成）
+        let docRef = chatsCollection(userId: userId, userBookId: chat.userBookId).document()
+        try await docRef.setData(data)
+        
+        // 作成されたドキュメントを取得して返す
+        let document = try await docRef.getDocument()
+        let createdDto = try document.data(as: BookChatDTO.self)
+        return createdDto.toDomain(id: document.documentID)
     }
     
     func deleteChat(chatId: String, userId: String, userBookId: String) async throws {
@@ -58,14 +69,11 @@ final class BookChatRepository: BaseRepository {
                     return
                 }
                 
-                do {
-                    let chats = try documents.compactMap { document in
-                        try document.data(as: BookChat.self)
-                    }
-                    completion(.success(chats.reversed()))
-                } catch {
-                    completion(.failure(error))
+                let chats: [BookChat] = documents.compactMap { document in
+                    guard let dto = try? document.data(as: BookChatDTO.self) else { return nil }
+                    return dto.toDomain(id: document.documentID)
                 }
+                completion(.success(chats.reversed()))
             }
     }
 }

@@ -1,4 +1,5 @@
 import SwiftUI
+import PhotosUI
 
 struct BookDetailView: View {
     let userBookId: String
@@ -7,6 +8,9 @@ struct BookDetailView: View {
     @State private var isLoading = true
     @State private var showingEditSheet = false
     @State private var showingDeleteAlert = false
+    @State private var showingSummarySheet = false
+    @State private var aiSummary: String?
+    @State private var isGeneratingSummary = false
     @Environment(\.dismiss) private var dismiss
     
     private let userBookRepository = ServiceContainer.shared.getUserBookRepository()
@@ -18,11 +22,11 @@ struct BookDetailView: View {
             if isLoading {
                 ProgressView()
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
-            } else if let userBook = userBook, let book = userBook.book {
+            } else if let userBook = userBook {
                 ScrollView {
                     VStack(alignment: .leading, spacing: 20) {
                         // 本の基本情報
-                        bookInfoSection(book: book)
+                        bookInfoSection(userBook: userBook)
                         
                         Divider()
                         
@@ -54,23 +58,55 @@ struct BookDetailView: View {
                         }
                         .buttonStyle(PlainButtonStyle())
                         
-                        if let notes = userBook.notes, !notes.isEmpty {
+                        // AI要約ボタン
+                        Button {
+                            Task {
+                                await generateSummary()
+                            }
+                        } label: {
+                            HStack {
+                                Image(systemName: "sparkles")
+                                    .font(.title2)
+                                    .foregroundStyle(.purple)
+                                VStack(alignment: .leading) {
+                                    Text("AI要約")
+                                        .font(.headline)
+                                        .foregroundStyle(.primary)
+                                    Text("読書メモから要点をまとめます")
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+                                }
+                                Spacer()
+                                if isGeneratingSummary {
+                                    ProgressView()
+                                        .scaleEffect(0.8)
+                                } else {
+                                    Image(systemName: "chevron.right")
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+                                }
+                            }
+                            .padding()
+                            .background(Color(.systemGray6))
+                            .cornerRadius(12)
+                        }
+                        .buttonStyle(PlainButtonStyle())
+                        .disabled(isGeneratingSummary)
+                        
+                        // AI要約があれば表示
+                        if let aiSummary = userBook.aiSummary, !aiSummary.isEmpty {
                             Divider()
-                            notesSection(notes: notes)
+                            aiSummarySection(summary: aiSummary)
                         }
                         
-                        if let description = book.description, !description.isEmpty {
+                        if let memo = userBook.memo, !memo.isEmpty {
                             Divider()
-                            descriptionSection(description: description)
+                            notesSection(notes: memo)
                         }
-                        
-                        // 本の詳細情報
-                        Divider()
-                        detailsSection(book: book)
                     }
                     .padding()
                 }
-                .navigationTitle(book.title)
+                .navigationTitle(userBook.bookTitle)
                 .navigationBarTitleDisplayMode(.inline)
                 .toolbar {
                     ToolbarItem(placement: .navigationBarTrailing) {
@@ -108,6 +144,9 @@ struct BookDetailView: View {
                 } message: {
                     Text("この本を削除してもよろしいですか？\nこの操作は取り消せません。")
                 }
+                .sheet(isPresented: $showingSummarySheet) {
+                    SummaryView(summary: aiSummary ?? "")
+                }
             } else {
                 Text("本が見つかりません")
                     .foregroundColor(.secondary)
@@ -123,24 +162,7 @@ struct BookDetailView: View {
         
         do {
             if let fetchedUserBook = try await userBookRepository.getUserBook(userId: userId, userBookId: userBookId) {
-                // Fetch the associated book
-                if let book = try await bookRepository.getBook(by: fetchedUserBook.bookId) {
-                    self.userBook = UserBook(
-                        id: fetchedUserBook.id,
-                        userId: fetchedUserBook.userId,
-                        bookId: fetchedUserBook.bookId,
-                        book: book,
-                        status: fetchedUserBook.status,
-                        rating: fetchedUserBook.rating,
-                        startDate: fetchedUserBook.startDate,
-                        completedDate: fetchedUserBook.completedDate,
-                        customCoverImageUrl: fetchedUserBook.customCoverImageUrl,
-                        notes: fetchedUserBook.notes,
-                        isPublic: fetchedUserBook.isPublic,
-                        createdAt: fetchedUserBook.createdAt,
-                        updatedAt: fetchedUserBook.updatedAt
-                    )
-                }
+                self.userBook = fetchedUserBook
             }
         } catch {
             print("Error loading book: \(error)")
@@ -160,40 +182,35 @@ struct BookDetailView: View {
         }
     }
     
-    private func bookInfoSection(book: Book) -> some View {
+    private func bookInfoSection(userBook: UserBook) -> some View {
         HStack(alignment: .top, spacing: 16) {
             // 本の表紙
-            if let coverImageUrl = userBook?.customCoverImageUrl ?? book.coverImageUrl {
-                AsyncImage(url: URL(string: coverImageUrl)) { image in
+            if let coverImageUrl = userBook.bookCoverImageUrl, 
+               let url = URL(string: coverImageUrl) {
+                CachedAsyncImage(url: url) { image in
                     image
                         .resizable()
                         .aspectRatio(contentMode: .fit)
                 } placeholder: {
-                    BookCoverPlaceholder(book: book)
+                    BookCoverPlaceholder(title: userBook.bookTitle)
                 }
                 .frame(width: 120, height: 180)
                 .cornerRadius(12)
             } else {
-                BookCoverPlaceholder(book: book)
+                BookCoverPlaceholder(title: userBook.bookTitle)
                     .frame(width: 120, height: 180)
                     .cornerRadius(12)
             }
             
             VStack(alignment: .leading, spacing: 8) {
-                Text(book.title)
+                Text(userBook.bookTitle)
                     .font(.title2)
                     .fontWeight(.bold)
                     .fixedSize(horizontal: false, vertical: true)
                 
-                Text(book.author)
+                Text(userBook.bookAuthor)
                     .font(.headline)
                     .foregroundColor(.secondary)
-                
-                if let publisher = book.publisher {
-                    Text(publisher)
-                        .font(.subheadline)
-                        .foregroundColor(.secondary)
-                }
                 
                 Spacer()
             }
@@ -263,52 +280,93 @@ struct BookDetailView: View {
         }
     }
     
-    private func descriptionSection(description: String) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text("概要")
-                .font(.headline)
-            Text(description)
-                .font(.body)
-                .foregroundColor(.secondary)
-                .lineLimit(nil)
-                .fixedSize(horizontal: false, vertical: true)
+    private func generateSummary() async {
+        guard let userId = authService.currentUser?.uid else { return }
+        
+        isGeneratingSummary = true
+        
+        do {
+            let aiService = AIService.shared
+            let summary = try await aiService.generateBookSummary(
+                userId: userId,
+                userBookId: userBookId
+            )
+            
+            aiSummary = summary
+            showingSummarySheet = true
+        } catch {
+            print("Error generating summary: \(error)")
+            // エラーメッセージを表示
+            aiSummary = "要約の生成に失敗しました。しばらく時間をおいてから再度お試しください。"
+            showingSummarySheet = true
         }
+        
+        isGeneratingSummary = false
     }
     
-    private func detailsSection(book: Book) -> some View {
+    private func aiSummarySection(summary: String) -> some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("詳細情報")
-                .font(.headline)
+            HStack {
+                Image(systemName: "sparkles")
+                    .foregroundStyle(.purple)
+                Text("AI要約")
+                    .font(.headline)
+                Spacer()
+                Text(userBook?.summaryGeneratedAt?.formatted(date: .abbreviated, time: .omitted) ?? "")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
             
-            VStack(spacing: 8) {
-                if let isbn = book.isbn {
-                    detailRow(label: "ISBN", value: isbn)
+            Text(summary)
+                .font(.body)
+                .foregroundStyle(.primary)
+                .padding()
+                .background(Color(.systemGray6))
+                .cornerRadius(12)
+        }
+    }
+}
+
+// AI要約表示ビュー
+struct SummaryView: View {
+    let summary: String
+    @Environment(\.dismiss) private var dismiss
+    
+    var body: some View {
+        NavigationStack {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 16) {
+                    HStack {
+                        Image(systemName: "sparkles")
+                            .foregroundStyle(.purple)
+                        Text("AI要約")
+                            .font(.headline)
+                    }
+                    
+                    Text(summary)
+                        .font(.body)
+                        .foregroundStyle(.primary)
+                        .padding()
+                        .background(Color(.systemGray6))
+                        .cornerRadius(12)
                 }
-                
-                if let pageCount = book.pageCount {
-                    detailRow(label: "ページ数", value: "\(pageCount)ページ")
-                }
-                
-                if let publishedDate = book.publishedDate {
-                    detailRow(label: "出版日", value: publishedDate.formatted(date: .abbreviated, time: .omitted))
+                .padding()
+            }
+            .navigationTitle("読書メモの要約")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button("閉じる") {
+                        dismiss()
+                    }
                 }
             }
         }
     }
-    
-    private func detailRow(label: String, value: String) -> some View {
-        HStack {
-            Text(label)
-                .foregroundColor(.secondary)
-            Spacer()
-            Text(value)
-        }
-        .font(.subheadline)
-    }
 }
 
 struct StatusBadge: View {
-    let status: UserBook.ReadingStatus
+    let status: ReadingStatus
     
     var body: some View {
         Text(status.displayName)
@@ -367,19 +425,293 @@ struct SimpleEditBookView: View {
     let onUpdate: (UserBook) -> Void
     
     @Environment(\.dismiss) private var dismiss
+    @State private var selectedPhoto: PhotosPickerItem?
+    @State private var selectedImage: UIImage?
+    @State private var memo = ""
+    @State private var status: ReadingStatus = .wantToRead
+    @State private var rating: Double = 0
+    @State private var isLoading = false
+    @State private var errorMessage: String?
+    
+    private let userBookRepository = ServiceContainer.shared.getUserBookRepository()
+    private let authService = AuthService.shared
     
     var body: some View {
         NavigationStack {
-            Text("編集画面は実装予定です")
-                .navigationTitle("本を編集")
-                .navigationBarTitleDisplayMode(.inline)
-                .toolbar {
-                    ToolbarItem(placement: .navigationBarLeading) {
-                        Button("キャンセル") {
-                            dismiss()
+            contentView
+        }
+    }
+    
+    private var contentView: some View {
+        ScrollView {
+            VStack(spacing: 24) {
+                coverImageSection
+                Divider()
+                statusSection
+                ratingSection
+                memoSection
+            }
+            .padding()
+        }
+        .navigationTitle("本を編集")
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .navigationBarLeading) {
+                Button("キャンセル") {
+                    dismiss()
+                }
+            }
+            
+            ToolbarItem(placement: .navigationBarTrailing) {
+                Button("保存") {
+                    Task {
+                        await saveChanges()
+                    }
+                }
+                .disabled(isLoading)
+            }
+        }
+        .onAppear {
+            status = userBook.status
+            rating = userBook.rating ?? 0
+            memo = userBook.memo ?? ""
+        }
+        .onChange(of: selectedPhoto) { _, newItem in
+            Task {
+                await loadImage(from: newItem)
+            }
+        }
+        .alert("エラー", isPresented: .constant(errorMessage != nil)) {
+            Button("OK") {
+                errorMessage = nil
+            }
+        } message: {
+            if let errorMessage {
+                Text(errorMessage)
+            }
+        }
+        .disabled(isLoading)
+    }
+    
+    private var coverImageSection: some View {
+        VStack(spacing: 16) {
+            Text("表紙画像")
+                .font(.headline)
+                .frame(maxWidth: .infinity, alignment: .leading)
+            
+            HStack(spacing: 20) {
+                currentCoverView
+                customCoverPicker
+                Spacer()
+            }
+        }
+    }
+    
+    private var currentCoverView: some View {
+        VStack {
+            if let coverImageUrl = userBook.bookCoverImageUrl {
+                AsyncImage(url: URL(string: coverImageUrl)) { image in
+                    image
+                        .resizable()
+                        .aspectRatio(contentMode: .fit)
+                } placeholder: {
+                    BookCoverPlaceholder(title: userBook.bookTitle)
+                }
+            } else {
+                BookCoverPlaceholder(title: userBook.bookTitle)
+            }
+        }
+        .frame(width: 100, height: 150)
+        .cornerRadius(8)
+    }
+    
+    private var customCoverPicker: some View {
+        PhotosPicker(selection: $selectedPhoto,
+                   matching: .images,
+                   photoLibrary: .shared()) {
+            VStack {
+                if let selectedImage {
+                    Image(uiImage: selectedImage)
+                        .resizable()
+                        .aspectRatio(contentMode: .fit)
+                        .frame(width: 100, height: 150)
+                        .cornerRadius(8)
+                } else {
+                    RoundedRectangle(cornerRadius: 8)
+                        .fill(Color(.systemGray5))
+                        .frame(width: 100, height: 150)
+                        .overlay(
+                            VStack(spacing: 8) {
+                                Image(systemName: "camera.fill")
+                                    .font(.title)
+                                Text("カスタム表紙")
+                                    .font(.caption)
+                            }
+                            .foregroundStyle(.secondary)
+                        )
+                }
+            }
+        }
+    }
+    
+    private var statusSection: some View {
+        VStack(spacing: 12) {
+            Text("読書ステータス")
+                .font(.headline)
+                .frame(maxWidth: .infinity, alignment: .leading)
+            
+            Picker("ステータス", selection: $status) {
+                ForEach(ReadingStatus.allCases) { status in
+                    Text(status.displayName).tag(status)
+                }
+            }
+            .pickerStyle(.segmented)
+        }
+    }
+    
+    private var ratingSection: some View {
+        Group {
+            if status == .completed {
+                VStack(spacing: 12) {
+                    Text("評価")
+                        .font(.headline)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                    
+                    HStack {
+                        ForEach(0..<5) { index in
+                            Image(systemName: index < Int(rating) ? "star.fill" : "star")
+                                .font(.title2)
+                                .foregroundStyle(.yellow)
+                                .onTapGesture {
+                                    rating = Double(index + 1)
+                                }
+                        }
+                        Spacer()
+                        if rating > 0 {
+                            Button("クリア") {
+                                rating = 0
+                            }
+                            .font(.caption)
                         }
                     }
                 }
+            }
+        }
+    }
+    
+    private var memoSection: some View {
+        VStack(spacing: 12) {
+            Text("メモ")
+                .font(.headline)
+                .frame(maxWidth: .infinity, alignment: .leading)
+            
+            TextEditor(text: $memo)
+                .frame(minHeight: 100)
+                .padding(8)
+                .background(Color(.systemGray6))
+                .cornerRadius(8)
+        }
+    }
+    
+    @MainActor
+    private func loadImage(from item: PhotosPickerItem?) async {
+        guard let item = item else { return }
+        
+        do {
+            if let data = try await item.loadTransferable(type: Data.self),
+               let image = UIImage(data: data) {
+                // Resize image to reduce file size
+                let resizedImage = image.resized(to: CGSize(width: 600, height: 900))
+                selectedImage = resizedImage
+            }
+        } catch {
+            errorMessage = "画像の読み込みに失敗しました"
+        }
+    }
+    
+    @MainActor
+    private func saveChanges() async {
+        guard let userId = authService.currentUser?.uid else { return }
+        
+        isLoading = true
+        
+        do {
+            // カスタム表紙をアップロード
+            var newCoverUrl = userBook.bookCoverImageUrl
+            if let selectedImage {
+                let storageService = StorageService.shared
+                newCoverUrl = try await storageService.uploadImage(
+                    selectedImage,
+                    path: .bookCover(userId: userId, bookId: userBook.id)
+                )
+            }
+            
+            // ステータスに応じて日付を更新
+            var newStartDate = userBook.startDate
+            var newCompletedDate = userBook.completedDate
+            if status == .reading && userBook.status == .wantToRead {
+                newStartDate = Date()
+            } else if status == .completed && userBook.status != .completed {
+                newCompletedDate = Date()
+            }
+            
+            // 更新されたUserBookを作成
+            let updatedUserBook = UserBook(
+                id: userBook.id,
+                userId: userBook.userId,
+                bookId: userBook.bookId,
+                manualBookData: userBook.manualBookData,
+                bookTitle: userBook.bookTitle,
+                bookAuthor: userBook.bookAuthor,
+                bookCoverImageUrl: newCoverUrl,
+                bookIsbn: userBook.bookIsbn,
+                status: status,
+                rating: rating > 0 ? rating : nil,
+                readingProgress: userBook.readingProgress,
+                currentPage: userBook.currentPage,
+                startDate: newStartDate,
+                completedDate: newCompletedDate,
+                memo: memo.isEmpty ? nil : memo,
+                tags: userBook.tags,
+                isPrivate: userBook.isPrivate,
+                aiSummary: userBook.aiSummary,
+                summaryGeneratedAt: userBook.summaryGeneratedAt,
+                createdAt: userBook.createdAt,
+                updatedAt: Date()
+            )
+            
+            try await userBookRepository.updateUserBook(updatedUserBook)
+            
+            onUpdate(updatedUserBook)
+            dismiss()
+        } catch {
+            errorMessage = "保存に失敗しました: \(error.localizedDescription)"
+        }
+        
+        isLoading = false
+    }
+}
+
+// MARK: - UIImage Extension
+private extension UIImage {
+    func resized(to size: CGSize) -> UIImage {
+        let targetSize = CGSize(
+            width: min(size.width, self.size.width),
+            height: min(size.height, self.size.height)
+        )
+        
+        let widthRatio = targetSize.width / self.size.width
+        let heightRatio = targetSize.height / self.size.height
+        let ratio = min(widthRatio, heightRatio)
+        
+        let newSize = CGSize(
+            width: self.size.width * ratio,
+            height: self.size.height * ratio
+        )
+        
+        let renderer = UIGraphicsImageRenderer(size: newSize)
+        return renderer.image { _ in
+            self.draw(in: CGRect(origin: .zero, size: newSize))
         }
     }
 }

@@ -2,11 +2,13 @@ import SwiftUI
 
 struct BookShelfView: View {
     @State private var viewModel = BookShelfViewModel()
-    @State private var selectedFilter: UserBook.ReadingStatus? = nil
+    @State private var selectedFilter: ReadingStatus? = nil
     @State private var selectedSort: SortOption = .dateAdded
     @State private var showingAddBook = false
     @State private var showingAddBookOptions = false
     @State private var showingBarcodeScanner = false
+    @State private var showingBookSearch = false
+    @State private var showingPublicBookshelf = false
     
     enum SortOption: String, CaseIterable {
         case dateAdded = "追加日"
@@ -63,7 +65,15 @@ struct BookShelfView: View {
                 }
                 
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    filterMenu
+                    HStack(spacing: 16) {
+                        Button {
+                            showingPublicBookshelf = true
+                        } label: {
+                            Image(systemName: "globe")
+                        }
+                        
+                        filterMenu
+                    }
                 }
             }
             .sheet(isPresented: $showingAddBook) {
@@ -74,16 +84,25 @@ struct BookShelfView: View {
             .sheet(isPresented: $showingBarcodeScanner) {
                 BarcodeScannerView()
             }
-            .confirmationDialog("本を追加", isPresented: $showingAddBookOptions) {
+            .sheet(isPresented: $showingBookSearch) {
+                BookSearchView()
+            }
+            .sheet(isPresented: $showingPublicBookshelf) {
+                PublicBookshelfView()
+            }
+            .confirmationDialog("本を検索", isPresented: $showingAddBookOptions) {
                 Button("バーコードでスキャン", action: {
                     showingBarcodeScanner = true
                 })
-                Button("手動で入力", action: {
+                Button("タイトルで検索", action: {
+                    showingBookSearch = true
+                })
+                Button("手動で登録", action: {
                     showingAddBook = true
                 })
                 Button("キャンセル", role: .cancel) { }
             } message: {
-                Text("どの方法で本を追加しますか？")
+                Text("どの方法で本を検索しますか？")
             }
             .task {
                 await viewModel.loadBooks()
@@ -111,7 +130,7 @@ struct BookShelfView: View {
                         systemImage: "books.vertical"
                     )
                 }
-                ForEach(UserBook.ReadingStatus.allCases, id: \.self) { status in
+                ForEach(ReadingStatus.allCases, id: \.self) { status in
                     Button(action: { selectedFilter = status }) {
                         Label(
                             selectedFilter == status ? "✓ \(status.displayName)" : status.displayName,
@@ -149,7 +168,7 @@ struct BookShelfView: View {
         }
     }
     
-    private func iconName(for status: UserBook.ReadingStatus) -> String {
+    private func iconName(for status: ReadingStatus) -> String {
         switch status {
         case .wantToRead:
             return "bookmark"
@@ -165,6 +184,9 @@ struct BookShelfView: View {
 
 struct EmptyBookShelfView: View {
     @State private var showingAddBook = false
+    @State private var showingAddBookOptions = false
+    @State private var showingBarcodeScanner = false
+    @State private var showingBookSearch = false
     
     var body: some View {
         VStack(spacing: 24) {
@@ -188,9 +210,9 @@ struct EmptyBookShelfView: View {
             
             VStack(spacing: 12) {
                 Button {
-                    showingAddBook = true
+                    showingAddBookOptions = true
                 } label: {
-                    Label("本を追加", systemImage: "plus.circle.fill")
+                    Label("本を検索", systemImage: "magnifyingglass.circle.fill")
                         .font(.headline)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 16)
@@ -210,6 +232,26 @@ struct EmptyBookShelfView: View {
             NavigationStack {
                 BookRegistrationView()
             }
+        }
+        .sheet(isPresented: $showingBarcodeScanner) {
+            BarcodeScannerView()
+        }
+        .sheet(isPresented: $showingBookSearch) {
+            BookSearchView()
+        }
+        .confirmationDialog("本を検索", isPresented: $showingAddBookOptions) {
+            Button("バーコードでスキャン", action: {
+                showingBarcodeScanner = true
+            })
+            Button("タイトルで検索", action: {
+                showingBookSearch = true
+            })
+            Button("手動で登録", action: {
+                showingAddBook = true
+            })
+            Button("キャンセル", role: .cancel) { }
+        } message: {
+            Text("どの方法で本を検索しますか？")
         }
     }
 }

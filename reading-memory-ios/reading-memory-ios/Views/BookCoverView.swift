@@ -7,7 +7,7 @@ struct BookCoverView: View {
         VStack(spacing: 8) {
             // Book cover
             ZStack {
-                let imageUrl = userBook.customCoverImageUrl ?? userBook.book?.coverImageUrl
+                let imageUrl = userBook.bookCoverImageUrl
                 if let imageUrl = imageUrl, !imageUrl.isEmpty {
                     AsyncImage(url: URL(string: imageUrl)) { phase in
                         switch phase {
@@ -16,29 +16,17 @@ struct BookCoverView: View {
                                 .resizable()
                                 .aspectRatio(contentMode: .fit)
                         case .failure(_):
-                            if let book = userBook.book {
-                                BookCoverPlaceholder(book: book)
-                            } else {
-                                EmptyBookCover()
-                            }
+                            BookCoverPlaceholder(title: userBook.bookTitle)
                         case .empty:
                             ProgressView()
                                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                                 .background(Color.gray.opacity(0.1))
                         @unknown default:
-                            if let book = userBook.book {
-                                BookCoverPlaceholder(book: book)
-                            } else {
-                                EmptyBookCover()
-                            }
+                            BookCoverPlaceholder(title: userBook.bookTitle)
                         }
                     }
                 } else {
-                    if let book = userBook.book {
-                        BookCoverPlaceholder(book: book)
-                    } else {
-                        EmptyBookCover()
-                    }
+                    BookCoverPlaceholder(title: userBook.bookTitle)
                 }
                 
                 // Status badge
@@ -58,7 +46,7 @@ struct BookCoverView: View {
             .shadow(color: .black.opacity(0.2), radius: 4, x: 0, y: 2)
             
             // Book title
-            Text(userBook.book?.title ?? "タイトルなし")
+            Text(userBook.bookTitle)
                 .font(.caption)
                 .lineLimit(2)
                 .multilineTextAlignment(.center)
@@ -79,7 +67,7 @@ struct BookCoverView: View {
 }
 
 struct BookCoverPlaceholder: View {
-    let book: Book
+    let title: String
     
     var body: some View {
         ZStack {
@@ -94,7 +82,7 @@ struct BookCoverPlaceholder: View {
                     .font(.system(size: 40))
                     .foregroundColor(.white.opacity(0.8))
                 
-                Text(book.title)
+                Text(title)
                     .font(.caption2)
                     .fontWeight(.medium)
                     .foregroundColor(.white)
@@ -121,13 +109,13 @@ struct EmptyBookCover: View {
 }
 
 struct BookStatusBadge: View {
-    let status: UserBook.ReadingStatus
+    let status: ReadingStatus
     
     var body: some View {
         HStack(spacing: 2) {
-            Image(systemName: status.iconName)
+            Image(systemName: status.icon)
                 .font(.system(size: 10))
-            Text(status.shortDisplayName)
+            Text(status.displayName)
                 .font(.system(size: 10))
                 .fontWeight(.medium)
         }
@@ -152,49 +140,24 @@ struct BookStatusBadge: View {
     }
 }
 
-extension UserBook.ReadingStatus {
-    var shortDisplayName: String {
-        switch self {
-        case .wantToRead:
-            return "読みたい"
-        case .reading:
-            return "読書中"
-        case .completed:
-            return "完了"
-        case .dnf:
-            return "DNF"
-        }
-    }
-    
-    var iconName: String {
-        switch self {
-        case .wantToRead:
-            return "bookmark"
-        case .reading:
-            return "book"
-        case .completed:
-            return "checkmark.circle"
-        case .dnf:
-            return "xmark.circle"
-        }
-    }
-}
-
 #Preview {
     BookCoverView(userBook: UserBook(
         id: "1",
         userId: "user1",
         bookId: "book1",
-        book: Book(
-            id: "book1",
-            title: "SwiftUI実践入門",
-            author: "山田太郎",
-            createdAt: Date(),
-            updatedAt: Date()
-        ),
+        bookTitle: "SwiftUI実践入門",
+        bookAuthor: "山田太郎",
+        bookCoverImageUrl: nil,
+        bookIsbn: nil,
         status: .reading,
         rating: 4.5,
+        readingProgress: nil,
+        currentPage: nil,
         startDate: Date(),
+        completedDate: nil,
+        memo: nil,
+        tags: [],
+        isPrivate: false,
         createdAt: Date(),
         updatedAt: Date()
     ))
