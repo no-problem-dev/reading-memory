@@ -11,11 +11,11 @@ protocol AchievementRepositoryProtocol {
     func checkAndUpdateAchievements(userId: String, userBooks: [UserBook], streaks: [ReadingStreak]) async throws
 }
 
-class AchievementRepository: BaseRepository, AchievementRepositoryProtocol {
+class AchievementRepository: AchievementRepositoryProtocol {
     static let shared = AchievementRepository()
+    private let db = Firestore.firestore()
     
-    private override init() {
-        super.init()
+    private init() {
     }
     
     func createAchievement(_ achievement: Achievement) async throws {
@@ -24,7 +24,7 @@ class AchievementRepository: BaseRepository, AchievementRepositoryProtocol {
             .collection("achievements")
             .document(achievement.id)
         
-        try await document.setData(from: achievement)
+        try document.setData(from: achievement)
     }
     
     func updateAchievement(_ achievement: Achievement) async throws {
@@ -36,7 +36,7 @@ class AchievementRepository: BaseRepository, AchievementRepositoryProtocol {
         var updatedAchievement = achievement
         updatedAchievement.updatedAt = Date()
         
-        try await document.setData(from: updatedAchievement)
+        try document.setData(from: updatedAchievement)
     }
     
     func getAchievement(userId: String, badgeId: String) async throws -> Achievement? {
@@ -127,7 +127,7 @@ class AchievementRepository: BaseRepository, AchievementRepositoryProtocol {
         case .genreBooks:
             guard let targetGenre = badge.requirement.genre else { return 0 }
             let genreBooks = userBooks.filter { book in
-                book.status == .completed && (book.tags ?? []).contains(targetGenre)
+                book.status == .completed && book.tags.contains(targetGenre)
             }.count
             return min(Double(genreBooks) / Double(badge.requirement.value), 1.0)
             

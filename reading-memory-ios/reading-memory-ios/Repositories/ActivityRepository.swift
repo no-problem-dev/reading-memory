@@ -12,11 +12,11 @@ protocol ActivityRepositoryProtocol {
     func recordMemoWritten(userId: String, date: Date) async throws
 }
 
-class ActivityRepository: BaseRepository, ActivityRepositoryProtocol {
+class ActivityRepository: ActivityRepositoryProtocol {
     static let shared = ActivityRepository()
+    private let db = Firestore.firestore()
     
-    private override init() {
-        super.init()
+    private init() {
     }
     
     func createActivity(_ activity: ReadingActivity) async throws {
@@ -25,7 +25,7 @@ class ActivityRepository: BaseRepository, ActivityRepositoryProtocol {
             .collection("activities")
             .document(activity.id)
         
-        try await document.setData(from: activity)
+        try document.setData(from: activity)
     }
     
     func updateActivity(_ activity: ReadingActivity) async throws {
@@ -37,7 +37,7 @@ class ActivityRepository: BaseRepository, ActivityRepositoryProtocol {
         var updatedActivity = activity
         updatedActivity.updatedAt = Date()
         
-        try await document.setData(from: updatedActivity)
+        try document.setData(from: updatedActivity)
     }
     
     func getTodayActivity(userId: String) async throws -> ReadingActivity? {

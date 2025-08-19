@@ -5,7 +5,7 @@ struct Achievement: Identifiable, Codable {
     let id: String
     let badgeId: String
     let userId: String
-    let unlockedAt: Date?
+    var unlockedAt: Date?
     var progress: Double
     var isUnlocked: Bool
     let createdAt: Date

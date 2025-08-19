@@ -12,11 +12,11 @@ protocol GoalRepositoryProtocol {
     func updateGoalProgress(goalId: String, userId: String, newValue: Int) async throws
 }
 
-class GoalRepository: BaseRepository, GoalRepositoryProtocol {
+class GoalRepository: GoalRepositoryProtocol {
     static let shared = GoalRepository()
+    private let db = Firestore.firestore()
     
-    private override init() {
-        super.init()
+    private init() {
     }
     
     func createGoal(_ goal: ReadingGoal) async throws {
@@ -25,7 +25,7 @@ class GoalRepository: BaseRepository, GoalRepositoryProtocol {
             .collection("goals")
             .document(goal.id)
         
-        try await document.setData(from: goal)
+        try document.setData(from: goal)
     }
     
     func updateGoal(_ goal: ReadingGoal) async throws {
@@ -37,7 +37,7 @@ class GoalRepository: BaseRepository, GoalRepositoryProtocol {
         var updatedGoal = goal
         updatedGoal.updatedAt = Date()
         
-        try await document.setData(from: updatedGoal)
+        try document.setData(from: updatedGoal)
     }
     
     func deleteGoal(goalId: String, userId: String) async throws {
@@ -98,7 +98,6 @@ class GoalRepository: BaseRepository, GoalRepositoryProtocol {
     
     // Helper method to calculate current progress based on period
     func calculateCurrentProgress(for goal: ReadingGoal, userBooks: [UserBook]) -> Int {
-        let calendar = Calendar.current
         let completedBooks = userBooks.filter { book in
             guard book.status == .completed,
                   let completedDate = book.completedDate else { return false }

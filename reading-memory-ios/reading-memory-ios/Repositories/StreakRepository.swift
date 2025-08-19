@@ -10,11 +10,11 @@ protocol StreakRepositoryProtocol {
     func recordActivity(userId: String, type: ReadingStreak.StreakType, date: Date) async throws
 }
 
-class StreakRepository: BaseRepository, StreakRepositoryProtocol {
+class StreakRepository: StreakRepositoryProtocol {
     static let shared = StreakRepository()
+    private let db = Firestore.firestore()
     
-    private override init() {
-        super.init()
+    private init() {
     }
     
     func createStreak(_ streak: ReadingStreak) async throws {
@@ -23,7 +23,7 @@ class StreakRepository: BaseRepository, StreakRepositoryProtocol {
             .collection("streaks")
             .document(streak.id)
         
-        try await document.setData(from: streak)
+        try document.setData(from: streak)
     }
     
     func updateStreak(_ streak: ReadingStreak) async throws {
@@ -35,7 +35,7 @@ class StreakRepository: BaseRepository, StreakRepositoryProtocol {
         var updatedStreak = streak
         updatedStreak.updatedAt = Date()
         
-        try await document.setData(from: updatedStreak)
+        try document.setData(from: updatedStreak)
     }
     
     func getStreak(userId: String, type: ReadingStreak.StreakType) async throws -> ReadingStreak? {

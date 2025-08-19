@@ -50,7 +50,7 @@ class AchievementViewModel {
         
         do {
             // 必要なデータを取得
-            let userBooks = try await userBookRepository.getUserBooks(userId: userId)
+            let userBooks = try await userBookRepository.getUserBooks(for: userId)
             let streaks = try await streakRepository.getAllStreaks(userId: userId)
             
             // アチーブメントの進捗を更新

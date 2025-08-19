@@ -55,7 +55,7 @@ class GoalViewModel {
             try await goalRepository.createGoal(goal)
             
             // UserProfileの年間目標も更新
-            if var profile = try await userProfileRepository.getProfile(userId: userId) {
+            if var profile = try await userProfileRepository.getUserProfile(userId: userId) {
                 profile = UserProfile(
                     id: profile.id,
                     displayName: profile.displayName,
@@ -72,7 +72,7 @@ class GoalViewModel {
                     createdAt: profile.createdAt,
                     updatedAt: Date()
                 )
-                try await userProfileRepository.updateProfile(profile)
+                try await userProfileRepository.updateUserProfile(profile)
             }
             
             await loadGoals()
@@ -94,7 +94,7 @@ class GoalViewModel {
             try await goalRepository.createGoal(goal)
             
             // UserProfileの月間目標も更新
-            if var profile = try await userProfileRepository.getProfile(userId: userId) {
+            if var profile = try await userProfileRepository.getUserProfile(userId: userId) {
                 profile = UserProfile(
                     id: profile.id,
                     displayName: profile.displayName,
@@ -111,7 +111,7 @@ class GoalViewModel {
                     createdAt: profile.createdAt,
                     updatedAt: Date()
                 )
-                try await userProfileRepository.updateProfile(profile)
+                try await userProfileRepository.updateUserProfile(profile)
             }
             
             await loadGoals()
@@ -147,7 +147,7 @@ class GoalViewModel {
             
             // UserProfileの目標も削除
             if goal.period == .yearly && goal.type == .bookCount {
-                if var profile = try await userProfileRepository.getProfile(userId: userId) {
+                if var profile = try await userProfileRepository.getUserProfile(userId: userId) {
                     profile = UserProfile(
                         id: profile.id,
                         displayName: profile.displayName,
@@ -164,7 +164,7 @@ class GoalViewModel {
                         createdAt: profile.createdAt,
                         updatedAt: Date()
                     )
-                    try await userProfileRepository.updateProfile(profile)
+                    try await userProfileRepository.updateUserProfile(profile)
                 }
             }
             
@@ -181,7 +181,7 @@ class GoalViewModel {
         
         do {
             // ユーザーの本を取得
-            let userBooks = try await userBookRepository.getUserBooks(userId: userId)
+            let userBooks = try await userBookRepository.getUserBooks(for: userId)
             
             // 各目標の進捗を計算して更新
             for goal in activeGoals {
@@ -205,7 +205,7 @@ class GoalViewModel {
     
     // 推奨目標を計算
     func calculateRecommendedGoal(period: ReadingGoal.GoalPeriod) -> Int {
-        guard let userId = userId else { return 10 }
+        guard userId != nil else { return 10 }
         
         // 過去の読書ペースから推奨値を計算（簡易版）
         let completedGoals = allGoals.filter { $0.isCompleted && $0.period == period }
