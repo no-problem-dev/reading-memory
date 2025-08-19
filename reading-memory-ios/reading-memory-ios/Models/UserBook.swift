@@ -29,6 +29,13 @@ struct UserBook: Identifiable, Equatable {
     var aiSummary: String?
     var summaryGeneratedAt: Date?
     
+    // 読みたいリスト関連
+    var priority: Int? // 0が最高優先度、nilの場合は優先度なし
+    var plannedReadingDate: Date? // 読書予定日
+    var reminderEnabled: Bool // リマインダー有効化
+    var purchaseLinks: [PurchaseLink]? // 購入リンク
+    var addedToWantListDate: Date? // リスト追加日
+    
     let createdAt: Date
     let updatedAt: Date
     
@@ -52,6 +59,11 @@ struct UserBook: Identifiable, Equatable {
         isPrivate: Bool = false,
         aiSummary: String? = nil,
         summaryGeneratedAt: Date? = nil,
+        priority: Int? = nil,
+        plannedReadingDate: Date? = nil,
+        reminderEnabled: Bool = false,
+        purchaseLinks: [PurchaseLink]? = nil,
+        addedToWantListDate: Date? = nil,
         createdAt: Date,
         updatedAt: Date
     ) {
@@ -74,6 +86,11 @@ struct UserBook: Identifiable, Equatable {
         self.isPrivate = isPrivate
         self.aiSummary = aiSummary
         self.summaryGeneratedAt = summaryGeneratedAt
+        self.priority = priority
+        self.plannedReadingDate = plannedReadingDate
+        self.reminderEnabled = reminderEnabled
+        self.purchaseLinks = purchaseLinks
+        self.addedToWantListDate = addedToWantListDate
         self.createdAt = createdAt
         self.updatedAt = updatedAt
     }
@@ -103,6 +120,7 @@ struct UserBook: Identifiable, Equatable {
             memo: nil,
             tags: [],
             isPrivate: false,
+            addedToWantListDate: status == .wantToRead ? now : nil,
             createdAt: now,
             updatedAt: now
         )
@@ -133,6 +151,7 @@ struct UserBook: Identifiable, Equatable {
             memo: nil,
             tags: [],
             isPrivate: false,
+            addedToWantListDate: status == .wantToRead ? now : nil,
             createdAt: now,
             updatedAt: now
         )
@@ -150,8 +169,15 @@ struct UserBook: Identifiable, Equatable {
         tags: [String]? = nil,
         isPrivate: Bool? = nil,
         aiSummary: String? = nil,
-        summaryGeneratedAt: Date? = nil
+        summaryGeneratedAt: Date? = nil,
+        priority: Int?? = nil,
+        plannedReadingDate: Date?? = nil,
+        reminderEnabled: Bool? = nil,
+        purchaseLinks: [PurchaseLink]?? = nil
     ) -> UserBook {
+        let newStatus = status ?? self.status
+        let now = Date()
+        
         return UserBook(
             id: self.id,
             userId: self.userId,
@@ -161,7 +187,7 @@ struct UserBook: Identifiable, Equatable {
             bookAuthor: self.bookAuthor,
             bookCoverImageUrl: self.bookCoverImageUrl,
             bookIsbn: self.bookIsbn,
-            status: status ?? self.status,
+            status: newStatus,
             rating: rating ?? self.rating,
             readingProgress: readingProgress ?? self.readingProgress,
             currentPage: currentPage ?? self.currentPage,
@@ -172,8 +198,13 @@ struct UserBook: Identifiable, Equatable {
             isPrivate: isPrivate ?? self.isPrivate,
             aiSummary: aiSummary ?? self.aiSummary,
             summaryGeneratedAt: summaryGeneratedAt ?? self.summaryGeneratedAt,
+            priority: priority ?? self.priority,
+            plannedReadingDate: plannedReadingDate ?? self.plannedReadingDate,
+            reminderEnabled: reminderEnabled ?? self.reminderEnabled,
+            purchaseLinks: purchaseLinks ?? self.purchaseLinks,
+            addedToWantListDate: self.addedToWantListDate ?? (newStatus == .wantToRead && self.status != .wantToRead ? now : nil),
             createdAt: self.createdAt,
-            updatedAt: Date()
+            updatedAt: now
         )
     }
 }

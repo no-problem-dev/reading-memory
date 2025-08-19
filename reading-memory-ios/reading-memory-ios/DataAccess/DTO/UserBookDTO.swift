@@ -28,6 +28,13 @@ struct UserBookDTO: Codable {
     let aiSummary: String?
     let summaryGeneratedAt: Timestamp?
     
+    // 読みたいリスト関連
+    let priority: Int?
+    let plannedReadingDate: Timestamp?
+    let reminderEnabled: Bool
+    let purchaseLinks: [PurchaseLinkDTO]?
+    let addedToWantListDate: Timestamp?
+    
     let createdAt: Timestamp
     let updatedAt: Timestamp
     
@@ -50,6 +57,11 @@ struct UserBookDTO: Codable {
         self.isPrivate = userBook.isPrivate
         self.aiSummary = userBook.aiSummary
         self.summaryGeneratedAt = userBook.summaryGeneratedAt.map { Timestamp(date: $0) }
+        self.priority = userBook.priority
+        self.plannedReadingDate = userBook.plannedReadingDate.map { Timestamp(date: $0) }
+        self.reminderEnabled = userBook.reminderEnabled
+        self.purchaseLinks = userBook.purchaseLinks?.map { PurchaseLinkDTO(from: $0) }
+        self.addedToWantListDate = userBook.addedToWantListDate.map { Timestamp(date: $0) }
         self.createdAt = Timestamp(date: userBook.createdAt)
         self.updatedAt = Timestamp(date: userBook.updatedAt)
     }
@@ -77,6 +89,11 @@ struct UserBookDTO: Codable {
             isPrivate: isPrivate,
             aiSummary: aiSummary,
             summaryGeneratedAt: summaryGeneratedAt?.dateValue(),
+            priority: priority,
+            plannedReadingDate: plannedReadingDate?.dateValue(),
+            reminderEnabled: reminderEnabled,
+            purchaseLinks: purchaseLinks?.map { $0.toDomain() },
+            addedToWantListDate: addedToWantListDate?.dateValue(),
             createdAt: createdAt.dateValue(),
             updatedAt: updatedAt.dateValue()
         )

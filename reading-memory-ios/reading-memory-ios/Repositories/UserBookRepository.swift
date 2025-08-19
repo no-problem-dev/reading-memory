@@ -2,7 +2,7 @@ import Foundation
 import FirebaseFirestore
 import FirebaseAuth
 
-final class UserBookRepository {
+final class UserBookRepository: UserBookRepositoryProtocol {
     private let db = Firestore.firestore()
     private let collectionName = "userBooks"
     
@@ -106,5 +106,13 @@ final class UserBookRepository {
         
         let dto = try document.data(as: UserBookDTO.self)
         return dto.toDomain(id: document.documentID)
+    }
+    
+    // ID のみで削除するバージョン（プロトコルに合わせる）
+    func deleteUserBook(_ userBookId: String) async throws {
+        guard let userId = Auth.auth().currentUser?.uid else {
+            throw NSError(domain: "UserBookRepository", code: 401, userInfo: [NSLocalizedDescriptionKey: "User not authenticated"])
+        }
+        try await deleteUserBook(userId: userId, userBookId: userBookId)
     }
 }

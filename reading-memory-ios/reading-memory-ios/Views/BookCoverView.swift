@@ -2,6 +2,10 @@ import SwiftUI
 
 struct BookCoverView: View {
     let userBook: UserBook
+    var showTitle: Bool = true
+    var showRating: Bool = true
+    var width: CGFloat = 110
+    var height: CGFloat = 160
     
     var body: some View {
         VStack(spacing: 8) {
@@ -41,24 +45,29 @@ struct BookCoverView: View {
                     }
                 }
             }
-            .frame(width: 110, height: 160)
+            .frame(width: width, height: height)
+            .clipped()
             .cornerRadius(8)
             .shadow(color: .black.opacity(0.2), radius: 4, x: 0, y: 2)
             
-            // Book title
-            Text(userBook.bookTitle)
-                .font(.caption)
-                .lineLimit(2)
-                .multilineTextAlignment(.center)
-                .frame(width: 110)
+            if showTitle {
+                // Book title
+                Text(userBook.bookTitle)
+                    .font(.caption)
+                    .lineLimit(2)
+                    .multilineTextAlignment(.center)
+                    .frame(width: width)
+            }
             
-            // Rating
-            if let rating = userBook.rating {
-                HStack(spacing: 2) {
-                    ForEach(0..<5) { index in
-                        Image(systemName: index < Int(rating) ? "star.fill" : "star")
-                            .font(.system(size: 10))
-                            .foregroundColor(.yellow)
+            if showRating {
+                // Rating
+                if let rating = userBook.rating {
+                    HStack(spacing: 2) {
+                        ForEach(0..<5) { index in
+                            Image(systemName: index < Int(rating) ? "star.fill" : "star")
+                                .font(.system(size: 10))
+                                .foregroundColor(.yellow)
+                        }
                     }
                 }
             }
@@ -70,28 +79,29 @@ struct BookCoverPlaceholder: View {
     let title: String
     
     var body: some View {
-        ZStack {
-            LinearGradient(
-                gradient: Gradient(colors: [Color.blue.opacity(0.3), Color.purple.opacity(0.3)]),
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            )
-            
-            VStack(spacing: 8) {
-                Image(systemName: "book.closed")
-                    .font(.system(size: 40))
-                    .foregroundColor(.white.opacity(0.8))
+        GeometryReader { geometry in
+            ZStack {
+                LinearGradient(
+                    gradient: Gradient(colors: [Color.blue.opacity(0.3), Color.purple.opacity(0.3)]),
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
                 
-                Text(title)
-                    .font(.caption2)
-                    .fontWeight(.medium)
-                    .foregroundColor(.white)
-                    .multilineTextAlignment(.center)
-                    .lineLimit(3)
-                    .padding(.horizontal, 8)
+                VStack(spacing: 8) {
+                    Image(systemName: "book.closed")
+                        .font(.system(size: min(geometry.size.width, geometry.size.height) * 0.25))
+                        .foregroundColor(.white.opacity(0.8))
+                    
+                    Text(title)
+                        .font(.caption2)
+                        .fontWeight(.medium)
+                        .foregroundColor(.white)
+                        .multilineTextAlignment(.center)
+                        .lineLimit(3)
+                        .padding(.horizontal, 8)
+                }
             }
         }
-        .frame(width: 110, height: 160)
     }
 }
 
