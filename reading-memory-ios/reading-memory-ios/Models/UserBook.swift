@@ -25,6 +25,10 @@ struct UserBook: Identifiable, Equatable {
     var tags: [String]
     var isPrivate: Bool
     
+    // AI関連
+    var aiSummary: String?
+    var summaryGeneratedAt: Date?
+    
     let createdAt: Date
     let updatedAt: Date
     
@@ -46,6 +50,8 @@ struct UserBook: Identifiable, Equatable {
         memo: String? = nil,
         tags: [String] = [],
         isPrivate: Bool = false,
+        aiSummary: String? = nil,
+        summaryGeneratedAt: Date? = nil,
         createdAt: Date,
         updatedAt: Date
     ) {
@@ -66,6 +72,8 @@ struct UserBook: Identifiable, Equatable {
         self.memo = memo
         self.tags = tags
         self.isPrivate = isPrivate
+        self.aiSummary = aiSummary
+        self.summaryGeneratedAt = summaryGeneratedAt
         self.createdAt = createdAt
         self.updatedAt = updatedAt
     }
@@ -140,7 +148,9 @@ struct UserBook: Identifiable, Equatable {
         completedDate: Date? = nil,
         memo: String? = nil,
         tags: [String]? = nil,
-        isPrivate: Bool? = nil
+        isPrivate: Bool? = nil,
+        aiSummary: String? = nil,
+        summaryGeneratedAt: Date? = nil
     ) -> UserBook {
         return UserBook(
             id: self.id,
@@ -160,17 +170,21 @@ struct UserBook: Identifiable, Equatable {
             memo: memo ?? self.memo,
             tags: tags ?? self.tags,
             isPrivate: isPrivate ?? self.isPrivate,
+            aiSummary: aiSummary ?? self.aiSummary,
+            summaryGeneratedAt: summaryGeneratedAt ?? self.summaryGeneratedAt,
             createdAt: self.createdAt,
             updatedAt: Date()
         )
     }
 }
 
-enum ReadingStatus: String, Codable, CaseIterable {
+enum ReadingStatus: String, Codable, CaseIterable, Identifiable {
     case wantToRead = "want_to_read"
     case reading = "reading"
     case completed = "completed"
     case dnf = "dnf" // Did Not Finish
+    
+    var id: String { rawValue }
     
     var displayName: String {
         switch self {

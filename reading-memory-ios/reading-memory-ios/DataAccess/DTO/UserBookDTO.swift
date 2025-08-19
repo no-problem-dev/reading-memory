@@ -24,6 +24,10 @@ struct UserBookDTO: Codable {
     let tags: [String]
     let isPrivate: Bool
     
+    // AI関連
+    let aiSummary: String?
+    let summaryGeneratedAt: Timestamp?
+    
     let createdAt: Timestamp
     let updatedAt: Timestamp
     
@@ -44,6 +48,8 @@ struct UserBookDTO: Codable {
         self.memo = userBook.memo
         self.tags = userBook.tags
         self.isPrivate = userBook.isPrivate
+        self.aiSummary = userBook.aiSummary
+        self.summaryGeneratedAt = userBook.summaryGeneratedAt.map { Timestamp(date: $0) }
         self.createdAt = Timestamp(date: userBook.createdAt)
         self.updatedAt = Timestamp(date: userBook.updatedAt)
     }
@@ -69,6 +75,8 @@ struct UserBookDTO: Codable {
             memo: memo,
             tags: tags,
             isPrivate: isPrivate,
+            aiSummary: aiSummary,
+            summaryGeneratedAt: summaryGeneratedAt?.dateValue(),
             createdAt: createdAt.dateValue(),
             updatedAt: updatedAt.dateValue()
         )

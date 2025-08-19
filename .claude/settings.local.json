@@ -37,7 +37,9 @@
       "Bash(npx tsc:*)",
       "Bash(firebase functions:secrets:set:*)",
       "Bash(git checkout:*)",
-      "Bash(npx ts-node:*)"
+      "Bash(npx ts-node:*)",
+      "Bash(npm run deploy:*)",
+      "Bash(touch:*)"
     ],
     "deny": []
   }

@@ -4,6 +4,10 @@ import { BookSearchService } from "./services/bookSearchService";
 
 admin.initializeApp();
 
+// AI関連の関数をインポート
+export { generateAIResponse } from "./functions/generateAIResponse";
+export { generateBookSummary } from "./functions/generateBookSummary";
+
 // 書籍検索 - ISBNベース
 export const searchBookByISBN = functions
   .region("asia-northeast1")
