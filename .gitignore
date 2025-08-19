@@ -20,7 +20,10 @@ DerivedData/
 *.hmap
 *.ipa
 *.xcuserstate
-project.xcworkspace/
+project.xcworkspace/*
+!project.xcworkspace/xcshareddata/
+!project.xcworkspace/xcshareddata/swiftpm/
+!project.xcworkspace/xcshareddata/swiftpm/Package.resolved
 .swiftpm/
 
 # CocoaPods
