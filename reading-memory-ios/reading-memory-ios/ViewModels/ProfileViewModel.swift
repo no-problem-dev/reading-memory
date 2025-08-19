@@ -97,9 +97,9 @@ final class ProfileViewModel: BaseViewModel {
             
             // Calculate basic statistics
             statistics.totalBooks = userBooks.count
-            statistics.completedBooks = userBooks.filter { $0.status == UserBook.ReadingStatus.completed }.count
-            statistics.readingBooks = userBooks.filter { $0.status == UserBook.ReadingStatus.reading }.count
-            statistics.wantToReadBooks = userBooks.filter { $0.status == UserBook.ReadingStatus.wantToRead }.count
+            statistics.completedBooks = userBooks.filter { $0.status == .completed }.count
+            statistics.readingBooks = userBooks.filter { $0.status == .reading }.count
+            statistics.wantToReadBooks = userBooks.filter { $0.status == .wantToRead }.count
             
             // Calculate average rating
             let ratedBooks = userBooks.filter { $0.rating != nil && $0.rating! > 0 }

@@ -1,6 +1,8 @@
 import Foundation
 
-struct Book: Identifiable, Codable {
+// 書籍マスターデータ（全ユーザー共通）
+// ドメインモデル - 外部依存なし
+struct Book: Identifiable, Equatable {
     let id: String
     let isbn: String?
     let title: String
@@ -10,34 +12,26 @@ struct Book: Identifiable, Codable {
     let pageCount: Int?
     let description: String?
     let coverImageUrl: String?
+    let dataSource: BookDataSource
+    let visibility: BookVisibility
     let createdAt: Date
     let updatedAt: Date
     
-    enum CodingKeys: String, CodingKey {
-        case id
-        case isbn
-        case title
-        case author
-        case publisher
-        case publishedDate
-        case pageCount
-        case description
-        case coverImageUrl
-        case createdAt
-        case updatedAt
-    }
-    
-    init(id: String = UUID().uuidString,
-         isbn: String? = nil,
-         title: String,
-         author: String,
-         publisher: String? = nil,
-         publishedDate: Date? = nil,
-         pageCount: Int? = nil,
-         description: String? = nil,
-         coverImageUrl: String? = nil,
-         createdAt: Date = Date(),
-         updatedAt: Date = Date()) {
+    init(
+        id: String,
+        isbn: String? = nil,
+        title: String,
+        author: String,
+        publisher: String? = nil,
+        publishedDate: Date? = nil,
+        pageCount: Int? = nil,
+        description: String? = nil,
+        coverImageUrl: String? = nil,
+        dataSource: BookDataSource,
+        visibility: BookVisibility,
+        createdAt: Date,
+        updatedAt: Date
+    ) {
         self.id = id
         self.isbn = isbn
         self.title = title
@@ -47,7 +41,40 @@ struct Book: Identifiable, Codable {
         self.pageCount = pageCount
         self.description = description
         self.coverImageUrl = coverImageUrl
+        self.dataSource = dataSource
+        self.visibility = visibility
         self.createdAt = createdAt
         self.updatedAt = updatedAt
+    }
+    
+    // 新規作成用のファクトリメソッド
+    static func new(
+        isbn: String? = nil,
+        title: String,
+        author: String,
+        publisher: String? = nil,
+        publishedDate: Date? = nil,
+        pageCount: Int? = nil,
+        description: String? = nil,
+        coverImageUrl: String? = nil,
+        dataSource: BookDataSource = .manual,
+        visibility: BookVisibility = .private
+    ) -> Book {
+        let now = Date()
+        return Book(
+            id: UUID().uuidString,
+            isbn: isbn,
+            title: title,
+            author: author,
+            publisher: publisher,
+            publishedDate: publishedDate,
+            pageCount: pageCount,
+            description: description,
+            coverImageUrl: coverImageUrl,
+            dataSource: dataSource,
+            visibility: visibility,
+            createdAt: now,
+            updatedAt: now
+        )
     }
 }

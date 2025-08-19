@@ -37,7 +37,7 @@ final class BookChatViewModel: BaseViewModel {
             return
         }
         
-        let chat = BookChat(
+        let chat = BookChat.new(
             userBookId: userBook.id,
             userId: userId,
             message: message

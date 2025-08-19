@@ -137,7 +137,7 @@ struct BookRegistrationView: View {
     
     private func saveBook() {
         Task {
-            let book = Book(
+            let book = Book.new(
                 isbn: isbn.isEmpty ? nil : isbn.trimmingCharacters(in: .whitespacesAndNewlines),
                 title: title.trimmingCharacters(in: .whitespacesAndNewlines),
                 author: author.trimmingCharacters(in: .whitespacesAndNewlines),

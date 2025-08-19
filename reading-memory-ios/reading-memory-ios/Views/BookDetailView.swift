@@ -18,11 +18,11 @@ struct BookDetailView: View {
             if isLoading {
                 ProgressView()
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
-            } else if let userBook = userBook, let book = userBook.book {
+            } else if let userBook = userBook {
                 ScrollView {
                     VStack(alignment: .leading, spacing: 20) {
                         // 本の基本情報
-                        bookInfoSection(book: book)
+                        bookInfoSection(userBook: userBook)
                         
                         Divider()
                         
@@ -54,23 +54,14 @@ struct BookDetailView: View {
                         }
                         .buttonStyle(PlainButtonStyle())
                         
-                        if let notes = userBook.notes, !notes.isEmpty {
+                        if let memo = userBook.memo, !memo.isEmpty {
                             Divider()
-                            notesSection(notes: notes)
+                            notesSection(notes: memo)
                         }
-                        
-                        if let description = book.description, !description.isEmpty {
-                            Divider()
-                            descriptionSection(description: description)
-                        }
-                        
-                        // 本の詳細情報
-                        Divider()
-                        detailsSection(book: book)
                     }
                     .padding()
                 }
-                .navigationTitle(book.title)
+                .navigationTitle(userBook.bookTitle)
                 .navigationBarTitleDisplayMode(.inline)
                 .toolbar {
                     ToolbarItem(placement: .navigationBarTrailing) {
@@ -123,24 +114,7 @@ struct BookDetailView: View {
         
         do {
             if let fetchedUserBook = try await userBookRepository.getUserBook(userId: userId, userBookId: userBookId) {
-                // Fetch the associated book
-                if let book = try await bookRepository.getBook(by: fetchedUserBook.bookId) {
-                    self.userBook = UserBook(
-                        id: fetchedUserBook.id,
-                        userId: fetchedUserBook.userId,
-                        bookId: fetchedUserBook.bookId,
-                        book: book,
-                        status: fetchedUserBook.status,
-                        rating: fetchedUserBook.rating,
-                        startDate: fetchedUserBook.startDate,
-                        completedDate: fetchedUserBook.completedDate,
-                        customCoverImageUrl: fetchedUserBook.customCoverImageUrl,
-                        notes: fetchedUserBook.notes,
-                        isPublic: fetchedUserBook.isPublic,
-                        createdAt: fetchedUserBook.createdAt,
-                        updatedAt: fetchedUserBook.updatedAt
-                    )
-                }
+                self.userBook = fetchedUserBook
             }
         } catch {
             print("Error loading book: \(error)")
@@ -160,40 +134,34 @@ struct BookDetailView: View {
         }
     }
     
-    private func bookInfoSection(book: Book) -> some View {
+    private func bookInfoSection(userBook: UserBook) -> some View {
         HStack(alignment: .top, spacing: 16) {
             // 本の表紙
-            if let coverImageUrl = userBook?.customCoverImageUrl ?? book.coverImageUrl {
+            if let coverImageUrl = userBook.bookCoverImageUrl {
                 AsyncImage(url: URL(string: coverImageUrl)) { image in
                     image
                         .resizable()
                         .aspectRatio(contentMode: .fit)
                 } placeholder: {
-                    BookCoverPlaceholder(book: book)
+                    BookCoverPlaceholder(title: userBook.bookTitle)
                 }
                 .frame(width: 120, height: 180)
                 .cornerRadius(12)
             } else {
-                BookCoverPlaceholder(book: book)
+                BookCoverPlaceholder(title: userBook.bookTitle)
                     .frame(width: 120, height: 180)
                     .cornerRadius(12)
             }
             
             VStack(alignment: .leading, spacing: 8) {
-                Text(book.title)
+                Text(userBook.bookTitle)
                     .font(.title2)
                     .fontWeight(.bold)
                     .fixedSize(horizontal: false, vertical: true)
                 
-                Text(book.author)
+                Text(userBook.bookAuthor)
                     .font(.headline)
                     .foregroundColor(.secondary)
-                
-                if let publisher = book.publisher {
-                    Text(publisher)
-                        .font(.subheadline)
-                        .foregroundColor(.secondary)
-                }
                 
                 Spacer()
             }
@@ -262,53 +230,10 @@ struct BookDetailView: View {
                 .foregroundColor(.secondary)
         }
     }
-    
-    private func descriptionSection(description: String) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text("概要")
-                .font(.headline)
-            Text(description)
-                .font(.body)
-                .foregroundColor(.secondary)
-                .lineLimit(nil)
-                .fixedSize(horizontal: false, vertical: true)
-        }
-    }
-    
-    private func detailsSection(book: Book) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text("詳細情報")
-                .font(.headline)
-            
-            VStack(spacing: 8) {
-                if let isbn = book.isbn {
-                    detailRow(label: "ISBN", value: isbn)
-                }
-                
-                if let pageCount = book.pageCount {
-                    detailRow(label: "ページ数", value: "\(pageCount)ページ")
-                }
-                
-                if let publishedDate = book.publishedDate {
-                    detailRow(label: "出版日", value: publishedDate.formatted(date: .abbreviated, time: .omitted))
-                }
-            }
-        }
-    }
-    
-    private func detailRow(label: String, value: String) -> some View {
-        HStack {
-            Text(label)
-                .foregroundColor(.secondary)
-            Spacer()
-            Text(value)
-        }
-        .font(.subheadline)
-    }
 }
 
 struct StatusBadge: View {
-    let status: UserBook.ReadingStatus
+    let status: ReadingStatus
     
     var body: some View {
         Text(status.displayName)

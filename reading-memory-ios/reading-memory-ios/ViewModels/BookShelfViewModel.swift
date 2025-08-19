@@ -9,7 +9,7 @@ class BookShelfViewModel: BaseViewModel {
     
     private(set) var allBooks: [UserBook] = []
     private(set) var filteredBooks: [UserBook] = []
-    private var currentFilter: UserBook.ReadingStatus? = nil
+    private var currentFilter: ReadingStatus? = nil
     private var currentSort: BookShelfView.SortOption = .dateAdded
     
     override init() {
@@ -26,35 +26,14 @@ class BookShelfViewModel: BaseViewModel {
                 throw AppError.authenticationRequired
             }
             
-            var userBooks = try await self.userBookRepository.getUserBooks(for: userId)
+            let userBooks = try await self.userBookRepository.getUserBooks(for: userId)
             
-            // Fetch all associated books
-            for i in 0..<userBooks.count {
-                if let book = try await self.bookRepository.getBook(by: userBooks[i].bookId) {
-                    userBooks[i] = UserBook(
-                        id: userBooks[i].id,
-                        userId: userBooks[i].userId,
-                        bookId: userBooks[i].bookId,
-                        book: book,
-                        status: userBooks[i].status,
-                        rating: userBooks[i].rating,
-                        startDate: userBooks[i].startDate,
-                        completedDate: userBooks[i].completedDate,
-                        customCoverImageUrl: userBooks[i].customCoverImageUrl,
-                        notes: userBooks[i].notes,
-                        isPublic: userBooks[i].isPublic,
-                        createdAt: userBooks[i].createdAt,
-                        updatedAt: userBooks[i].updatedAt
-                    )
-                }
-            }
-            
-            self.allBooks = userBooks.filter { $0.book != nil }
+            self.allBooks = userBooks
             self.applyFilterAndSort()
         }
     }
     
-    func filterBooks(by status: UserBook.ReadingStatus?) {
+    func filterBooks(by status: ReadingStatus?) {
         currentFilter = status
         applyFilterAndSort()
     }
@@ -76,9 +55,9 @@ class BookShelfViewModel: BaseViewModel {
         case .dateAdded:
             books.sort { $0.createdAt > $1.createdAt }
         case .title:
-            books.sort { ($0.book?.title ?? "").localizedCompare($1.book?.title ?? "") == .orderedAscending }
+            books.sort { $0.bookTitle.localizedCompare($1.bookTitle) == .orderedAscending }
         case .author:
-            books.sort { ($0.book?.author ?? "").localizedCompare($1.book?.author ?? "") == .orderedAscending }
+            books.sort { $0.bookAuthor.localizedCompare($1.bookAuthor) == .orderedAscending }
         case .rating:
             books.sort { 
                 let rating0 = $0.rating ?? 0

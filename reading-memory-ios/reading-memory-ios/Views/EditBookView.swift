@@ -3,10 +3,9 @@ import SwiftUI
 struct EditBookView: View {
     @Environment(\.dismiss) private var dismiss
     let userBook: UserBook
-    let book: Book
     let onSave: (UserBook) -> Void
     
-    @State private var status: UserBook.ReadingStatus
+    @State private var status: ReadingStatus
     @State private var rating: Double
     @State private var hasRating: Bool
     @State private var startDate: Date
@@ -18,9 +17,8 @@ struct EditBookView: View {
     @State private var showError = false
     @State private var errorMessage: String?
     
-    init(userBook: UserBook, book: Book, onSave: @escaping (UserBook) -> Void) {
+    init(userBook: UserBook, onSave: @escaping (UserBook) -> Void) {
         self.userBook = userBook
-        self.book = book
         self.onSave = onSave
         
         _status = State(initialValue: userBook.status)
@@ -30,7 +28,7 @@ struct EditBookView: View {
         _hasStartDate = State(initialValue: userBook.startDate != nil)
         _completedDate = State(initialValue: userBook.completedDate ?? Date())
         _hasCompletedDate = State(initialValue: userBook.completedDate != nil)
-        _notes = State(initialValue: userBook.notes ?? "")
+        _notes = State(initialValue: userBook.memo ?? "")
     }
     
     var body: some View {
@@ -38,7 +36,7 @@ struct EditBookView: View {
             Form {
                 Section("読書ステータス") {
                     Picker("ステータス", selection: $status) {
-                        ForEach(UserBook.ReadingStatus.allCases, id: \.self) { status in
+                        ForEach(ReadingStatus.allCases, id: \.self) { status in
                             Text(status.displayName).tag(status)
                         }
                     }
@@ -150,7 +148,7 @@ struct EditBookView: View {
         }
     }
     
-    private func handleStatusChange(from oldStatus: UserBook.ReadingStatus, to newStatus: UserBook.ReadingStatus) {
+    private func handleStatusChange(from oldStatus: ReadingStatus, to newStatus: ReadingStatus) {
         // 読みたい → その他: 開始日を今日に設定
         if oldStatus == .wantToRead && newStatus != .wantToRead && !hasStartDate {
             hasStartDate = true
@@ -184,19 +182,16 @@ struct EditBookView: View {
         
         Task {
             do {
-                let updatedUserBook = UserBook(
-                    id: userBook.id,
-                    userId: userBook.userId,
-                    bookId: userBook.bookId,
+                let updatedUserBook = userBook.updated(
                     status: status,
                     rating: hasRating ? rating : nil,
+                    readingProgress: userBook.readingProgress,
+                    currentPage: userBook.currentPage,
                     startDate: hasStartDate ? startDate : nil,
                     completedDate: hasCompletedDate ? completedDate : nil,
-                    customCoverImageUrl: userBook.customCoverImageUrl,
-                    notes: notes.isEmpty ? nil : notes,
-                    isPublic: userBook.isPublic,
-                    createdAt: userBook.createdAt,
-                    updatedAt: Date()
+                    memo: notes.isEmpty ? nil : notes,
+                    tags: userBook.tags,
+                    isPrivate: userBook.isPrivate
                 )
                 
                 try await UserBookRepository.shared.updateUserBook(updatedUserBook)
@@ -219,14 +214,24 @@ struct EditBookView: View {
 #Preview {
     EditBookView(
         userBook: UserBook(
-            userId: "test",
-            bookId: "test",
+            id: "test-id",
+            userId: "test-user",
+            bookId: "test-book",
+            bookTitle: "サンプルブック",
+            bookAuthor: "サンプル著者",
+            bookCoverImageUrl: nil,
+            bookIsbn: nil,
             status: .reading,
-            rating: 4.0
-        ),
-        book: Book(
-            title: "サンプルブック",
-            author: "サンプル著者"
+            rating: 4.0,
+            readingProgress: nil,
+            currentPage: nil,
+            startDate: Date(),
+            completedDate: nil,
+            memo: "サンプルメモ",
+            tags: [],
+            isPrivate: false,
+            createdAt: Date(),
+            updatedAt: Date()
         )
     ) { _ in }
 }

@@ -34,7 +34,9 @@
       "mcp__serena__replace_symbol_body",
       "mcp__serena__insert_after_symbol",
       "Bash(cat:*)",
-      "Bash(npx tsc:*)"
+      "Bash(npx tsc:*)",
+      "Bash(firebase functions:secrets:set:*)",
+      "Bash(git checkout:*)"
     ],
     "deny": []
   }
