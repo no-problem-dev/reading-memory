@@ -435,6 +435,7 @@ struct SimpleEditBookView: View {
     
     private let userBookRepository = ServiceContainer.shared.getUserBookRepository()
     private let authService = AuthService.shared
+    private let activityRepository = ActivityRepository.shared
     
     var body: some View {
         NavigationStack {
@@ -681,6 +682,11 @@ struct SimpleEditBookView: View {
             )
             
             try await userBookRepository.updateUserBook(updatedUserBook)
+            
+            // ステータスが完了に変更された場合、アクティビティを記録
+            if status == .completed && userBook.status != .completed {
+                try? await activityRepository.recordBookRead(userId: userId)
+            }
             
             onUpdate(updatedUserBook)
             dismiss()

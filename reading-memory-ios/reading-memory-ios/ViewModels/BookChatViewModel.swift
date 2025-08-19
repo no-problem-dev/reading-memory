@@ -13,6 +13,7 @@ final class BookChatViewModel: BaseViewModel {
     private let repository = BookChatRepository.shared
     private let authService = AuthService.shared
     private let aiService = AIService.shared
+    private let activityRepository = ActivityRepository.shared
     private var listener: ListenerRegistration?
     
     var isAIEnabled = false // AI機能の有効/無効フラグ
@@ -62,6 +63,9 @@ final class BookChatViewModel: BaseViewModel {
             if listener == nil {
                 chats.append(newChat)
             }
+            
+            // アクティビティを記録（メモ作成）
+            try? await activityRepository.recordMemoWritten(userId: userId)
             
             // AI応答を生成（有効な場合のみ）
             if isAIEnabled && !message.isEmpty {
