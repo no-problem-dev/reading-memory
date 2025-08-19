@@ -4,6 +4,7 @@ import PhotosUI
 struct ProfileView: View {
     @State private var viewModel = ProfileViewModel()
     @State private var showingEditView = false
+    @State private var showingGoalSetting = false
     
     var body: some View {
         NavigationStack {
@@ -53,6 +54,9 @@ struct ProfileView: View {
             }
             .sheet(isPresented: $showingEditView) {
                 ProfileEditView(viewModel: viewModel)
+            }
+            .sheet(isPresented: $showingGoalSetting) {
+                GoalSettingView()
             }
             .task {
                 await viewModel.loadProfile()
@@ -159,8 +163,20 @@ struct ProfileView: View {
     
     private func readingGoalProgress(goal: Int) -> some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("年間読書目標")
-                .font(.headline)
+            HStack {
+                Text("年間読書目標")
+                    .font(.headline)
+                
+                Spacer()
+                
+                Button {
+                    showingGoalSetting = true
+                } label: {
+                    Text("目標設定")
+                        .font(.caption)
+                        .foregroundColor(.blue)
+                }
+            }
             
             HStack {
                 Text("\(viewModel.statistics.booksThisYear) / \(goal) 冊")

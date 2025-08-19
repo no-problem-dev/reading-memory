@@ -6,6 +6,7 @@ final class BookRegistrationViewModel: BaseViewModel {
     private let bookRepository = BookRepository.shared
     private let userBookRepository = UserBookRepository.shared
     private let authService = AuthService.shared
+    private let activityRepository = ActivityRepository.shared
     
     func registerBook(_ book: Book) async -> Bool {
         var result = false
@@ -87,6 +88,11 @@ final class BookRegistrationViewModel: BaseViewModel {
             
             // UserBookを保存
             _ = try await self.userBookRepository.createUserBook(userBook)
+            
+            // アクティビティを記録（読みたいリストに追加）
+            if userBook.status == .wantToRead {
+                try? await self.activityRepository.recordBookRead(userId: userId)
+            }
             
             result = true
         }

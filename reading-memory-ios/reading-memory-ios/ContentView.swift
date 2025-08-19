@@ -76,10 +76,16 @@ struct MainTabView: View {
                     Text("本棚")
                 }
             
-            Text("読書中")
+            WantToReadListView()
                 .tabItem {
-                    Image(systemName: "book")
-                    Text("読書中")
+                    Image(systemName: "bookmark.fill")
+                    Text("読みたい")
+                }
+            
+            GoalDashboardView()
+                .tabItem {
+                    Image(systemName: "target")
+                    Text("目標")
                 }
             
             StatisticsView()
