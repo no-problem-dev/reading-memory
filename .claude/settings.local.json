@@ -41,7 +41,8 @@
       "Bash(npm run deploy:*)",
       "Bash(touch:*)",
       "mcp__serena__think_about_task_adherence",
-      "mcp__serena__list_memories"
+      "mcp__serena__list_memories",
+      "mcp__serena__find_referencing_symbols"
     ],
     "deny": []
   }
