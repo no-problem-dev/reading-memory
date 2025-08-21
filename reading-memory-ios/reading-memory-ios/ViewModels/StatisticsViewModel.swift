@@ -20,6 +20,11 @@ final class StatisticsViewModel: BaseViewModel {
     var monthlyAverage: Double = 0
     var longestStreak: Int = 0
     
+    // キャッシュされたデータ
+    private var cachedUserBooks: [UserBook] = []
+    private var cachedMemosCounts: [String: Int] = [:] // userBookId: count
+    private var currentPeriod: StatisticsView.StatisticsPeriod = .month
+    
     struct PeriodStatistics {
         var completedBooks: Int = 0
         var totalReadingDays: Int = 0
@@ -60,6 +65,23 @@ final class StatisticsViewModel: BaseViewModel {
     
     @MainActor
     func loadStatistics(for period: StatisticsView.StatisticsPeriod = .month) async {
+        await executeLoadTask { [weak self] in
+            guard let self = self else { return }
+            // 初回読み込みまたはキャッシュ期限切れの場合のみデータを取得
+            if self.shouldRefreshData() {
+                await self.fetchAndCacheData()
+            }
+            
+            // 期間が変更された場合は再計算（データの再取得はしない）
+            if self.currentPeriod != period || !self.hasLoadedInitialData {
+                self.currentPeriod = period
+                await self.recalculateStatistics(for: period)
+            }
+        }
+    }
+    
+    @MainActor
+    private func fetchAndCacheData() async {
         isLoading = true
         errorMessage = nil
         
@@ -68,11 +90,32 @@ final class StatisticsViewModel: BaseViewModel {
                 throw AppError.authenticationRequired
             }
             
-            // Get all user books
-            let allBooks = try await userBookRepository.getUserBooks(for: userId)
+            // ユーザーの本を取得してキャッシュ
+            cachedUserBooks = try await userBookRepository.getUserBooks(for: userId)
+            
+            // データ取得完了をマーク
+            markDataAsFetched()
+            
+        } catch {
+            errorMessage = AppError.from(error).localizedDescription
+        }
+        
+        isLoading = false
+    }
+    
+    @MainActor
+    private func recalculateStatistics(for period: StatisticsView.StatisticsPeriod) async {
+        guard !cachedUserBooks.isEmpty else { return }
+        
+        isLoading = true
+        
+        do {
+            guard let userId = Auth.auth().currentUser?.uid else {
+                throw AppError.authenticationRequired
+            }
             
             // Filter books by period
-            let (filteredBooks, previousPeriodBooks) = filterBooksByPeriod(allBooks, period: period)
+            let (filteredBooks, previousPeriodBooks) = filterBooksByPeriod(cachedUserBooks, period: period)
             
             // Calculate period statistics
             await calculatePeriodStatistics(
@@ -89,11 +132,11 @@ final class StatisticsViewModel: BaseViewModel {
             
             // Generate monthly stats for longer periods
             if period != .week {
-                generateMonthlyStats(books: allBooks)
+                generateMonthlyStats(books: cachedUserBooks)
             }
             
             // Calculate reading pace
-            calculateReadingPace(books: allBooks)
+            calculateReadingPace(books: cachedUserBooks)
             
         } catch {
             errorMessage = AppError.from(error).localizedDescription
@@ -163,11 +206,19 @@ final class StatisticsViewModel: BaseViewModel {
             periodStats.averageRating = totalRating / Double(ratedBooks.count)
         }
         
-        // Count memos
+        // Count memos (キャッシュを使用)
         var totalMemos = 0
         for book in books {
-            let memos = try? await bookChatRepository.getChats(userId: userId, userBookId: book.id, limit: 1000)
-            totalMemos += memos?.count ?? 0
+            if let cachedCount = cachedMemosCounts[book.id] {
+                totalMemos += cachedCount
+            } else {
+                // キャッシュにない場合のみ取得
+                guard !Task.isCancelled else { return }
+                let memos = try? await bookChatRepository.getChats(userId: userId, userBookId: book.id, limit: 1000)
+                let count = memos?.count ?? 0
+                cachedMemosCounts[book.id] = count
+                totalMemos += count
+            }
         }
         periodStats.totalMemos = totalMemos
         

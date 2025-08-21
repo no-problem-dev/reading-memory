@@ -2,7 +2,7 @@ import Foundation
 import FirebaseAuth
 
 @Observable
-class StreakViewModel {
+class StreakViewModel: BaseViewModel {
     private let streakRepository = StreakRepository.shared
     private let activityRepository = ActivityRepository.shared
     
@@ -12,14 +12,29 @@ class StreakViewModel {
     var memoStreak: ReadingStreak?
     var weeklyActivity: [Bool] = []
     var recentActivities: [ReadingActivity] = []
-    var isLoading = false
-    var errorMessage: String?
     
     private var userId: String? {
         Auth.auth().currentUser?.uid
     }
     
+    override init() {
+        super.init()
+        // ストリークデータは頻繁に更新されるため、キャッシュ期間を短めに設定
+        cacheValidityDuration = 60 // 1分
+    }
+    
     func loadStreaks() async {
+        await executeLoadTask { [weak self] in
+            guard let self = self else { return }
+            // 初回読み込みまたはキャッシュ期限切れの場合のみデータを取得
+            if self.shouldRefreshData() {
+                await self.fetchStreakData()
+            }
+        }
+    }
+    
+    @MainActor
+    private func fetchStreakData() async {
         guard let userId = userId else { return }
         
         isLoading = true
@@ -49,6 +64,10 @@ class StreakViewModel {
                 startDate: startDate,
                 endDate: endDate
             )
+            
+            // データ取得完了をマーク
+            markDataAsFetched()
+            
         } catch {
             errorMessage = "ストリークの読み込みに失敗しました: \(error.localizedDescription)"
         }
@@ -66,7 +85,8 @@ class StreakViewModel {
                 date: date
             )
             
-            // リロード
+            // キャッシュを無効化して再読み込み
+            forceRefresh()
             await loadStreaks()
         } catch {
             errorMessage = "アクティビティの記録に失敗しました: \(error.localizedDescription)"
@@ -80,7 +100,8 @@ class StreakViewModel {
             // 本の読書アクティビティを記録
             try await activityRepository.recordBookRead(userId: userId)
             
-            // リロード
+            // キャッシュを無効化して再読み込み
+            forceRefresh()
             await loadStreaks()
         } catch {
             errorMessage = "読書アクティビティの記録に失敗しました: \(error.localizedDescription)"
@@ -94,7 +115,8 @@ class StreakViewModel {
             // メモ作成アクティビティを記録
             try await activityRepository.recordMemoWritten(userId: userId)
             
-            // リロード
+            // キャッシュを無効化して再読み込み
+            forceRefresh()
             await loadStreaks()
         } catch {
             errorMessage = "メモアクティビティの記録に失敗しました: \(error.localizedDescription)"

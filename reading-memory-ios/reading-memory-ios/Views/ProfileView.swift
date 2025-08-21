@@ -59,10 +59,23 @@ struct ProfileView: View {
                 GoalSettingView()
             }
             .task {
-                await viewModel.loadProfile()
+                // 初回のみプロフィールを読み込む
+                if !viewModel.hasLoadedInitialData {
+                    await viewModel.loadProfile()
+                }
             }
             .refreshable {
+                // プルリフレッシュ時は強制的に再取得
+                viewModel.forceRefresh()
                 await viewModel.loadProfile()
+            }
+            .onAppear {
+                // タブが表示されたときはキャッシュの有効期限を確認
+                if viewModel.hasLoadedInitialData && viewModel.shouldRefreshData() {
+                    Task {
+                        await viewModel.loadProfile()
+                    }
+                }
             }
             .alert("エラー", isPresented: .constant(viewModel.errorMessage != nil)) {
                 Button("OK") {

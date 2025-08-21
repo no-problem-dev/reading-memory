@@ -56,12 +56,20 @@ struct StatisticsView: View {
             .navigationTitle("読書統計")
             .navigationBarTitleDisplayMode(.large)
             .task {
-                await viewModel.loadStatistics()
+                // 初回のみデータを読み込む
+                if !viewModel.hasLoadedInitialData {
+                    await viewModel.loadStatistics(for: selectedPeriod)
+                }
             }
             .onChange(of: selectedPeriod) { _, newValue in
                 Task {
                     await viewModel.loadStatistics(for: newValue)
                 }
+            }
+            .refreshable {
+                // プルリフレッシュ時は強制的に再取得
+                viewModel.forceRefresh()
+                await viewModel.loadStatistics(for: selectedPeriod)
             }
             .alert("エラー", isPresented: .constant(viewModel.errorMessage != nil)) {
                 Button("OK") {

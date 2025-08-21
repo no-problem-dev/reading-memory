@@ -18,30 +18,61 @@ class GoalViewModel {
         Auth.auth().currentUser?.uid
     }
     
+    // 現在実行中のタスクを追跡
+    private var loadTask: Task<Void, Never>?
+    private var updateTask: Task<Void, Never>?
+    
+    deinit {
+        loadTask?.cancel()
+        updateTask?.cancel()
+    }
+    
     func loadGoals() async {
         guard let userId = userId else { return }
         
-        isLoading = true
-        errorMessage = nil
+        // 既存のタスクをキャンセル
+        loadTask?.cancel()
         
-        do {
-            // アクティブな目標を取得
-            activeGoals = try await goalRepository.getActiveGoals(userId: userId)
+        loadTask = Task {
+            guard !Task.isCancelled else { return }
             
-            // すべての目標を取得
-            allGoals = try await goalRepository.getAllGoals(userId: userId)
+            isLoading = true
+            errorMessage = nil
             
-            // 年間・月間目標を特定
-            yearlyGoal = activeGoals.first { $0.period == .yearly && $0.type == .bookCount }
-            monthlyGoal = activeGoals.first { $0.period == .monthly && $0.type == .bookCount }
+            do {
+                // アクティブな目標を取得
+                let activeGoalsList = try await goalRepository.getActiveGoals(userId: userId)
+                guard !Task.isCancelled else { return }
+                
+                // すべての目標を取得
+                let allGoalsList = try await goalRepository.getAllGoals(userId: userId)
+                guard !Task.isCancelled else { return }
+                
+                // メインスレッドで更新
+                await MainActor.run {
+                    self.activeGoals = activeGoalsList
+                    self.allGoals = allGoalsList
+                    
+                    // 年間・月間目標を特定
+                    self.yearlyGoal = activeGoalsList.first { $0.period == .yearly && $0.type == .bookCount }
+                    self.monthlyGoal = activeGoalsList.first { $0.period == .monthly && $0.type == .bookCount }
+                }
+                
+                // 初回読み込み時のみ進捗を更新（無限ループを防ぐ）
+                await updateGoalProgressIfNeeded()
+            } catch {
+                guard !Task.isCancelled else { return }
+                await MainActor.run {
+                    self.errorMessage = "目標の読み込みに失敗しました: \(error.localizedDescription)"
+                }
+            }
             
-            // 現在の進捗を更新
-            await updateGoalProgress()
-        } catch {
-            errorMessage = "目標の読み込みに失敗しました: \(error.localizedDescription)"
+            await MainActor.run {
+                self.isLoading = false
+            }
         }
         
-        isLoading = false
+        await loadTask?.value
     }
     
     func createYearlyGoal(targetBooks: Int) async {
@@ -176,31 +207,73 @@ class GoalViewModel {
         isLoading = false
     }
     
-    private func updateGoalProgress() async {
+    // 進捗更新が必要な場合のみ実行
+    private func updateGoalProgressIfNeeded() async {
         guard let userId = userId else { return }
         
-        do {
-            // ユーザーの本を取得
-            let userBooks = try await userBookRepository.getUserBooks(for: userId)
+        // 既存のタスクをキャンセル
+        updateTask?.cancel()
+        
+        updateTask = Task {
+            guard !Task.isCancelled else { return }
             
-            // 各目標の進捗を計算して更新
-            for goal in activeGoals {
-                let currentProgress = goalRepository.calculateCurrentProgress(for: goal, userBooks: userBooks)
+            do {
+                // ユーザーの本を取得
+                let userBooks = try await userBookRepository.getUserBooks(for: userId)
+                guard !Task.isCancelled else { return }
                 
-                if goal.currentValue != currentProgress {
-                    try await goalRepository.updateGoalProgress(
-                        goalId: goal.id,
-                        userId: userId,
-                        newValue: currentProgress
-                    )
+                // 更新が必要な目標を収集
+                var goalsToUpdate: [(goal: ReadingGoal, newValue: Int)] = []
+                
+                for goal in activeGoals {
+                    let currentProgress = goalRepository.calculateCurrentProgress(for: goal, userBooks: userBooks)
+                    
+                    if goal.currentValue != currentProgress {
+                        goalsToUpdate.append((goal, currentProgress))
+                    }
                 }
+                
+                // 更新が必要な場合のみ実行
+                if !goalsToUpdate.isEmpty {
+                    for (goal, newValue) in goalsToUpdate {
+                        guard !Task.isCancelled else { return }
+                        
+                        try await goalRepository.updateGoalProgress(
+                            goalId: goal.id,
+                            userId: userId,
+                            newValue: newValue
+                        )
+                        
+                        // ローカルの値も更新（再取得を避ける）
+                        await MainActor.run {
+                            if let index = self.activeGoals.firstIndex(where: { $0.id == goal.id }) {
+                                self.activeGoals[index].currentValue = newValue
+                            }
+                            if let index = self.allGoals.firstIndex(where: { $0.id == goal.id }) {
+                                self.allGoals[index].currentValue = newValue
+                            }
+                            
+                            // 年間・月間目標も更新
+                            if self.yearlyGoal?.id == goal.id {
+                                self.yearlyGoal?.currentValue = newValue
+                            }
+                            if self.monthlyGoal?.id == goal.id {
+                                self.monthlyGoal?.currentValue = newValue
+                            }
+                        }
+                    }
+                }
+            } catch {
+                print("目標進捗の更新に失敗: \(error)")
             }
-            
-            // 再度読み込んで最新の状態を反映
-            await loadGoals()
-        } catch {
-            print("目標進捗の更新に失敗: \(error)")
         }
+        
+        await updateTask?.value
+    }
+    
+    // 手動で進捗を更新するメソッド（外部から呼び出し可能）
+    func refreshGoalProgress() async {
+        await updateGoalProgressIfNeeded()
     }
     
     // 推奨目標を計算
