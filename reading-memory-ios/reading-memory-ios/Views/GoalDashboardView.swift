@@ -6,6 +6,7 @@ struct GoalDashboardView: View {
     @State private var achievementViewModel = AchievementViewModel()
     @State private var showGoalSetting = false
     @State private var showAchievementGallery = false
+    @State private var hasLoadedInitialData = false
     
     var body: some View {
         NavigationStack {
@@ -42,10 +43,14 @@ struct GoalDashboardView: View {
                 }
             }
             .task {
-                await loadData()
+                // 初回のみデータを読み込む
+                if !hasLoadedInitialData {
+                    await loadData()
+                    hasLoadedInitialData = true
+                }
             }
             .refreshable {
-                await loadData()
+                await refreshData()
             }
             .sheet(isPresented: $showGoalSetting) {
                 GoalSettingView()
@@ -53,13 +58,37 @@ struct GoalDashboardView: View {
             .sheet(isPresented: $showAchievementGallery) {
                 AchievementGalleryView()
             }
+            .onAppear {
+                // タブが表示されたときは進捗のみ更新
+                if hasLoadedInitialData {
+                    Task {
+                        await goalViewModel.refreshGoalProgress()
+                    }
+                }
+            }
         }
     }
     
     private func loadData() async {
-        await goalViewModel.loadGoals()
-        await streakViewModel.loadStreaks()
-        await achievementViewModel.loadAchievements()
+        // 並行実行で高速化
+        await withTaskGroup(of: Void.self) { group in
+            group.addTask {
+                await self.goalViewModel.loadGoals()
+            }
+            group.addTask {
+                await self.streakViewModel.loadStreaks()
+            }
+            group.addTask {
+                await self.achievementViewModel.loadAchievements()
+            }
+        }
+    }
+    
+    private func refreshData() async {
+        // プルリフレッシュ時は全データを再取得
+        hasLoadedInitialData = false
+        await loadData()
+        hasLoadedInitialData = true
     }
     
     private var streakSection: some View {

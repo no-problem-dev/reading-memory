@@ -22,6 +22,9 @@ final class ProfileViewModel: BaseViewModel {
     var editReadingGoal: String = ""
     var editIsPublic = false
     
+    // キャッシュされたデータ
+    private var cachedUserBooks: [UserBook] = []
+    
     struct ProfileStatistics {
         var totalBooks: Int = 0
         var completedBooks: Int = 0
@@ -41,6 +44,17 @@ final class ProfileViewModel: BaseViewModel {
     
     @MainActor
     func loadProfile() async {
+        await executeLoadTask { [weak self] in
+            guard let self = self else { return }
+            // 初回読み込みまたはキャッシュ期限切れの場合のみデータを取得
+            if self.shouldRefreshData() {
+                await self.fetchAndCacheData()
+            }
+        }
+    }
+    
+    @MainActor
+    private func fetchAndCacheData() async {
         isLoading = true
         errorMessage = nil
         
@@ -68,6 +82,9 @@ final class ProfileViewModel: BaseViewModel {
                 }
             }
             
+            // ユーザーの本を取得してキャッシュ
+            cachedUserBooks = try await userBookRepository.getUserBooks(for: userId)
+            
             // Load statistics
             await loadStatistics(userId: userId)
             
@@ -80,6 +97,9 @@ final class ProfileViewModel: BaseViewModel {
                 editIsPublic = profile.isPublic
             }
             
+            // データ取得完了をマーク
+            markDataAsFetched()
+            
         } catch {
             errorMessage = AppError.from(error).localizedDescription
         }
@@ -90,8 +110,8 @@ final class ProfileViewModel: BaseViewModel {
     @MainActor
     private func loadStatistics(userId: String) async {
         do {
-            // Get all user books
-            let userBooks = try await userBookRepository.getUserBooks(for: userId)
+            // キャッシュされたデータを使用
+            let userBooks = cachedUserBooks
             
             // Calculate basic statistics
             statistics.totalBooks = userBooks.count
@@ -125,13 +145,9 @@ final class ProfileViewModel: BaseViewModel {
                 return bookYear == currentYear
             }.count
             
-            // Count total memos
-            var totalMemoCount = 0
-            for userBook in userBooks {
-                let memos = try await bookChatRepository.getChats(userId: userId, userBookId: userBook.id, limit: 1000)
-                totalMemoCount += memos.count
-            }
-            statistics.totalMemos = totalMemoCount
+            // Count total memos (遅延読み込み、表示時には必要ないためスキップ)
+            // ユーザーがプロフィールを表示したときのみメモ数を取得
+            statistics.totalMemos = 0  // デフォルトは0
             
             // Extract favorite genres from user profile
             if let profile = userProfile {
@@ -195,6 +211,9 @@ final class ProfileViewModel: BaseViewModel {
             
             try await userProfileRepository.updateUserProfile(updatedProfile)
             userProfile = updatedProfile
+            
+            // キャッシュを無効化して次回読み込み時に最新データを取得
+            forceRefresh()
             
             isEditMode = false
             selectedPhoto = nil

@@ -2,7 +2,7 @@ import Foundation
 import FirebaseAuth
 
 @Observable
-class AchievementViewModel {
+class AchievementViewModel: BaseViewModel {
     private let achievementRepository = AchievementRepository.shared
     private let userBookRepository = UserBookRepository.shared
     private let streakRepository = StreakRepository.shared
@@ -11,14 +11,29 @@ class AchievementViewModel {
     var unlockedAchievements: [Achievement] = []
     var badges: [Badge] = Badge.defaultBadges
     var badgesByCategory: [Badge.BadgeCategory: [Badge]] = [:]
-    var isLoading = false
-    var errorMessage: String?
     
     private var userId: String? {
         Auth.auth().currentUser?.uid
     }
     
+    override init() {
+        super.init()
+        // アチーブメントデータは比較的変更が少ないため、キャッシュ期間を長めに設定
+        cacheValidityDuration = 600 // 10分
+    }
+    
     func loadAchievements() async {
+        await executeLoadTask { [weak self] in
+            guard let self = self else { return }
+            // 初回読み込みまたはキャッシュ期限切れの場合のみデータを取得
+            if self.shouldRefreshData() {
+                await self.fetchAchievementData()
+            }
+        }
+    }
+    
+    @MainActor
+    private func fetchAchievementData() async {
         guard let userId = userId else { return }
         
         isLoading = true
@@ -32,8 +47,14 @@ class AchievementViewModel {
             // バッジをカテゴリー別に分類
             organizeBadgesByCategory()
             
-            // 進捗を更新
-            await updateAchievementProgress()
+            // 進捗を更新（別タスクで実行）
+            Task {
+                await updateAchievementProgress(shouldReload: false)
+            }
+            
+            // データ取得完了をマーク
+            markDataAsFetched()
+            
         } catch {
             errorMessage = "バッジの読み込みに失敗しました: \(error.localizedDescription)"
         }
@@ -45,7 +66,7 @@ class AchievementViewModel {
         badgesByCategory = Dictionary(grouping: badges) { $0.category }
     }
     
-    func updateAchievementProgress() async {
+    func updateAchievementProgress(shouldReload: Bool = true) async {
         guard let userId = userId else { return }
         
         do {
@@ -60,8 +81,11 @@ class AchievementViewModel {
                 streaks: streaks
             )
             
-            // リロード
-            await loadAchievements()
+            // 必要に応じてリロード
+            if shouldReload {
+                forceRefresh()
+                await loadAchievements()
+            }
         } catch {
             print("アチーブメント進捗の更新に失敗: \(error)")
         }
