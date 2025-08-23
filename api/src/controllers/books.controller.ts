@@ -154,8 +154,10 @@ export const createBook = async (
     const doc = await docRef.get();
     
     res.status(201).json({
-      id: doc.id,
-      ...doc.data()
+      book: {
+        id: doc.id,
+        ...doc.data()
+      }
     });
   } catch (error) {
     next(error);
@@ -192,8 +194,10 @@ export const updateBook = async (
     const updatedDoc = await bookRef.get();
     
     res.json({
-      id: updatedDoc.id,
-      ...updatedDoc.data()
+      book: {
+        id: updatedDoc.id,
+        ...updatedDoc.data()
+      }
     });
   } catch (error) {
     next(error);
