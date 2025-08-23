@@ -4,15 +4,13 @@ import { ApiError } from '../middleware/errorHandler';
 import { getFirestore } from '../config/firebase';
 import { FieldValue, Query } from 'firebase-admin/firestore';
 
-// Get all chats for a book
-const db = getFirestore();
-
 export const getChats = async (
   req: AuthRequest,
   res: Response,
   next: NextFunction
 ): Promise<void> => {
   try {
+    const db = getFirestore();
     const userId = req.user!.uid;
     const { bookId } = req.params;
     const { limit = 50, startAfter } = req.query;
@@ -59,6 +57,7 @@ export const createChat = async (
   next: NextFunction
 ): Promise<void> => {
   try {
+    const db = getFirestore();
     const userId = req.user!.uid;
     const { bookId } = req.params;
     const { message, messageType = 'user' } = req.body;
@@ -100,6 +99,7 @@ export const updateChat = async (
   next: NextFunction
 ): Promise<void> => {
   try {
+    const db = getFirestore();
     const userId = req.user!.uid;
     const { bookId, chatId } = req.params;
     const { message } = req.body;
@@ -139,6 +139,7 @@ export const deleteChat = async (
   next: NextFunction
 ): Promise<void> => {
   try {
+    const db = getFirestore();
     const userId = req.user!.uid;
     const { bookId, chatId } = req.params;
     

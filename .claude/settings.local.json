@@ -112,7 +112,9 @@
       "Bash(--member=\"serviceAccount:reading-memory-api@reading-memory.iam.gserviceaccount.com\" )",
       "Bash(--role=\"roles/serviceusage.serviceUsageConsumer\")",
       "Bash(gcloud run services update:*)",
-      "Bash(grep:*)"
+      "Bash(grep:*)",
+      "Bash(gcloud builds list:*)",
+      "Bash(gcloud run revisions describe:*)"
     ],
     "deny": []
   }
