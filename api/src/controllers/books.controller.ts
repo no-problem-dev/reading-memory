@@ -143,6 +143,29 @@ export const createBook = async (
     delete bookData.userId;
     delete bookData.id;
     
+    // Convert date strings to Date objects
+    if (bookData.publishedDate) {
+      bookData.publishedDate = new Date(bookData.publishedDate);
+    }
+    if (bookData.addedDate) {
+      bookData.addedDate = new Date(bookData.addedDate);
+    }
+    if (bookData.startDate) {
+      bookData.startDate = new Date(bookData.startDate);
+    }
+    if (bookData.completedDate) {
+      bookData.completedDate = new Date(bookData.completedDate);
+    }
+    if (bookData.lastReadDate) {
+      bookData.lastReadDate = new Date(bookData.lastReadDate);
+    }
+    if (bookData.plannedReadingDate) {
+      bookData.plannedReadingDate = new Date(bookData.plannedReadingDate);
+    }
+    if (bookData.summaryGeneratedAt) {
+      bookData.summaryGeneratedAt = new Date(bookData.summaryGeneratedAt);
+    }
+    
     // Add server timestamps
     const data = {
       ...bookData,
@@ -181,6 +204,29 @@ export const updateBook = async (
     delete updates.id;
     delete updates.userId;
     delete updates.createdAt;
+    
+    // Convert date strings to Date objects
+    if (updates.publishedDate) {
+      updates.publishedDate = new Date(updates.publishedDate);
+    }
+    if (updates.addedDate) {
+      updates.addedDate = new Date(updates.addedDate);
+    }
+    if (updates.startDate) {
+      updates.startDate = new Date(updates.startDate);
+    }
+    if (updates.completedDate) {
+      updates.completedDate = new Date(updates.completedDate);
+    }
+    if (updates.lastReadDate) {
+      updates.lastReadDate = new Date(updates.lastReadDate);
+    }
+    if (updates.plannedReadingDate) {
+      updates.plannedReadingDate = new Date(updates.plannedReadingDate);
+    }
+    if (updates.summaryGeneratedAt) {
+      updates.summaryGeneratedAt = new Date(updates.summaryGeneratedAt);
+    }
     
     // Add updated timestamp
     updates.updatedAt = FieldValue.serverTimestamp();

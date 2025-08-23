@@ -132,7 +132,9 @@ final class APIClient {
     // MARK: AI関連
     
     func generateAIResponse(bookId: String, message: String) async throws -> AIResponseResult {
-        let body = try JSONEncoder().encode([
+        let encoder = JSONEncoder()
+        encoder.dateEncodingStrategy = .iso8601
+        let body = try encoder.encode([
             "message": message
         ])
         
@@ -245,7 +247,9 @@ final class APIClient {
     
     func createBook(_ book: Book) async throws -> Book {
         let bookData = BookCreateRequest(from: book)
-        let body = try JSONEncoder().encode(bookData)
+        let encoder = JSONEncoder()
+        encoder.dateEncodingStrategy = .iso8601
+        let body = try encoder.encode(bookData)
         
         let request = try await makeRequest(
             method: "POST",
@@ -259,7 +263,9 @@ final class APIClient {
     
     func updateBook(_ book: Book) async throws -> Book {
         let bookData = BookUpdateRequest(from: book)
-        let body = try JSONEncoder().encode(bookData)
+        let encoder = JSONEncoder()
+        encoder.dateEncodingStrategy = .iso8601
+        let body = try encoder.encode(bookData)
         
         let request = try await makeRequest(
             method: "PUT",
@@ -293,7 +299,9 @@ final class APIClient {
     }
     
     func createActivity(_ activity: ReadingActivity) async throws -> ReadingActivity {
-        let body = try JSONEncoder().encode(activity)
+        let encoder = JSONEncoder()
+        encoder.dateEncodingStrategy = .iso8601
+        let body = try encoder.encode(activity)
         
         let request = try await makeRequest(
             method: "POST",
@@ -318,7 +326,9 @@ final class APIClient {
     }
     
     func createGoal(_ goal: ReadingGoal) async throws -> ReadingGoal {
-        let body = try JSONEncoder().encode(goal)
+        let encoder = JSONEncoder()
+        encoder.dateEncodingStrategy = .iso8601
+        let body = try encoder.encode(goal)
         
         let request = try await makeRequest(
             method: "POST",
@@ -331,7 +341,9 @@ final class APIClient {
     }
     
     func updateGoal(_ goal: ReadingGoal) async throws -> ReadingGoal {
-        let body = try JSONEncoder().encode(goal)
+        let encoder = JSONEncoder()
+        encoder.dateEncodingStrategy = .iso8601
+        let body = try encoder.encode(goal)
         
         let request = try await makeRequest(
             method: "PUT",
@@ -365,7 +377,9 @@ final class APIClient {
     }
     
     func createAchievement(_ achievement: Achievement) async throws -> Achievement {
-        let body = try JSONEncoder().encode(achievement)
+        let encoder = JSONEncoder()
+        encoder.dateEncodingStrategy = .iso8601
+        let body = try encoder.encode(achievement)
         
         let request = try await makeRequest(
             method: "POST",
@@ -390,7 +404,9 @@ final class APIClient {
     }
     
     func createOrUpdateStreak(_ streak: ReadingStreak) async throws -> ReadingStreak {
-        let body = try JSONEncoder().encode(streak)
+        let encoder = JSONEncoder()
+        encoder.dateEncodingStrategy = .iso8601
+        let body = try encoder.encode(streak)
         
         let request = try await makeRequest(
             method: "POST",
@@ -424,7 +440,9 @@ final class APIClient {
     }
     
     func createUserProfile(_ profile: UserProfile) async throws -> UserProfile {
-        let body = try JSONEncoder().encode(profile)
+        let encoder = JSONEncoder()
+        encoder.dateEncodingStrategy = .iso8601
+        let body = try encoder.encode(profile)
         
         let request = try await makeRequest(
             method: "POST",
@@ -437,7 +455,9 @@ final class APIClient {
     }
     
     func updateUserProfile(_ profile: UserProfile) async throws -> UserProfile {
-        let body = try JSONEncoder().encode(profile)
+        let encoder = JSONEncoder()
+        encoder.dateEncodingStrategy = .iso8601
+        let body = try encoder.encode(profile)
         
         let request = try await makeRequest(
             method: "PUT",
