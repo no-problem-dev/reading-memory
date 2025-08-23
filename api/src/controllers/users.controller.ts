@@ -82,14 +82,22 @@ export const createProfile = async (
     const profile: UserProfile = {
       id: uid,
       displayName: req.body.displayName || '',
-      profileImageUrl: req.body.profileImageUrl,
-      bio: req.body.bio,
       favoriteGenres: req.body.favoriteGenres || [],
-      readingGoal: req.body.readingGoal,
       isPublic: req.body.isPublic ?? false,
       createdAt: now,
       updatedAt: now,
     };
+    
+    // Optional fields - only add if not undefined
+    if (req.body.profileImageUrl !== undefined) {
+      profile.profileImageUrl = req.body.profileImageUrl;
+    }
+    if (req.body.bio !== undefined) {
+      profile.bio = req.body.bio;
+    }
+    if (req.body.readingGoal !== undefined) {
+      profile.readingGoal = req.body.readingGoal;
+    }
     
     await db.doc(`userProfiles/${uid}`).set(profile);
     
