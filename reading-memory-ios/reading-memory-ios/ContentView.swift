@@ -2,7 +2,7 @@ import SwiftUI
 
 struct ContentView: View {
     @State private var authViewModel = AuthViewModel()
-    @State private var needsProfileSetup = false
+    @State private var needsOnboarding = false
     @State private var isCheckingProfile = true
     
     var body: some View {
@@ -20,9 +20,9 @@ struct ContentView: View {
             } else if authViewModel.currentUser == nil {
                 AuthView()
                     .environment(authViewModel)
-            } else if needsProfileSetup {
-                ProfileSetupView {
-                    needsProfileSetup = false
+            } else if needsOnboarding {
+                OnboardingView {
+                    needsOnboarding = false
                 }
                 .environment(authViewModel)
             } else {
@@ -46,7 +46,7 @@ struct ContentView: View {
     private func checkUserProfile() async {
         guard let currentUser = authViewModel.currentUser else {
             isCheckingProfile = false
-            needsProfileSetup = false
+            needsOnboarding = false
             return
         }
         
@@ -54,12 +54,12 @@ struct ContentView: View {
             let userProfileRepository = UserProfileRepository.shared
             let profile = try await userProfileRepository.getUserProfile(userId: currentUser.id)
             
-            needsProfileSetup = (profile == nil)
+            needsOnboarding = (profile == nil)
             isCheckingProfile = false
             
         } catch {
-            // If there's an error checking profile, assume setup is needed
-            needsProfileSetup = true
+            // If there's an error checking profile, assume onboarding is needed
+            needsOnboarding = true
             isCheckingProfile = false
         }
     }

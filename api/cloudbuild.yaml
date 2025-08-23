@@ -1,0 +1,44 @@
+steps:
+  # Build the container image
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['build', '-t', 'asia-northeast1-docker.pkg.dev/$PROJECT_ID/reading-memory-api/reading-memory-api:$COMMIT_SHA', '.']
+    dir: 'api'
+  
+  # Push the container image to Artifact Registry
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['push', 'asia-northeast1-docker.pkg.dev/$PROJECT_ID/reading-memory-api/reading-memory-api:$COMMIT_SHA']
+  
+  # Deploy container image to Cloud Run
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: gcloud
+    args:
+      - 'run'
+      - 'deploy'
+      - 'reading-memory-api'
+      - '--image'
+      - 'asia-northeast1-docker.pkg.dev/$PROJECT_ID/reading-memory-api/reading-memory-api:$COMMIT_SHA'
+      - '--region'
+      - 'asia-northeast1'
+      - '--platform'
+      - 'managed'
+      - '--allow-unauthenticated'
+      - '--set-env-vars'
+      - 'NODE_ENV=production,GCP_PROJECT_ID=$PROJECT_ID'
+      - '--set-secrets'
+      - 'GOOGLE_BOOKS_API_KEY=GOOGLE_BOOKS_API_KEY:latest,CLAUDE_API_KEY=CLAUDE_API_KEY:latest'
+      - '--service-account'
+      - 'reading-memory-api@reading-memory.iam.gserviceaccount.com'
+      - '--memory'
+      - '1Gi'
+      - '--cpu'
+      - '1'
+      - '--timeout'
+      - '60'
+      - '--max-instances'
+      - '100'
+
+images:
+  - 'gcr.io/$PROJECT_ID/reading-memory-api:$COMMIT_SHA'
+
+options:
+  logging: CLOUD_LOGGING_ONLY

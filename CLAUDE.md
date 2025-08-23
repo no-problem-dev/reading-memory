@@ -24,9 +24,12 @@
   - Authentication (Google/Apple Sign-In)
   - Firestore (NoSQL データベース)
   - Cloud Storage (画像保存)
-  - Cloud Functions (サーバーレス関数)
+
+### API (Cloud Run)
 - **言語**: TypeScript 5.0+
 - **ランタイム**: Node.js 20+
+- **フレームワーク**: Express.js
+- **デプロイ**: Docker コンテナ on Cloud Run
 
 ### AI/外部API
 - **AI**: Vertex AI / Gemini API
@@ -41,19 +44,29 @@ reading-memory/
 │   ├── technical/          # 技術仕様
 │   ├── development/        # 開発ガイド
 │   └── business/           # ビジネス関連
-├── ios/                    # iOS アプリ (SwiftUI)
-│   ├── ReadingMemory/      # メインアプリ
+├── reading-memory-ios/      # iOS アプリ (SwiftUI)
+│   ├── reading-memory-ios/  # メインアプリ
 │   │   ├── Models/         # データモデル
 │   │   ├── Views/          # SwiftUI ビュー
 │   │   ├── ViewModels/     # ビューモデル
 │   │   ├── Repositories/   # データアクセス層
 │   │   ├── Services/       # ビジネスロジック
+│   │   ├── DataAccess/     # DTO (Data Transfer Objects)
+│   │   │   └── DTO/        # Firestore用データ変換
 │   │   └── Utils/          # ユーティリティ
-│   └── ReadingMemory.xcodeproj
-├── functions/              # Cloud Functions
+│   └── reading-memory-ios.xcodeproj
+├── api/                    # REST API (Cloud Run)
 │   ├── src/               # TypeScript ソース
+│   │   ├── routes/        # APIルート定義
+│   │   ├── services/      # サービス層
+│   │   └── index.ts       # エントリーポイント
 │   ├── package.json       # 依存関係
 │   └── tsconfig.json      # TypeScript 設定
+├── ci_scripts/            # CI/CD スクリプト
+├── firestore.rules        # Firestore セキュリティルール
+├── storage.rules          # Storage セキュリティルール
+├── firebase.json          # Firebase 設定
+├── firestore.indexes.json # Firestore インデックス
 ├── task-sheet.md          # タスク管理シート
 ├── CLAUDE.md              # このファイル
 └── README.md              # プロジェクト概要
@@ -61,15 +74,22 @@ reading-memory/
 
 ## 主要機能
 
-### コア機能（MVP）
-1. **本とおしゃべり** - チャット形式で気づきを記録
+### 実装済み機能
+1. **本とおしゃべり** - チャット形式で気づきを記録（AI応答機能付き）
 2. **メモリーシェルフ** - 美しいビジュアルで本棚を再現
-3. **読書ダイアリー** - 読書習慣の可視化
+3. **読書記録管理** - ステータス管理（読みたい/読書中/完了/DNF）
+4. **読みたいリスト** - 優先度設定、読書予定日、リマインダー機能
+5. **読書目標と習慣** - 月間/年間目標、読書ストリーク追跡
+6. **アチーブメント** - バッジ獲得システム、実績管理
+7. **書籍検索** - Google Books API/OpenBD統合検索、バーコードスキャン
+8. **AI要約** - Claude APIによる読書メモの要約生成
+9. **公開本棚** - 読書記録の選択的共有機能
+10. **プロフィール** - ユーザープロフィール管理
 
 ### 将来機能
-- AI要約・対話機能
 - 複数の本の知識を横断検索（RAG）
-- 選択的な読書体験の共有
+- 読書コミュニティ機能
+- 読書分析の高度化
 
 ## コーディング規約
 
@@ -133,9 +153,13 @@ chore: ビルド設定など
 ### Firestore コレクション
 - `users/{userId}` - ユーザー基本情報
 - `userProfiles/{userId}` - プロフィール情報
-- `books/{bookId}` - 本のマスターデータ
-- `userBooks/{userId}/books/{userBookId}` - ユーザーごとの本
-- `userBooks/{userId}/books/{userBookId}/chats/{chatId}` - チャットメモ
+- `books/{bookId}` - 本のマスターデータ（共有本のみ）
+- `users/{userId}/userBooks/{userBookId}` - ユーザーごとの本
+- `users/{userId}/userBooks/{userBookId}/chats/{chatId}` - チャットメモ
+- `users/{userId}/goals/{goalId}` - 読書目標
+- `users/{userId}/activities/{activityId}` - 読書活動記録
+- `users/{userId}/achievements/{achievementId}` - 獲得アチーブメント
+- `users/{userId}/streaks/{streakId}` - 読書ストリーク
 
 ## 重要な制約・仕様
 
@@ -159,28 +183,39 @@ chore: ビルド設定など
 ### iOS 開発
 ```bash
 # プロジェクトを開く
-cd ios
-open ReadingMemory.xcodeproj
+cd reading-memory-ios
+open reading-memory-ios.xcodeproj
 
 # クリーンビルド
 # Xcode で Cmd+Shift+K
+
+# ビルド
+# Xcode で Cmd+B
+
+# 実行
+# Xcode で Cmd+R
 ```
 
-### Cloud Functions
+### REST API (Cloud Run)
 ```bash
-cd functions
+cd api
 
 # 依存関係インストール
 npm install
 
 # ローカルで実行
-npm run serve
+npm run dev
 
-# デプロイ
-firebase deploy --only functions
+# Dockerビルド
+docker build -t reading-memory-api .
+
+# Cloud Runへデプロイ
+gcloud run deploy reading-memory-api \
+  --image asia-northeast1-docker.pkg.dev/reading-memory/reading-memory-api/reading-memory-api \
+  --region asia-northeast1
 
 # ログ確認
-firebase functions:log
+gcloud logging read "resource.type=cloud_run_revision"
 ```
 
 ### Firebase
@@ -200,7 +235,7 @@ firebase deploy --only firestore:indexes
 ### よくある問題
 1. **Firebase 認証エラー**: GoogleService-Info.plist の配置確認
 2. **ビルドエラー**: Xcode のクリーンビルド（Cmd+Shift+K）
-3. **Functions エラー**: Node.js バージョン確認（v20 以上）
+3. **API エラー**: 環境変数とSecret Managerの設定確認
 
 ## AI アシスタントへの指示
 
@@ -228,10 +263,14 @@ firebase deploy --only firestore:indexes
 
 ## 現在のフェーズ
 
-**Phase 1: MVP 開発中**
-- 基本的な読書記録機能を実装
-- 1ヶ月での完成を目標
-- 詳細は task-sheet.md を参照
+**Phase 4: 読書目標・習慣機能完了**
+- MVP開発は完了
+- 基本的な読書記録機能：実装済み
+- チャットメモ機能：実装済み（AI応答対応）
+- 読みたいリスト機能：実装済み
+- 読書目標・習慣トラッキング：実装済み
+- アチーブメント機能：実装済み
+- 詳細は task-sheet.md とメモリーファイルを参照
 
 ## 次のステップ
 

@@ -36,8 +36,6 @@
 - [市場調査レポート](docs/business/market-research.md)
 - [技術仕様書](docs/technical/technical-specification.md)
 - [データモデル設計](docs/technical/data-model.md)
-- [開発ガイドライン](docs/development/development-guide.md)
-- [セットアップ手順](docs/development/setup.md)
 
 ## 🎯 開発フェーズ
 
@@ -50,7 +48,7 @@
 ### Phase 2: 検索と写真（2週間）
 - ✅ ISBN検索・バーコードスキャン
 - ✅ 写真添付
-- ✅ Cloud Functions による本の検索
+- ✅ REST API による本の検索
 
 ### Phase 3: AI機能（3週間）
 - ✅ AI チャット応答
@@ -85,8 +83,8 @@ reading-memory/
 │   ├── technical/          # 技術仕様
 │   ├── development/        # 開発ガイド
 │   └── business/           # ビジネス関連
-├── ios/                    # iOSアプリ (SwiftUI)
-├── functions/              # Cloud Functions
+├── reading-memory-ios/     # iOSアプリ (SwiftUI)
+├── api/                    # REST API (Cloud Run)
 └── README.md
 ```
 

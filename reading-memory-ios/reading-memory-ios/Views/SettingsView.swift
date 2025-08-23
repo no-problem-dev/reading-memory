@@ -2,6 +2,10 @@ import SwiftUI
 
 struct SettingsView: View {
     @Environment(AuthViewModel.self) private var authViewModel
+    @State private var showingDeleteAccountAlert = false
+    @State private var showingDeleteAccountConfirmation = false
+    @State private var isDeleting = false
+    @State private var deleteError: String?
     
     var body: some View {
         NavigationView {
@@ -36,8 +40,98 @@ struct SettingsView: View {
                         .foregroundColor(.red)
                     }
                 }
+                
+                Section {
+                    Button(action: {
+                        showingDeleteAccountAlert = true
+                    }) {
+                        HStack {
+                            Image(systemName: "trash")
+                            Text("アカウントを削除")
+                        }
+                        .foregroundColor(.red)
+                    }
+                } footer: {
+                    Text("アカウントを削除すると、すべてのデータが完全に削除され、復元できません。")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
             }
             .navigationTitle("設定")
+            .disabled(isDeleting)
+            .overlay {
+                if isDeleting {
+                    Color.black.opacity(0.5)
+                        .ignoresSafeArea()
+                    
+                    VStack(spacing: 16) {
+                        ProgressView()
+                        Text("アカウントを削除しています...")
+                            .font(.headline)
+                        Text("この処理には時間がかかる場合があります")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    }
+                    .padding(24)
+                    .background(Color(.systemBackground))
+                    .cornerRadius(16)
+                    .shadow(radius: 10)
+                }
+            }
+            .alert("アカウント削除の確認", isPresented: $showingDeleteAccountAlert) {
+                Button("キャンセル", role: .cancel) {}
+                Button("続ける", role: .destructive) {
+                    showingDeleteAccountConfirmation = true
+                }
+            } message: {
+                Text("本当にアカウントを削除しますか？\n\nこの操作は取り消すことができません。すべての読書記録、メモ、設定が完全に削除されます。")
+            }
+            .alert("最終確認", isPresented: $showingDeleteAccountConfirmation) {
+                Button("キャンセル", role: .cancel) {}
+                Button("削除する", role: .destructive) {
+                    Task {
+                        await deleteAccount()
+                    }
+                }
+            } message: {
+                Text("本当にアカウントを削除してよろしいですか？\n\nこの操作を実行すると、二度と元に戻すことはできません。")
+            }
+            .alert("エラー", isPresented: .constant(deleteError != nil)) {
+                Button("OK") {
+                    deleteError = nil
+                }
+            } message: {
+                if let error = deleteError {
+                    Text(error)
+                }
+            }
         }
+    }
+    
+    private func deleteAccount() async {
+        isDeleting = true
+        
+        // 認証状態を確認
+        guard AuthService.shared.currentUser != nil else {
+            deleteError = "認証情報が見つかりません。再度ログインしてください。"
+            isDeleting = false
+            return
+        }
+        
+        do {
+            let result = try await AuthService.shared.deleteAccount()
+            
+            if result.success {
+                // 削除成功 - サインアウト処理
+                await authViewModel.signOut()
+            } else {
+                // 部分的な失敗
+                deleteError = "アカウントの削除中に一部エラーが発生しました:\n\(result.errors.joined(separator: "\n"))\n\nサポートにお問い合わせください。"
+            }
+        } catch {
+            deleteError = error.localizedDescription
+        }
+        
+        isDeleting = false
     }
 }

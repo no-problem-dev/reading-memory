@@ -1,14 +1,36 @@
 rules_version = '2';
 service firebase.storage {
   match /b/{bucket}/o {
+    // ユーザーが認証されているかチェック
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    // リクエストしているユーザーが対象のユーザーかチェック
+    function isUser(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+    
+    // 画像ファイルかチェック
+    function isImageFile() {
+      return request.resource.contentType.matches('image/.*');
+    }
+    
+    // ファイルサイズ制限（5MB）
+    function isValidFileSize() {
+      return request.resource.size < 5 * 1024 * 1024;
+    }
+    
     // ユーザーは自分のフォルダ内のファイルのみアクセス可能
     match /users/{userId}/{allPaths=**} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
+      allow read: if isUser(userId);
+      allow write: if isUser(userId) && isImageFile() && isValidFileSize();
+      allow delete: if false; // Cloud Functions経由でのみ削除可能
     }
     
     // 本の画像は認証済みユーザーが読み取り可能
     match /books/{bookId}/{allPaths=**} {
-      allow read: if request.auth != null;
+      allow read: if isAuthenticated();
       allow write: if false; // Cloud Functionsからのみ書き込み可能
     }
   }

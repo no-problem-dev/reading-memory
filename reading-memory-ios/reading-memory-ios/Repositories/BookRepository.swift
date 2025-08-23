@@ -83,20 +83,20 @@ final class BookRepository {
         try await db.collection(collectionName).document(bookId).delete()
     }
     
-    // MARK: - 検索機能（Cloud Functions経由）
+    // MARK: - 検索機能（REST API経由）
     
     func searchPublicBooks(query: String, limit: Int = 20) async throws -> [Book] {
-        // Cloud Functions経由で検索
-        return try await CloudFunctionsService.shared.searchPublicBooks(query: query, limit: limit)
+        // REST API経由で検索
+        return try await BookSearchService.shared.searchPublicBooks(query: query, limit: limit)
     }
     
     func getPopularBooks(limit: Int = 20) async throws -> [Book] {
-        // Cloud Functions経由で取得
-        return try await CloudFunctionsService.shared.getPopularBooks(limit: limit)
+        // REST API経由で取得
+        return try await BookSearchService.shared.getPopularBooks(limit: limit)
     }
     
     func getRecentlyAddedBooks(limit: Int = 20) async throws -> [Book] {
-        // Cloud Functions経由で取得
-        return try await CloudFunctionsService.shared.getRecentBooks(limit: limit)
+        // REST API経由で取得
+        return try await BookSearchService.shared.getRecentBooks(limit: limit)
     }
 }
