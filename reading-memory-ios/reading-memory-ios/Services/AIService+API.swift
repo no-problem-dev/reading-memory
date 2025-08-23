@@ -1,16 +1,11 @@
 import Foundation
 
-/// AI関連サービス
-final class AIService {
-    static let shared = AIService()
+// AIServiceをAPIClientを使うように拡張
+extension AIService {
     
-    private let apiClient = APIClient.shared
-    
-    private init() {}
-    
-    /// AI応答を生成
-    func generateAIResponse(userId: String, userBookId: String, message: String) async throws -> String {
-        let result = try await apiClient.generateAIResponse(
+    /// AI応答を生成 (REST API版)
+    func generateAIResponseAPI(userId: String, userBookId: String, message: String) async throws -> String {
+        let result = try await APIClient.shared.generateAIResponse(
             userId: userId,
             userBookId: userBookId,
             message: message
@@ -23,9 +18,9 @@ final class AIService {
         return result.message
     }
     
-    /// 読書メモの要約を生成
-    func generateBookSummary(userId: String, userBookId: String) async throws -> String {
-        let result = try await apiClient.generateBookSummary(
+    /// 読書メモの要約を生成 (REST API版)
+    func generateBookSummaryAPI(userId: String, userBookId: String) async throws -> String {
+        let result = try await APIClient.shared.generateBookSummary(
             userId: userId,
             userBookId: userBookId
         )

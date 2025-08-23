@@ -23,13 +23,15 @@ interface UserProfile {
   userId: string               // Firebase Auth UID
   displayName: string
   bio?: string                 // 自己紹介（最大200文字）
-  photoUrl?: string           // Cloud Storage URL
+  avatarUrl?: string          // Cloud Storage URL
+  isPublic: boolean           // プロフィールの公開設定
+  createdAt: Timestamp
   updatedAt: Timestamp
 }
 ```
 
 ### books/{bookId}
-本のマスターデータ（全ユーザー共通）
+本のマスターデータ（公開本のみ、全ユーザー共通）
 
 ```typescript
 interface Book {
@@ -38,40 +40,158 @@ interface Book {
   title: string
   author: string
   publisher?: string
-  publishedDate?: string
-  defaultCoverUrl?: string    // Google Books API等から取得
+  publishedDate?: Date
+  pageCount?: number
+  description?: string
+  coverImageUrl?: string      // Google Books API等から取得
+  dataSource: 'google' | 'openbd' | 'manual'
+  visibility: 'public' | 'private'
   createdAt: Timestamp
+  updatedAt: Timestamp
 }
 ```
 
-### userBooks/{userId}/books/{userBookId}
+### users/{userId}/userBooks/{userBookId}
 ユーザーごとの本の記録
 
 ```typescript
 interface UserBook {
   id: string
   userId: string
-  bookId: string              // booksコレクションへの参照
+  bookId?: string              // 公開本の場合のみ（booksコレクションへの参照）
+  manualBookData?: ManualBookData  // 手動入力本の場合のみ
+  
+  // 非正規化データ（検索・表示の高速化）
+  bookTitle: string
+  bookAuthor: string
+  bookCoverImageUrl?: string
+  bookIsbn?: string
+  
+  // ユーザー個別データ
   status: 'want_to_read' | 'reading' | 'completed' | 'dnf'
   rating?: number             // 0.5-5.0（0.5刻み）
-  customCoverUrl?: string     // ユーザーがアップロードした表紙
-  startedAt?: Timestamp
-  completedAt?: Timestamp
+  readingProgress?: number    // 0.0-1.0
+  currentPage?: number
+  startDate?: Timestamp
+  completedDate?: Timestamp
+  memo?: string
+  tags: string[]
+  isPrivate: boolean
+  
+  // AI関連
+  aiSummary?: string
+  summaryGeneratedAt?: Timestamp
+  
+  // 読みたいリスト関連
+  priority?: number           // 0が最高優先度
+  plannedReadingDate?: Timestamp
+  reminderEnabled: boolean
+  purchaseLinks?: PurchaseLink[]
+  addedToWantListDate?: Timestamp
+  
   createdAt: Timestamp
   updatedAt: Timestamp
 }
+
+interface ManualBookData {
+  title: string
+  author: string
+  isbn?: string
+  publisher?: string
+  publishedDate?: Date
+  pageCount?: number
+  description?: string
+  coverImageUrl?: string
+}
+
+interface PurchaseLink {
+  storeName: string
+  url: string
+}
 ```
 
-### userBooks/{userId}/books/{userBookId}/chats/{chatId}
+### users/{userId}/userBooks/{userBookId}/chats/{chatId}
 本に対するチャットメモ（サブコレクション）
 
 ```typescript
 interface BookChat {
   id: string
+  userBookId: string
+  userId: string
   message: string
-  type: 'text' | 'photo' | 'ai_response'
-  photoUrl?: string           // 写真メッセージの場合
+  imageUrl?: string           // 添付画像
+  chapterOrSection?: string   // 章・セクション
+  pageNumber?: number         // ページ番号
+  isAI: boolean              // AI応答かユーザーメモか
   createdAt: Timestamp
+}
+```
+
+### users/{userId}/goals/{goalId}
+読書目標
+
+```typescript
+interface ReadingGoal {
+  id: string
+  userId: string
+  type: 'monthly' | 'yearly'
+  targetBooks: number
+  targetDate: Date
+  completedBooks: number
+  isActive: boolean
+  createdAt: Timestamp
+  updatedAt: Timestamp
+}
+```
+
+### users/{userId}/activities/{activityId}
+読書活動記録
+
+```typescript
+interface ReadingActivity {
+  id: string
+  userId: string
+  userBookId: string
+  activityType: 'started' | 'completed' | 'progress' | 'memo'
+  date: Date
+  details?: {
+    progress?: number
+    pagesRead?: number
+    memoCount?: number
+  }
+  createdAt: Timestamp
+}
+```
+
+### users/{userId}/achievements/{achievementId}
+獲得アチーブメント
+
+```typescript
+interface Achievement {
+  id: string
+  userId: string
+  badgeId: string
+  unlockedAt: Date
+  progress: number
+  isCompleted: boolean
+  createdAt: Timestamp
+  updatedAt: Timestamp
+}
+```
+
+### users/{userId}/streaks/{streakId}
+読書ストリーク
+
+```typescript
+interface ReadingStreak {
+  id: string
+  userId: string
+  currentStreak: number
+  longestStreak: number
+  lastActivityDate: Date
+  streakStartDate: Date
+  createdAt: Timestamp
+  updatedAt: Timestamp
 }
 ```
 
@@ -107,10 +227,27 @@ interface BookChat {
 ### 複合インデックス（必須）
 
 ```
-Collection: userBooks/{userId}/books
+Collection: users/{userId}/userBooks
 - status ASC, createdAt DESC
 - status ASC, rating DESC
 - status ASC, updatedAt DESC
+- status ASC, priority ASC
+- status ASC, plannedReadingDate ASC
+- isPrivate ASC, createdAt DESC
+
+Collection: users/{userId}/userBooks/{userBookId}/chats
+- createdAt DESC
+
+Collection: users/{userId}/goals
+- type ASC, isActive DESC
+- isActive DESC, targetDate ASC
+
+Collection: users/{userId}/activities
+- date DESC
+- userBookId ASC, date DESC
+
+Collection: users/{userId}/achievements
+- isCompleted DESC, unlockedAt DESC
 ```
 
 ### 単一フィールドインデックス（自動）
@@ -118,23 +255,37 @@ Collection: userBooks/{userId}/books
 - updatedAt
 - status
 - rating
+- priority
+- isPrivate
 
 ## データ操作パターン
 
 ### 本の登録フロー
-1. booksコレクションを検索
-2. 存在しない場合は新規作成
-3. userBooksにユーザー固有のデータを作成
+1. Google Books API/OpenBDで書籍情報を検索
+2. 公開本の場合:
+   - booksコレクションを検索
+   - 存在しない場合は新規作成（visibility: public）
+3. 手動入力本の場合:
+   - manualBookDataに情報を格納
+4. users/{userId}/userBooksにユーザー固有のデータを作成
 
 ### チャットメモの追加
-1. userBooks/{userId}/books/{userBookId}の存在確認
+1. users/{userId}/userBooks/{userBookId}の存在確認
 2. chatsサブコレクションに追加
 3. 親ドキュメントのupdatedAtを更新
+4. AI応答の場合はCloud Functions経由で処理
+
+### 読書活動の記録
+1. ステータス変更時にactivityを記録
+2. ストリーク情報を更新
+3. 目標の進捗を更新
+4. アチーブメントの条件確認と解除
 
 ### 統計情報の取得
 1. userBooksコレクションをstatus別に集計
-2. 必要に応じてCloud Functionsでキャッシュ
-3. リアルタイム更新は最小限に
+2. activitiesから読書履歴を取得
+3. goalsから目標進捗を取得
+4. キャッシュの活用で高速化
 
 ## データ移行戦略
 

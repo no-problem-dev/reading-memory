@@ -1,15 +1,15 @@
 import Foundation
 
-// 複数のAPIを統合した書籍検索サービス（Cloud Functions経由）
+/// 複数のAPIを統合した書籍検索サービス
 final class UnifiedBookSearchService {
     static let shared = UnifiedBookSearchService()
     
-    private let cloudFunctions = CloudFunctionsService.shared
+    private let bookSearchService = BookSearchService.shared
     private let cacheService = BookCacheService.shared
     
     private init() {}
     
-    // ISBN検索（Cloud Functions経由）
+    /// ISBN検索
     func searchByISBN(_ isbn: String) async -> [Book] {
         let cleanedISBN = isbn.replacingOccurrences(of: "-", with: "")
         
@@ -19,7 +19,7 @@ final class UnifiedBookSearchService {
         }
         
         do {
-            let books = try await cloudFunctions.searchBookByISBN(cleanedISBN)
+            let books = try await bookSearchService.searchByISBN(cleanedISBN)
             
             // 結果をキャッシュに保存
             if let firstBook = books.first {
@@ -33,7 +33,7 @@ final class UnifiedBookSearchService {
         }
     }
     
-    // キーワード検索（Cloud Functions経由）
+    /// キーワード検索
     func searchByKeyword(_ keyword: String, maxResults: Int = 20) async -> [Book] {
         // キャッシュをチェック
         if let cachedResults = cacheService.getCachedResults(for: keyword) {
@@ -41,7 +41,7 @@ final class UnifiedBookSearchService {
         }
         
         do {
-            let books = try await cloudFunctions.searchBooksByQuery(keyword)
+            let books = try await bookSearchService.searchByQuery(keyword)
             
             // 結果をキャッシュに保存
             cacheService.cacheSearchResults(books, for: keyword)
@@ -54,7 +54,7 @@ final class UnifiedBookSearchService {
         }
     }
     
-    // 統合検索（ISBN、タイトル、著者を判別して適切なAPIを使用）
+    /// 統合検索（ISBN、タイトル、著者を判別して適切なAPIを使用）
     func unifiedSearch(query: String) async -> [Book] {
         let trimmedQuery = query.trimmingCharacters(in: .whitespacesAndNewlines)
         
@@ -74,7 +74,7 @@ final class UnifiedBookSearchService {
         return await searchByKeyword(trimmedQuery)
     }
     
-    // 本の詳細情報を取得
+    /// 本の詳細情報を取得
     func fetchBookDetails(isbn: String) async -> Book? {
         let books = await searchByISBN(isbn)
         
