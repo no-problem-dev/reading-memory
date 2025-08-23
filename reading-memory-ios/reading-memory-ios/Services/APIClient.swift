@@ -41,6 +41,9 @@ final class APIClient {
         if let user = await authService.currentUser {
             let token = try await user.getIDToken()
             request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+            print("DEBUG: Setting authorization header with token length: \(token.count)")
+        } else {
+            print("DEBUG: No current user found for authorization")
         }
         
         request.httpBody = body

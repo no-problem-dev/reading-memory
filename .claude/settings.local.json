@@ -114,7 +114,8 @@
       "Bash(gcloud run services update:*)",
       "Bash(grep:*)",
       "Bash(gcloud builds list:*)",
-      "Bash(gcloud run revisions describe:*)"
+      "Bash(gcloud run revisions describe:*)",
+      "Bash(gcloud run revisions:*)"
     ],
     "deny": []
   }

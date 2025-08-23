@@ -29,6 +29,14 @@ export const authenticate = async (
     
     const idToken = authHeader.split('Bearer ')[1];
     
+    // Debug logging
+    logger.info('Auth token info', {
+      tokenLength: idToken.length,
+      tokenPrefix: idToken.substring(0, 20) + '...',
+      path: req.path,
+      method: req.method
+    });
+    
     try {
       const decodedToken = await getAuth().verifyIdToken(idToken);
       req.user = {
@@ -36,8 +44,12 @@ export const authenticate = async (
         email: decodedToken.email,
       };
       next();
-    } catch (error) {
-      logger.error('Invalid ID token', error);
+    } catch (error: any) {
+      logger.error('Invalid ID token', {
+        error: error.message,
+        code: error.code,
+        tokenLength: idToken.length
+      });
       res.status(401).json({
         error: {
           code: 'INVALID_TOKEN',
