@@ -2,6 +2,9 @@ import Foundation
 import SwiftUI
 import AuthenticationServices
 import CryptoKit
+import FirebaseAuth
+import GoogleSignIn
+import FirebaseCore
 
 @MainActor
 @Observable
@@ -42,16 +45,27 @@ final class AuthViewModel: BaseViewModel {
         await withLoadingNoThrow { [weak self] in
             guard let self = self else { return }
             
-            // ダミー実装：Google認証成功をシミュレート
-            self.currentUser = User(
-                id: "dummy-google-user",
-                email: "user@gmail.com",
-                displayName: "Google User",
-                photoURL: nil,
-                provider: .google,
-                createdAt: Date(),
-                lastLoginAt: Date()
-            )
+            guard let presentingViewController = UIApplication.shared.windows.first?.rootViewController else {
+                throw AppError.custom("画面の取得に失敗しました")
+            }
+            
+            guard let clientID = FirebaseApp.app()?.options.clientID else {
+                throw AppError.custom("Google Sign-In設定が見つかりません")
+            }
+            
+            GIDSignIn.sharedInstance.configuration = GIDConfiguration(clientID: clientID)
+            
+            let result = try await GIDSignIn.sharedInstance.signIn(withPresenting: presentingViewController)
+            
+            guard let idToken = result.user.idToken?.tokenString else {
+                throw AppError.custom("IDトークンの取得に失敗しました")
+            }
+            
+            let accessToken = result.user.accessToken.tokenString
+            let credential = GoogleAuthProvider.credential(withIDToken: idToken, accessToken: accessToken)
+            
+            _ = try await Auth.auth().signIn(with: credential)
+            // AuthService の AuthStateListener が自動的に currentUser を更新する
         }
     }
     
@@ -79,23 +93,24 @@ final class AuthViewModel: BaseViewModel {
                 throw NSError(domain: "AuthError", code: 0, userInfo: [NSLocalizedDescriptionKey: "Apple認証情報の取得に失敗しました"])
             }
             
-            var displayName = ""
-            if let fullName = appleIDCredential.fullName {
-                let firstName = fullName.givenName ?? ""
-                let lastName = fullName.familyName ?? ""
-                displayName = "\(lastName) \(firstName)".trimmingCharacters(in: .whitespaces)
+            guard let nonce = self.currentNonce else {
+                throw AppError.custom("無効なnonce値です")
             }
             
-            // ダミー実装：Apple認証成功をシミュレート
-            self.currentUser = User(
-                id: "dummy-apple-user",
-                email: appleIDCredential.email ?? "user@icloud.com",
-                displayName: displayName.isEmpty ? "Apple User" : displayName,
-                photoURL: nil,
-                provider: .apple,
-                createdAt: Date(),
-                lastLoginAt: Date()
-            )
+            guard let appleIDToken = appleIDCredential.identityToken else {
+                throw AppError.custom("Apple IDトークンが取得できませんでした")
+            }
+            
+            guard let idTokenString = String(data: appleIDToken, encoding: .utf8) else {
+                throw AppError.custom("Apple IDトークンの変換に失敗しました")
+            }
+            
+            let credential = OAuthProvider.appleCredential(withIDToken: idTokenString,
+                                                         rawNonce: nonce,
+                                                         fullName: appleIDCredential.fullName)
+            
+            _ = try await Auth.auth().signIn(with: credential)
+            // AuthService の AuthStateListener が自動的に currentUser を更新する
         }
     }
     

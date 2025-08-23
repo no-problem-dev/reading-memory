@@ -111,7 +111,8 @@
       "Bash(--image asia-northeast1-docker.pkg.dev/reading-memory/reading-memory-api/reading-memory-api:latest )",
       "Bash(--member=\"serviceAccount:reading-memory-api@reading-memory.iam.gserviceaccount.com\" )",
       "Bash(--role=\"roles/serviceusage.serviceUsageConsumer\")",
-      "Bash(gcloud run services update:*)"
+      "Bash(gcloud run services update:*)",
+      "Bash(grep:*)"
     ],
     "deny": []
   }

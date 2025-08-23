@@ -7,8 +7,11 @@ import { errorHandler } from './middleware/errorHandler';
 import { logger } from './utils/logger';
 import aiRoutes from './routes/ai.routes';
 import booksRoutes from './routes/books.routes';
-import publicRoutes from './routes/public.routes';
 import usersRoutes from './routes/users.routes';
+import activitiesRoutes from './routes/activities.routes';
+import goalsRoutes from './routes/goals.routes';
+import achievementsRoutes from './routes/achievements.routes';
+import streaksRoutes from './routes/streaks.routes';
 
 export const createApp = (): Application => {
   const app = express();
@@ -43,10 +46,13 @@ export const createApp = (): Application => {
   });
   
   // API routes
-  app.use('/api/v1/users', usersRoutes);
+  app.use('/api/v1', usersRoutes);  // Changed to handle /api/v1/profile
   app.use('/api/v1/users', aiRoutes);
   app.use('/api/v1/books', booksRoutes);
-  app.use('/api/v1/public', publicRoutes);
+  app.use('/api/v1/activities', activitiesRoutes);
+  app.use('/api/v1/goals', goalsRoutes);
+  app.use('/api/v1/achievements', achievementsRoutes);
+  app.use('/api/v1/streaks', streaksRoutes);
   
   // 404 handler
   app.use((_req, res) => {

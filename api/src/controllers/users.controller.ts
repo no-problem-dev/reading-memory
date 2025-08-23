@@ -11,6 +11,156 @@ interface DeleteResult {
   errors: string[];
 }
 
+interface UserProfile {
+  id: string;
+  displayName: string;
+  profileImageUrl?: string;
+  bio?: string;
+  favoriteGenres: string[];
+  readingGoal?: number;
+  isPublic: boolean;
+  createdAt: admin.firestore.Timestamp;
+  updatedAt: admin.firestore.Timestamp;
+}
+
+export const getProfile = async (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    if (!req.user) {
+      throw new ApiError(401, 'UNAUTHENTICATED', '認証が必要です。');
+    }
+    
+    const uid = req.user.uid;
+    const db = getFirestore();
+    
+    const profileDoc = await db.doc(`userProfiles/${uid}`).get();
+    
+    if (!profileDoc.exists) {
+      res.status(404).json({
+        error: {
+          code: 'NOT_FOUND',
+          message: 'Profile not found',
+        },
+      });
+      return;
+    }
+    
+    const profile = profileDoc.data() as UserProfile;
+    res.json({
+      ...profile,
+      createdAt: profile.createdAt.toDate().toISOString(),
+      updatedAt: profile.updatedAt.toDate().toISOString(),
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const createProfile = async (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    if (!req.user) {
+      throw new ApiError(401, 'UNAUTHENTICATED', '認証が必要です。');
+    }
+    
+    const uid = req.user.uid;
+    const db = getFirestore();
+    
+    // Check if profile already exists
+    const existingProfile = await db.doc(`userProfiles/${uid}`).get();
+    if (existingProfile.exists) {
+      throw new ApiError(409, 'ALREADY_EXISTS', 'Profile already exists');
+    }
+    
+    const now = admin.firestore.Timestamp.now();
+    const profile: UserProfile = {
+      id: uid,
+      displayName: req.body.displayName || '',
+      profileImageUrl: req.body.profileImageUrl,
+      bio: req.body.bio,
+      favoriteGenres: req.body.favoriteGenres || [],
+      readingGoal: req.body.readingGoal,
+      isPublic: req.body.isPublic ?? false,
+      createdAt: now,
+      updatedAt: now,
+    };
+    
+    await db.doc(`userProfiles/${uid}`).set(profile);
+    
+    res.status(201).json({
+      ...profile,
+      createdAt: profile.createdAt.toDate().toISOString(),
+      updatedAt: profile.updatedAt.toDate().toISOString(),
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const updateProfile = async (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    if (!req.user) {
+      throw new ApiError(401, 'UNAUTHENTICATED', '認証が必要です。');
+    }
+    
+    const uid = req.user.uid;
+    const db = getFirestore();
+    
+    const profileRef = db.doc(`userProfiles/${uid}`);
+    const profileDoc = await profileRef.get();
+    
+    if (!profileDoc.exists) {
+      throw new ApiError(404, 'NOT_FOUND', 'Profile not found');
+    }
+    
+    const updates: Partial<UserProfile> = {
+      updatedAt: admin.firestore.Timestamp.now(),
+    };
+    
+    if (req.body.displayName !== undefined) {
+      updates.displayName = req.body.displayName;
+    }
+    if (req.body.profileImageUrl !== undefined) {
+      updates.profileImageUrl = req.body.profileImageUrl;
+    }
+    if (req.body.bio !== undefined) {
+      updates.bio = req.body.bio;
+    }
+    if (req.body.favoriteGenres !== undefined) {
+      updates.favoriteGenres = req.body.favoriteGenres;
+    }
+    if (req.body.readingGoal !== undefined) {
+      updates.readingGoal = req.body.readingGoal;
+    }
+    if (req.body.isPublic !== undefined) {
+      updates.isPublic = req.body.isPublic;
+    }
+    
+    await profileRef.update(updates);
+    
+    const updatedProfile = await profileRef.get();
+    const data = updatedProfile.data() as UserProfile;
+    
+    res.json({
+      ...data,
+      createdAt: data.createdAt.toDate().toISOString(),
+      updatedAt: data.updatedAt.toDate().toISOString(),
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 export const deleteAccount = async (
   req: AuthRequest,
   res: Response,

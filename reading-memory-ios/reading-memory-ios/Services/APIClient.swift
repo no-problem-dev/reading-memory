@@ -39,7 +39,7 @@ final class APIClient {
         // Firebase IDトークンを取得して設定
         let authService = await AuthService.shared
         if let user = await authService.currentUser {
-            let token = user.getIDToken()
+            let token = try await user.getIDToken()
             request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         }
         

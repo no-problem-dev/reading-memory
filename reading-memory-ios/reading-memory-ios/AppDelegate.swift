@@ -1,10 +1,12 @@
 import UIKit
 import GoogleSignIn
+import FirebaseCore
 
 class AppDelegate: NSObject, UIApplicationDelegate {
     func application(_ application: UIApplication,
                      didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey : Any]? = nil) -> Bool {
-        // Firebase依存を削除済み
+        // Firebase初期化
+        FirebaseApp.configure()
         
         return true
     }

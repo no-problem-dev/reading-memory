@@ -1,4 +1,5 @@
 import Foundation
+import FirebaseAuth
 
 enum DeleteAccountError: Error, LocalizedError {
     case authenticationRequired
@@ -20,25 +21,44 @@ enum DeleteAccountError: Error, LocalizedError {
     }
 }
 
-// ダミーのAuthUser型
+// Firebase AuthUserを抽象化
 class AuthUser {
-    let uid: String = "dummy-user-id"
-    let email: String? = "user@example.com"
-    let displayName: String? = "Test User"
-    let photoURL: URL? = nil
-    let isAnonymous: Bool = false
+    private let firebaseUser: FirebaseAuth.User
     
-    func getIDToken() -> String {
-        // ダミーのIDトークンを返す
-        return "dummy-id-token"
+    init(firebaseUser: FirebaseAuth.User) {
+        self.firebaseUser = firebaseUser
+    }
+    
+    var uid: String {
+        firebaseUser.uid
+    }
+    
+    var email: String? {
+        firebaseUser.email
+    }
+    
+    var displayName: String? {
+        firebaseUser.displayName
+    }
+    
+    var photoURL: URL? {
+        firebaseUser.photoURL
+    }
+    
+    var isAnonymous: Bool {
+        firebaseUser.isAnonymous
+    }
+    
+    func getIDToken() async throws -> String {
+        return try await firebaseUser.getIDToken()
     }
     
     func reload() async throws {
-        // 何もしない
+        try await firebaseUser.reload()
     }
     
     func delete() async throws {
-        // 何もしない
+        try await firebaseUser.delete()
     }
 }
 
@@ -46,30 +66,54 @@ class AuthUser {
 final class AuthService {
     static let shared = AuthService()
     
-    private var _currentUser: AuthUser? = AuthUser() // デフォルトでログイン状態
+    private var authStateHandle: AuthStateDidChangeListenerHandle?
+    private var _currentUser: AuthUser?
     
     var currentUser: AuthUser? {
         return _currentUser
     }
     
-    private init() {}
+    private init() {
+        // 初期化時に現在のFirebaseユーザーをチェック
+        if let firebaseUser = Auth.auth().currentUser {
+            _currentUser = AuthUser(firebaseUser: firebaseUser)
+        }
+    }
     
     func startAuthStateListener(_ handler: @escaping (AuthUser?) -> Void) {
-        // 即座に現在のユーザーを返す
+        authStateHandle = Auth.auth().addStateDidChangeListener { [weak self] _, user in
+            if let user = user {
+                let authUser = AuthUser(firebaseUser: user)
+                self?._currentUser = authUser
+                handler(authUser)
+            } else {
+                self?._currentUser = nil
+                handler(nil)
+            }
+        }
+        
+        // 即座に現在のユーザーを通知
         handler(_currentUser)
     }
     
     func stopAuthStateListener() {
-        // 何もしない
+        if let handle = authStateHandle {
+            Auth.auth().removeStateDidChangeListener(handle)
+            authStateHandle = nil
+        }
     }
     
     func signOut() throws {
+        try Auth.auth().signOut()
         _currentUser = nil
     }
     
     func deleteAccount() async throws {
         let apiClient = APIClient.shared
         _ = try await apiClient.deleteAccount()
+        
+        // Firebase上のユーザーも削除
+        try await Auth.auth().currentUser?.delete()
         _currentUser = nil
     }
 }
