@@ -151,14 +151,17 @@ struct BookRegistrationView: View {
                     pageCount: Int(pageCount) ?? prefilledBook.pageCount,
                     description: description.isEmpty ? prefilledBook.description : description.trimmingCharacters(in: .whitespacesAndNewlines),
                     coverImageUrl: coverUrl ?? prefilledBook.coverImageUrl,
-                    dataSource: prefilledBook.dataSource,  // 重要: 元のdataSourceを保持
-                    visibility: prefilledBook.visibility,   // 重要: 元のvisibilityを保持
+                    dataSource: prefilledBook.dataSource,
+                    status: prefilledBook.status,
+                    addedDate: prefilledBook.addedDate,
                     createdAt: prefilledBook.createdAt,
                     updatedAt: Date()
                 )
             } else {
                 // 手動入力の本の場合
-                book = Book.new(
+                guard let userId = AuthService.shared.currentUser?.uid else { return }
+                book = Book(
+                    id: UUID().uuidString,
                     isbn: isbn.isEmpty ? nil : isbn.trimmingCharacters(in: .whitespacesAndNewlines),
                     title: title.trimmingCharacters(in: .whitespacesAndNewlines),
                     author: author.trimmingCharacters(in: .whitespacesAndNewlines),
@@ -167,8 +170,11 @@ struct BookRegistrationView: View {
                     pageCount: Int(pageCount),
                     description: description.isEmpty ? nil : description.trimmingCharacters(in: .whitespacesAndNewlines),
                     coverImageUrl: coverUrl,
-                    dataSource: .manual,    // 手動入力
-                    visibility: .private    // 非公開
+                    dataSource: .manual,
+                    status: .wantToRead,
+                    addedDate: Date(),
+                    createdAt: Date(),
+                    updatedAt: Date()
                 )
             }
             

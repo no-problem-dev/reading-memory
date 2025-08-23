@@ -1,91 +1,63 @@
 import Foundation
-import FirebaseFirestore
-import FirebaseAuth
 
 protocol ActivityRepositoryProtocol {
     func createActivity(_ activity: ReadingActivity) async throws
     func updateActivity(_ activity: ReadingActivity) async throws
-    func getTodayActivity(userId: String) async throws -> ReadingActivity?
-    func getActivity(userId: String, date: Date) async throws -> ReadingActivity?
-    func getActivitiesInRange(userId: String, startDate: Date, endDate: Date) async throws -> [ReadingActivity]
-    func recordBookRead(userId: String, date: Date) async throws
-    func recordMemoWritten(userId: String, date: Date) async throws
+    func getTodayActivity() async throws -> ReadingActivity?
+    func getActivity(date: Date) async throws -> ReadingActivity?
+    func getActivitiesInRange(startDate: Date, endDate: Date) async throws -> [ReadingActivity]
+    func recordBookRead(date: Date) async throws
+    func recordMemoWritten(date: Date) async throws
 }
 
 class ActivityRepository: ActivityRepositoryProtocol {
     static let shared = ActivityRepository()
-    private let db = Firestore.firestore()
+    private let apiClient = APIClient.shared
     
-    private init() {
-    }
+    private init() {}
     
     func createActivity(_ activity: ReadingActivity) async throws {
-        let document = db.collection("users")
-            .document(activity.userId)
-            .collection("activities")
-            .document(activity.id)
-        
-        try document.setData(from: activity)
+        _ = try await apiClient.createActivity(activity)
     }
     
     func updateActivity(_ activity: ReadingActivity) async throws {
-        let document = db.collection("users")
-            .document(activity.userId)
-            .collection("activities")
-            .document(activity.id)
-        
-        var updatedActivity = activity
-        updatedActivity.updatedAt = Date()
-        
-        try document.setData(from: updatedActivity)
+        // APIでは作成と更新が同じエンドポイント
+        _ = try await apiClient.createActivity(activity)
     }
     
-    func getTodayActivity(userId: String) async throws -> ReadingActivity? {
-        return try await getActivity(userId: userId, date: Date())
+    func getTodayActivity() async throws -> ReadingActivity? {
+        return try await getActivity(date: Date())
     }
     
-    func getActivity(userId: String, date: Date) async throws -> ReadingActivity? {
+    func getActivity(date: Date) async throws -> ReadingActivity? {
+        let activities = try await apiClient.getActivities()
+        
         let calendar = Calendar.current
         let startOfDay = calendar.startOfDay(for: date)
         
-        // 日付ベースのIDを生成
-        let dateFormatter = DateFormatter()
-        dateFormatter.dateFormat = "yyyy-MM-dd"
-        let dateString = dateFormatter.string(from: startOfDay)
-        let activityId = "\(userId)_\(dateString)"
-        
-        let document = db.collection("users")
-            .document(userId)
-            .collection("activities")
-            .document(activityId)
-        
-        let snapshot = try await document.getDocument()
-        return try? snapshot.data(as: ReadingActivity.self)
+        return activities.first { activity in
+            calendar.isDate(activity.date, inSameDayAs: startOfDay)
+        }
     }
     
-    func getActivitiesInRange(userId: String, startDate: Date, endDate: Date) async throws -> [ReadingActivity] {
+    func getActivitiesInRange(startDate: Date, endDate: Date) async throws -> [ReadingActivity] {
+        let activities = try await apiClient.getActivities()
+        
         let calendar = Calendar.current
         let startOfStartDate = calendar.startOfDay(for: startDate)
         let endOfEndDate = calendar.dateInterval(of: .day, for: endDate)?.end ?? endDate
         
-        let query = db.collection("users")
-            .document(userId)
-            .collection("activities")
-            .whereField("date", isGreaterThanOrEqualTo: startOfStartDate)
-            .whereField("date", isLessThan: endOfEndDate)
-            .order(by: "date", descending: false)
-        
-        let snapshot = try await query.getDocuments()
-        return snapshot.documents.compactMap { document in
-            try? document.data(as: ReadingActivity.self)
-        }
+        return activities.filter { activity in
+            activity.date >= startOfStartDate && activity.date < endOfEndDate
+        }.sorted { $0.date < $1.date }
     }
     
-    func recordBookRead(userId: String, date: Date = Date()) async throws {
-        var activity = try await getActivity(userId: userId, date: date)
+    func recordBookRead(date: Date = Date()) async throws {
+        var activity = try await getActivity(date: date)
         
         if activity == nil {
-            activity = ReadingActivity.createTodayActivity(userId: userId)
+            // サーバー側でuserIdが設定される
+            activity = ReadingActivity.createTodayActivity()
         }
         
         activity?.recordBookRead()
@@ -96,17 +68,17 @@ class ActivityRepository: ActivityRepositoryProtocol {
         
         // ストリークも更新
         try await StreakRepository.shared.recordMultipleActivities(
-            userId: userId,
             types: [.reading, .combined],
             date: date
         )
     }
     
-    func recordMemoWritten(userId: String, date: Date = Date()) async throws {
-        var activity = try await getActivity(userId: userId, date: date)
+    func recordMemoWritten(date: Date = Date()) async throws {
+        var activity = try await getActivity(date: date)
         
         if activity == nil {
-            activity = ReadingActivity.createTodayActivity(userId: userId)
+            // サーバー側でuserIdが設定される
+            activity = ReadingActivity.createTodayActivity()
         }
         
         activity?.recordMemoWritten()
@@ -117,20 +89,19 @@ class ActivityRepository: ActivityRepositoryProtocol {
         
         // ストリークも更新
         try await StreakRepository.shared.recordMultipleActivities(
-            userId: userId,
             types: [.chatMemo, .combined],
             date: date
         )
     }
     
     // 統計用：特定期間のアクティビティサマリーを取得
-    func getActivitySummary(userId: String, days: Int) async throws -> (totalBooks: Int, totalMemos: Int, activeDays: Int) {
+    func getActivitySummary(days: Int) async throws -> (totalBooks: Int, totalMemos: Int, activeDays: Int) {
         let endDate = Date()
         guard let startDate = Calendar.current.date(byAdding: .day, value: -days, to: endDate) else {
             return (0, 0, 0)
         }
         
-        let activities = try await getActivitiesInRange(userId: userId, startDate: startDate, endDate: endDate)
+        let activities = try await getActivitiesInRange(startDate: startDate, endDate: endDate)
         
         let totalBooks = activities.reduce(0) { $0 + $1.booksRead }
         let totalMemos = activities.reduce(0) { $0 + $1.memosWritten }

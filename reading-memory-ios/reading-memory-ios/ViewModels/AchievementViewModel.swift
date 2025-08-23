@@ -1,10 +1,10 @@
 import Foundation
-import FirebaseAuth
+// import FirebaseAuth
 
 @Observable
 class AchievementViewModel: BaseViewModel {
     private let achievementRepository = AchievementRepository.shared
-    private let userBookRepository = UserBookRepository.shared
+    private let bookRepository = BookRepository.shared
     private let streakRepository = StreakRepository.shared
     
     var allAchievements: [Achievement] = []
@@ -12,9 +12,7 @@ class AchievementViewModel: BaseViewModel {
     var badges: [Badge] = Badge.defaultBadges
     var badgesByCategory: [Badge.BadgeCategory: [Badge]] = [:]
     
-    private var userId: String? {
-        Auth.auth().currentUser?.uid
-    }
+    private var authService = AuthService.shared
     
     override init() {
         super.init()
@@ -34,14 +32,14 @@ class AchievementViewModel: BaseViewModel {
     
     @MainActor
     private func fetchAchievementData() async {
-        guard let userId = userId else { return }
+        guard let user = authService.currentUser else { return }
         
         isLoading = true
         errorMessage = nil
         
         do {
             // ユーザーのアチーブメントを取得
-            allAchievements = try await achievementRepository.getUserAchievements(userId: userId)
+            allAchievements = try await achievementRepository.getUserAchievements()
             unlockedAchievements = allAchievements.filter { $0.isUnlocked }
             
             // バッジをカテゴリー別に分類
@@ -67,17 +65,16 @@ class AchievementViewModel: BaseViewModel {
     }
     
     func updateAchievementProgress(shouldReload: Bool = true) async {
-        guard let userId = userId else { return }
+        guard let user = authService.currentUser else { return }
         
         do {
             // 必要なデータを取得
-            let userBooks = try await userBookRepository.getUserBooks(for: userId)
-            let streaks = try await streakRepository.getAllStreaks(userId: userId)
+            let books = try await bookRepository.getBooks()
+            let streaks = try await streakRepository.getAllStreaks()
             
             // アチーブメントの進捗を更新
             try await achievementRepository.checkAndUpdateAchievements(
-                userId: userId,
-                userBooks: userBooks,
+                books: books,
                 streaks: streaks
             )
             

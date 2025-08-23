@@ -233,8 +233,7 @@ extension OpenBDResponse {
                 pageCount: extractPageCount(),
                 description: extractDescription(),
                 coverImageUrl: summary.cover,
-                dataSource: .openBD,
-                visibility: .public
+                dataSource: .openBD
             )
         }
         
@@ -258,8 +257,7 @@ extension OpenBDResponse {
             pageCount: extractPageCount(),
             description: extractDescription(),
             coverImageUrl: coverImageUrl,
-            dataSource: .openBD,
-            visibility: .public
+            dataSource: .openBD
         )
     }
     

@@ -1,6 +1,6 @@
 import SwiftUI
 import PhotosUI
-import FirebaseStorage
+// import FirebaseStorage
 
 struct ProfileSetupView: View {
     @State private var displayName = ""
@@ -197,21 +197,11 @@ struct ProfileSetupView: View {
     }
     
     private func uploadProfileImage(image: UIImage, userId: String) async throws -> String {
-        guard let imageData = image.jpegData(compressionQuality: 0.8) else {
-            throw AppError.imageUploadFailed
-        }
-        
-        let storage = Storage.storage()
-        let storageRef = storage.reference()
-        let profileImageRef = storageRef.child("profile_images/\(userId).jpg")
-        
-        let metadata = StorageMetadata()
-        metadata.contentType = "image/jpeg"
-        
-        _ = try await profileImageRef.putDataAsync(imageData, metadata: metadata)
-        let downloadURL = try await profileImageRef.downloadURL()
-        
-        return downloadURL.absoluteString
+        let storageService = StorageService.shared
+        return try await storageService.uploadImage(
+            image,
+            path: .profileImage(userId: userId)
+        )
     }
 }
 

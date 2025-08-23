@@ -1,39 +1,39 @@
 import Foundation
-import FirebaseFirestore
 
-// Firestore用のDTO（Data Transfer Object）
 struct BookChatDTO: Codable {
-    let userBookId: String
-    let userId: String
+    let bookId: String
     let message: String
     let imageUrl: String?
     let chapterOrSection: String?
     let pageNumber: Int?
     let isAI: Bool
-    let createdAt: Timestamp
+    let createdAt: Date
+    
+    // 後方互換性のため
+    var userBookId: String {
+        bookId
+    }
     
     init(from bookChat: BookChat) {
-        self.userBookId = bookChat.userBookId
-        self.userId = bookChat.userId
+        self.bookId = bookChat.bookId
         self.message = bookChat.message
         self.imageUrl = bookChat.imageUrl
         self.chapterOrSection = bookChat.chapterOrSection
         self.pageNumber = bookChat.pageNumber
         self.isAI = bookChat.isAI
-        self.createdAt = Timestamp(date: bookChat.createdAt)
+        self.createdAt = bookChat.createdAt
     }
     
     func toDomain(id: String) -> BookChat {
         return BookChat(
             id: id,
-            userBookId: userBookId,
-            userId: userId,
+            bookId: bookId,
             message: message,
             imageUrl: imageUrl,
             chapterOrSection: chapterOrSection,
             pageNumber: pageNumber,
             isAI: isAI,
-            createdAt: createdAt.dateValue()
+            createdAt: createdAt
         )
     }
 }

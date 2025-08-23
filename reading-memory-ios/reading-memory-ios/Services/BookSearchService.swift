@@ -26,31 +26,9 @@ final class BookSearchService {
         }
     }
     
-    // MARK: - 公開本の取得
+    // MARK: - 公開本の取得（削除予定）
     
-    /// 人気の本を取得
-    func getPopularBooks(limit: Int = 20) async throws -> [Book] {
-        let result = try await apiClient.getPopularBooks(limit: limit)
-        return result.books.compactMap { dto in
-            parseBookFromDTO(dto)
-        }
-    }
-    
-    /// 新着の本を取得
-    func getRecentBooks(limit: Int = 20) async throws -> [Book] {
-        let result = try await apiClient.getRecentBooks(limit: limit)
-        return result.books.compactMap { dto in
-            parseBookFromDTO(dto)
-        }
-    }
-    
-    /// 公開本を検索
-    func searchPublicBooks(query: String, limit: Int = 20) async throws -> [Book] {
-        let result = try await apiClient.searchPublicBooks(query: query, limit: limit)
-        return result.books.compactMap { dto in
-            parseBookFromDTO(dto)
-        }
-    }
+    // 以下のメソッドは公開本機能削除のため、将来的に削除予定
     
     // MARK: - Private Methods
     
@@ -65,14 +43,6 @@ final class BookSearchService {
             dataSource = .manual
         }
         
-        let visibility: BookVisibility
-        if let visibilityString = dto.visibility,
-           let vis = BookVisibility(rawValue: visibilityString) {
-            visibility = vis
-        } else {
-            visibility = .public
-        }
-        
         // 出版日の変換
         var publishedDate: Date?
         if let dateString = dto.publishedDate {
@@ -82,7 +52,7 @@ final class BookSearchService {
         }
         
         if let id = dto.id {
-            // 既存の本
+            // 既存の本（APIから取得した場合）
             return Book(
                 id: id,
                 isbn: dto.isbn,
@@ -94,7 +64,8 @@ final class BookSearchService {
                 description: dto.description,
                 coverImageUrl: dto.coverImageUrl,
                 dataSource: dataSource,
-                visibility: visibility,
+                status: .wantToRead,
+                addedDate: Date(),
                 createdAt: dto.createdAt ?? Date(),
                 updatedAt: dto.updatedAt ?? Date()
             )
@@ -109,8 +80,7 @@ final class BookSearchService {
                 pageCount: dto.pageCount,
                 description: dto.description,
                 coverImageUrl: dto.coverImageUrl,
-                dataSource: dataSource,
-                visibility: visibility
+                dataSource: dataSource
             )
         }
     }

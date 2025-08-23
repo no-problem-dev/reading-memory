@@ -1,9 +1,7 @@
 import Foundation
-import FirebaseFirestore
 
 struct ReadingActivity: Identifiable, Codable {
     let id: String
-    let userId: String
     let date: Date
     var booksRead: Int
     var memosWritten: Int
@@ -14,7 +12,6 @@ struct ReadingActivity: Identifiable, Codable {
     
     enum CodingKeys: String, CodingKey {
         case id
-        case userId
         case date
         case booksRead
         case memosWritten
@@ -25,7 +22,6 @@ struct ReadingActivity: Identifiable, Codable {
     }
     
     init(id: String? = nil,
-         userId: String,
          date: Date,
          booksRead: Int = 0,
          memosWritten: Int = 0,
@@ -37,9 +33,7 @@ struct ReadingActivity: Identifiable, Codable {
         let dateFormatter = DateFormatter()
         dateFormatter.dateFormat = "yyyy-MM-dd"
         let dateString = dateFormatter.string(from: date)
-        self.id = id ?? "\(userId)_\(dateString)"
-        
-        self.userId = userId
+        self.id = id ?? "activity_\(dateString)"
         self.date = Calendar.current.startOfDay(for: date)
         self.booksRead = booksRead
         self.memosWritten = memosWritten
@@ -73,9 +67,8 @@ struct ReadingActivity: Identifiable, Codable {
         self.updatedAt = Date()
     }
     
-    static func createTodayActivity(userId: String) -> ReadingActivity {
+    static func createTodayActivity() -> ReadingActivity {
         return ReadingActivity(
-            userId: userId,
             date: Date()
         )
     }

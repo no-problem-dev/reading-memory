@@ -1,9 +1,9 @@
 import Foundation
-import FirebaseAuth
+// import FirebaseAuth
 
 @Observable
 final class StatisticsViewModel: BaseViewModel {
-    private let userBookRepository = UserBookRepository.shared
+    private let bookRepository = BookRepository.shared
     private let bookChatRepository = BookChatRepository.shared
     
     // Period Statistics
@@ -21,8 +21,8 @@ final class StatisticsViewModel: BaseViewModel {
     var longestStreak: Int = 0
     
     // キャッシュされたデータ
-    private var cachedUserBooks: [UserBook] = []
-    private var cachedMemosCounts: [String: Int] = [:] // userBookId: count
+    private var cachedBooks: [Book] = []
+    private var cachedMemosCounts: [String: Int] = [:] // bookId: count
     private var currentPeriod: StatisticsView.StatisticsPeriod = .month
     
     struct PeriodStatistics {
@@ -86,12 +86,12 @@ final class StatisticsViewModel: BaseViewModel {
         errorMessage = nil
         
         do {
-            guard let userId = Auth.auth().currentUser?.uid else {
+            guard let userId = await AuthService.shared.currentUser?.uid else {
                 throw AppError.authenticationRequired
             }
             
             // ユーザーの本を取得してキャッシュ
-            cachedUserBooks = try await userBookRepository.getUserBooks(for: userId)
+            cachedBooks = try await bookRepository.getBooks()
             
             // データ取得完了をマーク
             markDataAsFetched()
@@ -105,17 +105,17 @@ final class StatisticsViewModel: BaseViewModel {
     
     @MainActor
     private func recalculateStatistics(for period: StatisticsView.StatisticsPeriod) async {
-        guard !cachedUserBooks.isEmpty else { return }
+        guard !cachedBooks.isEmpty else { return }
         
         isLoading = true
         
         do {
-            guard let userId = Auth.auth().currentUser?.uid else {
+            guard let userId = await AuthService.shared.currentUser?.uid else {
                 throw AppError.authenticationRequired
             }
             
             // Filter books by period
-            let (filteredBooks, previousPeriodBooks) = filterBooksByPeriod(cachedUserBooks, period: period)
+            let (filteredBooks, previousPeriodBooks) = filterBooksByPeriod(cachedBooks, period: period)
             
             // Calculate period statistics
             await calculatePeriodStatistics(
@@ -132,11 +132,11 @@ final class StatisticsViewModel: BaseViewModel {
             
             // Generate monthly stats for longer periods
             if period != .week {
-                generateMonthlyStats(books: cachedUserBooks)
+                generateMonthlyStats(books: cachedBooks)
             }
             
             // Calculate reading pace
-            calculateReadingPace(books: cachedUserBooks)
+            calculateReadingPace(books: cachedBooks)
             
         } catch {
             errorMessage = AppError.from(error).localizedDescription
@@ -145,7 +145,7 @@ final class StatisticsViewModel: BaseViewModel {
         isLoading = false
     }
     
-    private func filterBooksByPeriod(_ books: [UserBook], period: StatisticsView.StatisticsPeriod) -> (current: [UserBook], previous: [UserBook]) {
+    private func filterBooksByPeriod(_ books: [Book], period: StatisticsView.StatisticsPeriod) -> (current: [Book], previous: [Book]) {
         let calendar = Calendar.current
         let now = Date()
         var startDate: Date
@@ -184,8 +184,8 @@ final class StatisticsViewModel: BaseViewModel {
     
     @MainActor
     private func calculatePeriodStatistics(
-        books: [UserBook],
-        previousBooks: [UserBook],
+        books: [Book],
+        previousBooks: [Book],
         userId: String,
         period: StatisticsView.StatisticsPeriod
     ) async {
@@ -214,7 +214,7 @@ final class StatisticsViewModel: BaseViewModel {
             } else {
                 // キャッシュにない場合のみ取得
                 guard !Task.isCancelled else { return }
-                let memos = try? await bookChatRepository.getChats(userId: userId, userBookId: book.id, limit: 1000)
+                let memos = try? await bookChatRepository.getChats(bookId: book.id, limit: 1000)
                 let count = memos?.count ?? 0
                 cachedMemosCounts[book.id] = count
                 totalMemos += count
@@ -252,7 +252,7 @@ final class StatisticsViewModel: BaseViewModel {
         }
     }
     
-    private func generateReadingTrendData(books: [UserBook], period: StatisticsView.StatisticsPeriod) {
+    private func generateReadingTrendData(books: [Book], period: StatisticsView.StatisticsPeriod) {
         let calendar = Calendar.current
         let now = Date()
         var groupedData: [Date: Int] = [:]
@@ -301,12 +301,12 @@ final class StatisticsViewModel: BaseViewModel {
         }
     }
     
-    private func generateGenreDistribution(books: [UserBook]) {
+    private func generateGenreDistribution(books: [Book]) {
         var genreCounts: [String: Int] = [:]
         
         for _ in books {
-            // UserBook doesn't have genres property, so we'll use a placeholder
-            let genre = "未分類" // TODO: Add genre support to UserBook model
+            // Book doesn't have genres property, so we'll use a placeholder
+            let genre = "未分類" // TODO: Add genre support to Book model
             genreCounts[genre, default: 0] += 1
         }
         
@@ -316,7 +316,7 @@ final class StatisticsViewModel: BaseViewModel {
             .map { $0 }
     }
     
-    private func generateRatingDistribution(books: [UserBook]) {
+    private func generateRatingDistribution(books: [Book]) {
         var ratingCounts: [Double: Int] = [:]
         
         for book in books where book.rating != nil && book.rating! > 0 {
@@ -334,7 +334,7 @@ final class StatisticsViewModel: BaseViewModel {
         ratingDistribution = distribution
     }
     
-    private func generateMonthlyStats(books: [UserBook]) {
+    private func generateMonthlyStats(books: [Book]) {
         let calendar = Calendar.current
         let now = Date()
         let twelveMonthsAgo = calendar.date(byAdding: .month, value: -11, to: now)!
@@ -374,7 +374,7 @@ final class StatisticsViewModel: BaseViewModel {
         .sorted { $0.month < $1.month }
     }
     
-    private func calculateReadingPace(books: [UserBook]) {
+    private func calculateReadingPace(books: [Book]) {
         let completedBooks = books.filter { $0.status == .completed }
         
         // Average reading days
@@ -408,7 +408,7 @@ final class StatisticsViewModel: BaseViewModel {
         calculateLongestStreak(books: completedBooks)
     }
     
-    private func calculateLongestStreak(books: [UserBook]) {
+    private func calculateLongestStreak(books: [Book]) {
         let calendar = Calendar.current
         let readingDates = Set(books.compactMap { book -> Date? in
             guard let date = book.completedDate else { return nil }

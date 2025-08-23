@@ -8,8 +8,8 @@ struct BookChatView: View {
     @State private var selectedImage: UIImage?
     @FocusState private var isInputFocused: Bool
     
-    init(userBook: UserBook) {
-        _viewModel = State(wrappedValue: ServiceContainer.shared.makeBookChatViewModel(userBook: userBook))
+    init(book: Book) {
+        _viewModel = State(wrappedValue: ServiceContainer.shared.makeBookChatViewModel(book: book))
     }
     
     var body: some View {

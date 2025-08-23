@@ -2,8 +2,8 @@ import SwiftUI
 
 struct WantToReadDetailView: View {
     @Environment(\.dismiss) private var dismiss
-    let book: UserBook
-    let onSave: (UserBook?) -> Void
+    let book: Book
+    let onSave: (Book?) -> Void
     
     @State private var priority: Int
     @State private var plannedReadingDate: Date?
@@ -12,7 +12,7 @@ struct WantToReadDetailView: View {
     @State private var showingAddLink = false
     @State private var editingLink: PurchaseLink?
     
-    init(book: UserBook, onSave: @escaping (UserBook?) -> Void) {
+    init(book: Book, onSave: @escaping (Book?) -> Void) {
         self.book = book
         self.onSave = onSave
         _priority = State(initialValue: book.priority ?? 5)
@@ -27,12 +27,12 @@ struct WantToReadDetailView: View {
                 // 本の情報セクション
                 Section {
                     HStack(spacing: 12) {
-                        BookCoverView(userBook: book, showTitle: false, showRating: false, width: 60, height: 84)
+                        BookCoverView(book: book, showTitle: false, showRating: false, width: 60, height: 84)
                         
                         VStack(alignment: .leading, spacing: 4) {
-                            Text(book.bookTitle)
+                            Text(book.title)
                                 .font(.headline)
-                            Text(book.bookAuthor)
+                            Text(book.author)
                                 .font(.subheadline)
                                 .foregroundColor(.secondary)
                         }

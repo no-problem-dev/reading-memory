@@ -8,7 +8,6 @@ struct BookShelfView: View {
     @State private var showingAddBookOptions = false
     @State private var showingBarcodeScanner = false
     @State private var showingBookSearch = false
-    @State private var showingPublicBookshelf = false
     
     enum SortOption: String, CaseIterable {
         case dateAdded = "追加日"
@@ -66,12 +65,6 @@ struct BookShelfView: View {
                 
                 ToolbarItem(placement: .navigationBarTrailing) {
                     HStack(spacing: 16) {
-                        Button {
-                            showingPublicBookshelf = true
-                        } label: {
-                            Image(systemName: "globe")
-                        }
-                        
                         filterMenu
                     }
                 }
@@ -86,9 +79,6 @@ struct BookShelfView: View {
             }
             .sheet(isPresented: $showingBookSearch) {
                 BookSearchView()
-            }
-            .sheet(isPresented: $showingPublicBookshelf) {
-                PublicBookshelfView()
             }
             .confirmationDialog("本を検索", isPresented: $showingAddBookOptions) {
                 Button("バーコードでスキャン", action: {
@@ -257,7 +247,7 @@ struct EmptyBookShelfView: View {
 }
 
 struct BookShelfGridView: View {
-    let books: [UserBook]
+    let books: [Book]
     
     private let columns = [
         GridItem(.adaptive(minimum: 110, maximum: 130), spacing: 16)
@@ -266,9 +256,9 @@ struct BookShelfGridView: View {
     var body: some View {
         ScrollView {
             LazyVGrid(columns: columns, spacing: 20) {
-                ForEach(books) { userBook in
-                    NavigationLink(destination: BookDetailView(userBookId: userBook.id)) {
-                        BookCoverView(userBook: userBook)
+                ForEach(books) { book in
+                    NavigationLink(destination: BookDetailView(bookId: book.id)) {
+                        BookCoverView(book: book)
                     }
                     .buttonStyle(PlainButtonStyle())
                 }

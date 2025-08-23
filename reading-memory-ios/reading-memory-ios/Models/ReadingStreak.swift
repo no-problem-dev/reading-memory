@@ -1,9 +1,7 @@
 import Foundation
-import FirebaseFirestore
 
 struct ReadingStreak: Identifiable, Codable {
     let id: String
-    let userId: String
     let type: StreakType
     var currentStreak: Int
     var longestStreak: Int
@@ -20,7 +18,6 @@ struct ReadingStreak: Identifiable, Codable {
     
     enum CodingKeys: String, CodingKey {
         case id
-        case userId
         case type
         case currentStreak
         case longestStreak
@@ -31,7 +28,6 @@ struct ReadingStreak: Identifiable, Codable {
     }
     
     init(id: String = UUID().uuidString,
-         userId: String,
          type: StreakType,
          currentStreak: Int = 0,
          longestStreak: Int = 0,
@@ -40,7 +36,6 @@ struct ReadingStreak: Identifiable, Codable {
          createdAt: Date = Date(),
          updatedAt: Date = Date()) {
         self.id = id
-        self.userId = userId
         self.type = type
         self.currentStreak = currentStreak
         self.longestStreak = longestStreak

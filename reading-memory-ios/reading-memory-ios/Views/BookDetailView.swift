@@ -2,9 +2,9 @@ import SwiftUI
 import PhotosUI
 
 struct BookDetailView: View {
-    let userBookId: String
+    let bookId: String
     
-    @State private var userBook: UserBook?
+    @State private var book: Book?
     @State private var isLoading = true
     @State private var showingEditSheet = false
     @State private var showingDeleteAlert = false
@@ -13,7 +13,6 @@ struct BookDetailView: View {
     @State private var isGeneratingSummary = false
     @Environment(\.dismiss) private var dismiss
     
-    private let userBookRepository = ServiceContainer.shared.getUserBookRepository()
     private let bookRepository = ServiceContainer.shared.getBookRepository()
     private let authService = AuthService.shared
     
@@ -22,19 +21,19 @@ struct BookDetailView: View {
             if isLoading {
                 ProgressView()
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
-            } else if let userBook = userBook {
+            } else if let book = book {
                 ScrollView {
                     VStack(alignment: .leading, spacing: 20) {
                         // 本の基本情報
-                        bookInfoSection(userBook: userBook)
+                        bookInfoSection(book: book)
                         
                         Divider()
                         
                         // 読書ステータスと評価
-                        statusAndRatingSection(userBook: userBook)
+                        statusAndRatingSection(book: book)
                         
                         // チャットメモへのボタン
-                        NavigationLink(destination: BookChatView(userBook: userBook)) {
+                        NavigationLink(destination: BookChatView(book: book)) {
                             HStack {
                                 Image(systemName: "bubble.left.and.bubble.right")
                                     .font(.title2)
@@ -94,19 +93,19 @@ struct BookDetailView: View {
                         .disabled(isGeneratingSummary)
                         
                         // AI要約があれば表示
-                        if let aiSummary = userBook.aiSummary, !aiSummary.isEmpty {
+                        if let aiSummary = book.aiSummary, !aiSummary.isEmpty {
                             Divider()
                             aiSummarySection(summary: aiSummary)
                         }
                         
-                        if let memo = userBook.memo, !memo.isEmpty {
+                        if let memo = book.memo, !memo.isEmpty {
                             Divider()
                             notesSection(notes: memo)
                         }
                     }
                     .padding()
                 }
-                .navigationTitle(userBook.bookTitle)
+                .navigationTitle(book.title)
                 .navigationBarTitleDisplayMode(.inline)
                 .toolbar {
                     ToolbarItem(placement: .navigationBarTrailing) {
@@ -130,8 +129,8 @@ struct BookDetailView: View {
                     }
                 }
                 .sheet(isPresented: $showingEditSheet) {
-                    SimpleEditBookView(userBook: userBook) { updatedUserBook in
-                        self.userBook = updatedUserBook
+                    SimpleEditBookView(book: book) { updatedBook in
+                        self.book = updatedBook
                     }
                 }
                 .alert("本を削除", isPresented: $showingDeleteAlert) {
@@ -153,16 +152,16 @@ struct BookDetailView: View {
             }
         }
         .task {
-            await loadUserBook()
+            await loadBook()
         }
     }
     
-    private func loadUserBook() async {
+    private func loadBook() async {
         guard let userId = authService.currentUser?.uid else { return }
         
         do {
-            if let fetchedUserBook = try await userBookRepository.getUserBook(userId: userId, userBookId: userBookId) {
-                self.userBook = fetchedUserBook
+            if let fetchedBook = try await bookRepository.getBook(bookId: bookId) {
+                self.book = fetchedBook
             }
         } catch {
             print("Error loading book: \(error)")
@@ -175,40 +174,40 @@ struct BookDetailView: View {
         guard let userId = authService.currentUser?.uid else { return }
         
         do {
-            try await userBookRepository.deleteUserBook(userId: userId, userBookId: userBookId)
+            try await bookRepository.deleteBook(bookId: bookId)
             dismiss()
         } catch {
             print("Error deleting book: \(error)")
         }
     }
     
-    private func bookInfoSection(userBook: UserBook) -> some View {
+    private func bookInfoSection(book: Book) -> some View {
         HStack(alignment: .top, spacing: 16) {
             // 本の表紙
-            if let coverImageUrl = userBook.bookCoverImageUrl, 
+            if let coverImageUrl = book.coverImageUrl, 
                let url = URL(string: coverImageUrl) {
                 CachedAsyncImage(url: url) { image in
                     image
                         .resizable()
                         .aspectRatio(contentMode: .fit)
                 } placeholder: {
-                    BookCoverPlaceholder(title: userBook.bookTitle)
+                    BookCoverPlaceholder(title: book.title)
                 }
                 .frame(width: 120, height: 180)
                 .cornerRadius(12)
             } else {
-                BookCoverPlaceholder(title: userBook.bookTitle)
+                BookCoverPlaceholder(title: book.title)
                     .frame(width: 120, height: 180)
                     .cornerRadius(12)
             }
             
             VStack(alignment: .leading, spacing: 8) {
-                Text(userBook.bookTitle)
+                Text(book.title)
                     .font(.title2)
                     .fontWeight(.bold)
                     .fixedSize(horizontal: false, vertical: true)
                 
-                Text(userBook.bookAuthor)
+                Text(book.author)
                     .font(.headline)
                     .foregroundColor(.secondary)
                 
@@ -219,14 +218,14 @@ struct BookDetailView: View {
         }
     }
     
-    private func statusAndRatingSection(userBook: UserBook) -> some View {
+    private func statusAndRatingSection(book: Book) -> some View {
         VStack(alignment: .leading, spacing: 16) {
             // ステータス
             HStack {
                 Text("ステータス")
                     .fontWeight(.medium)
                 Spacer()
-                StatusBadge(status: userBook.status)
+                StatusBadge(status: book.status)
             }
             
             // 評価
@@ -234,7 +233,7 @@ struct BookDetailView: View {
                 Text("評価")
                     .fontWeight(.medium)
                 Spacer()
-                if let rating = userBook.rating {
+                if let rating = book.rating {
                     RatingView(rating: rating)
                 } else {
                     Text("未評価")
@@ -243,9 +242,9 @@ struct BookDetailView: View {
             }
             
             // 読書期間
-            if userBook.status != .wantToRead {
+            if book.status != .wantToRead {
                 VStack(alignment: .leading, spacing: 8) {
-                    if let startDate = userBook.startDate {
+                    if let startDate = book.startDate {
                         HStack {
                             Text("開始日")
                                 .fontWeight(.medium)
@@ -255,8 +254,8 @@ struct BookDetailView: View {
                         }
                     }
                     
-                    if userBook.status == .completed,
-                       let completedDate = userBook.completedDate {
+                    if book.status == .completed,
+                       let completedDate = book.completedDate {
                         HStack {
                             Text("完了日")
                                 .fontWeight(.medium)
@@ -287,9 +286,8 @@ struct BookDetailView: View {
         
         do {
             let aiService = AIService.shared
-            let summary = try await aiService.generateBookSummary(
-                userId: userId,
-                userBookId: userBookId
+            let summary = try await aiService.generateBookSummaryAPI(
+                bookId: bookId
             )
             
             aiSummary = summary
@@ -312,7 +310,7 @@ struct BookDetailView: View {
                 Text("AI要約")
                     .font(.headline)
                 Spacer()
-                Text(userBook?.summaryGeneratedAt?.formatted(date: .abbreviated, time: .omitted) ?? "")
+                Text(book?.summaryGeneratedAt?.formatted(date: .abbreviated, time: .omitted) ?? "")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
@@ -421,8 +419,8 @@ struct RatingView: View {
 }
 
 struct SimpleEditBookView: View {
-    let userBook: UserBook
-    let onUpdate: (UserBook) -> Void
+    let book: Book
+    let onUpdate: (Book) -> Void
     
     @Environment(\.dismiss) private var dismiss
     @State private var selectedPhoto: PhotosPickerItem?
@@ -433,7 +431,7 @@ struct SimpleEditBookView: View {
     @State private var isLoading = false
     @State private var errorMessage: String?
     
-    private let userBookRepository = ServiceContainer.shared.getUserBookRepository()
+    private let bookRepository = ServiceContainer.shared.getBookRepository()
     private let authService = AuthService.shared
     private let activityRepository = ActivityRepository.shared
     
@@ -473,9 +471,9 @@ struct SimpleEditBookView: View {
             }
         }
         .onAppear {
-            status = userBook.status
-            rating = userBook.rating ?? 0
-            memo = userBook.memo ?? ""
+            status = book.status
+            rating = book.rating ?? 0
+            memo = book.memo ?? ""
         }
         .onChange(of: selectedPhoto) { _, newItem in
             Task {
@@ -510,16 +508,16 @@ struct SimpleEditBookView: View {
     
     private var currentCoverView: some View {
         VStack {
-            if let coverImageUrl = userBook.bookCoverImageUrl {
+            if let coverImageUrl = book.coverImageUrl {
                 AsyncImage(url: URL(string: coverImageUrl)) { image in
                     image
                         .resizable()
                         .aspectRatio(contentMode: .fit)
                 } placeholder: {
-                    BookCoverPlaceholder(title: userBook.bookTitle)
+                    BookCoverPlaceholder(title: book.title)
                 }
             } else {
-                BookCoverPlaceholder(title: userBook.bookTitle)
+                BookCoverPlaceholder(title: book.title)
             }
         }
         .frame(width: 100, height: 150)
@@ -562,7 +560,7 @@ struct SimpleEditBookView: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
             
             Picker("ステータス", selection: $status) {
-                ForEach(ReadingStatus.allCases) { status in
+                ForEach(ReadingStatus.allCases, id: \.self) { status in
                     Text(status.displayName).tag(status)
                 }
             }
@@ -638,57 +636,64 @@ struct SimpleEditBookView: View {
         
         do {
             // カスタム表紙をアップロード
-            var newCoverUrl = userBook.bookCoverImageUrl
+            var newCoverUrl = book.coverImageUrl
             if let selectedImage {
                 let storageService = StorageService.shared
                 newCoverUrl = try await storageService.uploadImage(
                     selectedImage,
-                    path: .bookCover(userId: userId, bookId: userBook.id)
+                    path: .bookCover(userId: userId, bookId: book.id)
                 )
             }
             
             // ステータスに応じて日付を更新
-            var newStartDate = userBook.startDate
-            var newCompletedDate = userBook.completedDate
-            if status == .reading && userBook.status == .wantToRead {
+            var newStartDate = book.startDate
+            var newCompletedDate = book.completedDate
+            if status == .reading && book.status == .wantToRead {
                 newStartDate = Date()
-            } else if status == .completed && userBook.status != .completed {
+            } else if status == .completed && book.status != .completed {
                 newCompletedDate = Date()
             }
             
-            // 更新されたUserBookを作成
-            let updatedUserBook = UserBook(
-                id: userBook.id,
-                userId: userBook.userId,
-                bookId: userBook.bookId,
-                manualBookData: userBook.manualBookData,
-                bookTitle: userBook.bookTitle,
-                bookAuthor: userBook.bookAuthor,
-                bookCoverImageUrl: newCoverUrl,
-                bookIsbn: userBook.bookIsbn,
+            // 更新されたBookを作成
+            let updatedBook = Book(
+                id: book.id,
+                isbn: book.isbn,
+                title: book.title,
+                author: book.author,
+                publisher: book.publisher,
+                publishedDate: book.publishedDate,
+                pageCount: book.pageCount,
+                description: book.description,
+                coverImageUrl: newCoverUrl,
+                dataSource: book.dataSource,
                 status: status,
                 rating: rating > 0 ? rating : nil,
-                readingProgress: userBook.readingProgress,
-                currentPage: userBook.currentPage,
+                readingProgress: book.readingProgress,
+                currentPage: book.currentPage,
+                addedDate: book.addedDate,
                 startDate: newStartDate,
                 completedDate: newCompletedDate,
+                lastReadDate: book.lastReadDate,
+                priority: book.priority,
+                plannedReadingDate: book.plannedReadingDate,
+                reminderEnabled: book.reminderEnabled,
+                purchaseLinks: book.purchaseLinks,
                 memo: memo.isEmpty ? nil : memo,
-                tags: userBook.tags,
-                isPrivate: userBook.isPrivate,
-                aiSummary: userBook.aiSummary,
-                summaryGeneratedAt: userBook.summaryGeneratedAt,
-                createdAt: userBook.createdAt,
+                tags: book.tags,
+                aiSummary: book.aiSummary,
+                summaryGeneratedAt: book.summaryGeneratedAt,
+                createdAt: book.createdAt,
                 updatedAt: Date()
             )
             
-            try await userBookRepository.updateUserBook(updatedUserBook)
+            try await bookRepository.updateBook(updatedBook)
             
             // ステータスが完了に変更された場合、アクティビティを記録
-            if status == .completed && userBook.status != .completed {
-                try? await activityRepository.recordBookRead(userId: userId)
+            if status == .completed && book.status != .completed {
+                try? await activityRepository.recordBookRead()
             }
             
-            onUpdate(updatedUserBook)
+            onUpdate(updatedBook)
             dismiss()
         } catch {
             errorMessage = "保存に失敗しました: \(error.localizedDescription)"
@@ -724,6 +729,6 @@ private extension UIImage {
 
 #Preview {
     NavigationStack {
-        BookDetailView(userBookId: "test-id")
+        BookDetailView(bookId: "test-id")
     }
 }

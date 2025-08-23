@@ -1,5 +1,4 @@
 import Foundation
-import FirebaseAuth
 
 /// REST APIクライアント
 final class APIClient {
@@ -38,8 +37,9 @@ final class APIClient {
         request.setValue("application/json", forHTTPHeaderField: "Accept")
         
         // Firebase IDトークンを取得して設定
-        if let user = Auth.auth().currentUser {
-            let token = try await user.getIDToken()
+        let authService = await AuthService.shared
+        if let user = await authService.currentUser {
+            let token = user.getIDToken()
             request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         }
         
@@ -55,7 +55,7 @@ final class APIClient {
             throw AppError.custom("無効なレスポンスです")
         }
         
-        if httpResponse.statusCode == 200 {
+        if httpResponse.statusCode >= 200 && httpResponse.statusCode < 300 {
             do {
                 let decoder = JSONDecoder()
                 decoder.dateDecodingStrategy = .iso8601
@@ -77,24 +77,24 @@ final class APIClient {
     
     // MARK: AI関連
     
-    func generateAIResponse(userId: String, userBookId: String, message: String) async throws -> AIResponseResult {
+    func generateAIResponse(bookId: String, message: String) async throws -> AIResponseResult {
         let body = try JSONEncoder().encode([
             "message": message
         ])
         
         let request = try await makeRequest(
             method: "POST",
-            path: "/api/v1/users/\(userId)/books/\(userBookId)/ai-response",
+            path: "/api/v1/books/\(bookId)/ai-response",
             body: body
         )
         
         return try await execute(request, responseType: AIResponseResult.self)
     }
     
-    func generateBookSummary(userId: String, userBookId: String) async throws -> SummaryResult {
+    func generateBookSummary(bookId: String) async throws -> SummaryResult {
         let request = try await makeRequest(
             method: "POST",
-            path: "/api/v1/users/\(userId)/books/\(userBookId)/summary"
+            path: "/api/v1/books/\(bookId)/summary"
         )
         
         return try await execute(request, responseType: SummaryResult.self)
@@ -166,6 +166,243 @@ final class APIClient {
         
         return try await execute(request, responseType: DeleteAccountResult.self)
     }
+    
+    // MARK: - Books CRUD
+    
+    func getBooks() async throws -> [Book] {
+        let request = try await makeRequest(
+            method: "GET",
+            path: "/api/v1/books"
+        )
+        
+        let response = try await execute(request, responseType: BooksResponse.self)
+        return response.books.map { $0.toDomain() }
+    }
+    
+    func getBook(id: String) async throws -> Book {
+        let request = try await makeRequest(
+            method: "GET",
+            path: "/api/v1/books/\(id)"
+        )
+        
+        let response = try await execute(request, responseType: BookResponse.self)
+        return response.book.toDomain()
+    }
+    
+    func createBook(_ book: Book) async throws -> Book {
+        let bookData = BookCreateRequest(from: book)
+        let body = try JSONEncoder().encode(bookData)
+        
+        let request = try await makeRequest(
+            method: "POST",
+            path: "/api/v1/books",
+            body: body
+        )
+        
+        let response = try await execute(request, responseType: BookResponse.self)
+        return response.book.toDomain()
+    }
+    
+    func updateBook(_ book: Book) async throws -> Book {
+        let bookData = BookUpdateRequest(from: book)
+        let body = try JSONEncoder().encode(bookData)
+        
+        let request = try await makeRequest(
+            method: "PUT",
+            path: "/api/v1/books/\(book.id)",
+            body: body
+        )
+        
+        let response = try await execute(request, responseType: BookResponse.self)
+        return response.book.toDomain()
+    }
+    
+    func deleteBook(id: String) async throws {
+        let request = try await makeRequest(
+            method: "DELETE",
+            path: "/api/v1/books/\(id)"
+        )
+        
+        _ = try await execute(request, responseType: EmptyResponse.self)
+    }
+    
+    // MARK: - Activities
+    
+    func getActivities() async throws -> [ReadingActivity] {
+        let request = try await makeRequest(
+            method: "GET",
+            path: "/api/v1/activities"
+        )
+        
+        let response = try await execute(request, responseType: ActivitiesResponse.self)
+        return response.activities.map { $0.toDomain() }
+    }
+    
+    func createActivity(_ activity: ReadingActivity) async throws -> ReadingActivity {
+        let body = try JSONEncoder().encode(activity)
+        
+        let request = try await makeRequest(
+            method: "POST",
+            path: "/api/v1/activities",
+            body: body
+        )
+        
+        let response = try await execute(request, responseType: ActivityResponse.self)
+        return response.activity.toDomain()
+    }
+    
+    // MARK: - Goals
+    
+    func getGoals() async throws -> [ReadingGoal] {
+        let request = try await makeRequest(
+            method: "GET",
+            path: "/api/v1/goals"
+        )
+        
+        let response = try await execute(request, responseType: GoalsResponse.self)
+        return response.goals.map { $0.toDomain() }
+    }
+    
+    func createGoal(_ goal: ReadingGoal) async throws -> ReadingGoal {
+        let body = try JSONEncoder().encode(goal)
+        
+        let request = try await makeRequest(
+            method: "POST",
+            path: "/api/v1/goals",
+            body: body
+        )
+        
+        let response = try await execute(request, responseType: GoalResponse.self)
+        return response.goal.toDomain()
+    }
+    
+    func updateGoal(_ goal: ReadingGoal) async throws -> ReadingGoal {
+        let body = try JSONEncoder().encode(goal)
+        
+        let request = try await makeRequest(
+            method: "PUT",
+            path: "/api/v1/goals/\(goal.id)",
+            body: body
+        )
+        
+        let response = try await execute(request, responseType: GoalResponse.self)
+        return response.goal.toDomain()
+    }
+    
+    func deleteGoal(id: String) async throws {
+        let request = try await makeRequest(
+            method: "DELETE",
+            path: "/api/v1/goals/\(id)"
+        )
+        
+        _ = try await execute(request, responseType: EmptyResponse.self)
+    }
+    
+    // MARK: - Achievements
+    
+    func getAchievements() async throws -> [Achievement] {
+        let request = try await makeRequest(
+            method: "GET",
+            path: "/api/v1/achievements"
+        )
+        
+        let response = try await execute(request, responseType: AchievementsResponse.self)
+        return response.achievements.map { $0.toDomain() }
+    }
+    
+    func createAchievement(_ achievement: Achievement) async throws -> Achievement {
+        let body = try JSONEncoder().encode(achievement)
+        
+        let request = try await makeRequest(
+            method: "POST",
+            path: "/api/v1/achievements",
+            body: body
+        )
+        
+        let response = try await execute(request, responseType: AchievementResponse.self)
+        return response.achievement.toDomain()
+    }
+    
+    // MARK: - Streaks
+    
+    func getStreaks() async throws -> [ReadingStreak] {
+        let request = try await makeRequest(
+            method: "GET",
+            path: "/api/v1/streaks"
+        )
+        
+        let response = try await execute(request, responseType: StreaksResponse.self)
+        return response.streaks.map { $0.toDomain() }
+    }
+    
+    func createOrUpdateStreak(_ streak: ReadingStreak) async throws -> ReadingStreak {
+        let body = try JSONEncoder().encode(streak)
+        
+        let request = try await makeRequest(
+            method: "POST",
+            path: "/api/v1/streaks",
+            body: body
+        )
+        
+        let response = try await execute(request, responseType: StreakResponse.self)
+        return response.streak.toDomain()
+    }
+    
+    // MARK: - User Profile
+    
+    func getUserProfile() async throws -> UserProfile? {
+        let request = try await makeRequest(
+            method: "GET",
+            path: "/api/v1/profile"
+        )
+        
+        do {
+            let response = try await execute(request, responseType: UserProfileResponse.self)
+            return response.profile
+        } catch {
+            if let apiError = error as? AppError,
+               case .custom(let message) = apiError,
+               message.contains("404") {
+                return nil
+            }
+            throw error
+        }
+    }
+    
+    func createUserProfile(_ profile: UserProfile) async throws -> UserProfile {
+        let body = try JSONEncoder().encode(profile)
+        
+        let request = try await makeRequest(
+            method: "POST",
+            path: "/api/v1/profile",
+            body: body
+        )
+        
+        let response = try await execute(request, responseType: UserProfileResponse.self)
+        return response.profile
+    }
+    
+    func updateUserProfile(_ profile: UserProfile) async throws -> UserProfile {
+        let body = try JSONEncoder().encode(profile)
+        
+        let request = try await makeRequest(
+            method: "PUT",
+            path: "/api/v1/profile",
+            body: body
+        )
+        
+        let response = try await execute(request, responseType: UserProfileResponse.self)
+        return response.profile
+    }
+    
+    func deleteUserProfile() async throws {
+        let request = try await makeRequest(
+            method: "DELETE",
+            path: "/api/v1/profile"
+        )
+        
+        _ = try await execute(request, responseType: EmptyResponse.self)
+    }
 }
 
 // MARK: - Response Types
@@ -202,4 +439,136 @@ struct DeleteAccountResult: Decodable {
     let success: Bool
     let deletedCollections: [String]
     let errors: [String]
+}
+
+// MARK: - CRUD Response Types
+
+struct EmptyResponse: Decodable {}
+
+struct BooksResponse: Decodable {
+    let books: [BookDTO]
+}
+
+struct BookResponse: Decodable {
+    let book: BookDTO
+}
+
+struct ActivitiesResponse: Decodable {
+    let activities: [ActivityDTO]
+}
+
+struct ActivityResponse: Decodable {
+    let activity: ActivityDTO
+}
+
+struct GoalsResponse: Decodable {
+    let goals: [GoalDTO]
+}
+
+struct GoalResponse: Decodable {
+    let goal: GoalDTO
+}
+
+struct AchievementsResponse: Decodable {
+    let achievements: [AchievementDTO]
+}
+
+struct AchievementResponse: Decodable {
+    let achievement: AchievementDTO
+}
+
+struct StreaksResponse: Decodable {
+    let streaks: [StreakDTO]
+}
+
+struct StreakResponse: Decodable {
+    let streak: StreakDTO
+}
+
+struct UserProfileResponse: Decodable {
+    let profile: UserProfile
+}
+
+// MARK: - Request Types
+
+struct BookCreateRequest: Encodable {
+    let isbn: String?
+    let title: String
+    let author: String
+    let publisher: String?
+    let publishedDate: Date?
+    let pageCount: Int?
+    let description: String?
+    let coverImageUrl: String?
+    let dataSource: String
+    let status: String
+    let rating: Double?
+    let readingProgress: Double?
+    let currentPage: Int?
+    let startDate: Date?
+    let completedDate: Date?
+    let priority: Int?
+    let plannedReadingDate: Date?
+    let reminderEnabled: Bool
+    let purchaseLinks: [PurchaseLink]?
+    let memo: String?
+    let tags: [String]
+    
+    init(from book: Book) {
+        self.isbn = book.isbn
+        self.title = book.title
+        self.author = book.author
+        self.publisher = book.publisher
+        self.publishedDate = book.publishedDate
+        self.pageCount = book.pageCount
+        self.description = book.description
+        self.coverImageUrl = book.coverImageUrl
+        self.dataSource = book.dataSource.rawValue
+        self.status = book.status.rawValue
+        self.rating = book.rating
+        self.readingProgress = book.readingProgress
+        self.currentPage = book.currentPage
+        self.startDate = book.startDate
+        self.completedDate = book.completedDate
+        self.priority = book.priority
+        self.plannedReadingDate = book.plannedReadingDate
+        self.reminderEnabled = book.reminderEnabled
+        self.purchaseLinks = book.purchaseLinks
+        self.memo = book.memo
+        self.tags = book.tags
+    }
+}
+
+struct BookUpdateRequest: Encodable {
+    let status: String?
+    let rating: Double?
+    let readingProgress: Double?
+    let currentPage: Int?
+    let startDate: Date?
+    let completedDate: Date?
+    let priority: Int?
+    let plannedReadingDate: Date?
+    let reminderEnabled: Bool?
+    let purchaseLinks: [PurchaseLink]?
+    let memo: String?
+    let tags: [String]?
+    let aiSummary: String?
+    let summaryGeneratedAt: Date?
+    
+    init(from book: Book) {
+        self.status = book.status.rawValue
+        self.rating = book.rating
+        self.readingProgress = book.readingProgress
+        self.currentPage = book.currentPage
+        self.startDate = book.startDate
+        self.completedDate = book.completedDate
+        self.priority = book.priority
+        self.plannedReadingDate = book.plannedReadingDate
+        self.reminderEnabled = book.reminderEnabled
+        self.purchaseLinks = book.purchaseLinks
+        self.memo = book.memo
+        self.tags = book.tags
+        self.aiSummary = book.aiSummary
+        self.summaryGeneratedAt = book.summaryGeneratedAt
+    }
 }

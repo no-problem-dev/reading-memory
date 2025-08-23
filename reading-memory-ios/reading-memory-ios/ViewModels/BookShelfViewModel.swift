@@ -1,19 +1,18 @@
 import Foundation
-import FirebaseFirestore
+// TODO: Remove Firebase dependency
+// import FirebaseFirestore
 
 @Observable
 class BookShelfViewModel: BaseViewModel {
-    private let userBookRepository: UserBookRepository
     private let bookRepository: BookRepository
     private let authService = AuthService.shared
     
-    private(set) var allBooks: [UserBook] = []
-    private(set) var filteredBooks: [UserBook] = []
+    private(set) var allBooks: [Book] = []
+    private(set) var filteredBooks: [Book] = []
     private var currentFilter: ReadingStatus? = nil
     private var currentSort: BookShelfView.SortOption = .dateAdded
     
     override init() {
-        self.userBookRepository = ServiceContainer.shared.getUserBookRepository()
         self.bookRepository = ServiceContainer.shared.getBookRepository()
         super.init()
     }
@@ -21,14 +20,11 @@ class BookShelfViewModel: BaseViewModel {
     @MainActor
     func loadBooks() async {
         await withLoadingNoThrow { [weak self] in
-            guard let self = self,
-                  let userId = self.authService.currentUser?.uid else {
-                throw AppError.authenticationRequired
-            }
+            guard let self = self else { return }
             
-            let userBooks = try await self.userBookRepository.getUserBooks(for: userId)
+            let books = try await self.bookRepository.getBooks()
             
-            self.allBooks = userBooks
+            self.allBooks = books
             self.applyFilterAndSort()
         }
     }
@@ -55,9 +51,9 @@ class BookShelfViewModel: BaseViewModel {
         case .dateAdded:
             books.sort { $0.createdAt > $1.createdAt }
         case .title:
-            books.sort { $0.bookTitle.localizedCompare($1.bookTitle) == .orderedAscending }
+            books.sort { $0.title.localizedCompare($1.title) == .orderedAscending }
         case .author:
-            books.sort { $0.bookAuthor.localizedCompare($1.bookAuthor) == .orderedAscending }
+            books.sort { $0.author.localizedCompare($1.author) == .orderedAscending }
         case .rating:
             books.sort { 
                 let rating0 = $0.rating ?? 0

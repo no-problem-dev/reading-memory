@@ -1,88 +1,49 @@
 import Foundation
-import FirebaseFirestore
-import FirebaseAuth
 
 protocol AchievementRepositoryProtocol {
     func createAchievement(_ achievement: Achievement) async throws
     func updateAchievement(_ achievement: Achievement) async throws
-    func getAchievement(userId: String, badgeId: String) async throws -> Achievement?
-    func getUserAchievements(userId: String) async throws -> [Achievement]
-    func getUnlockedAchievements(userId: String) async throws -> [Achievement]
-    func checkAndUpdateAchievements(userId: String, userBooks: [UserBook], streaks: [ReadingStreak]) async throws
+    func getAchievement(badgeId: String) async throws -> Achievement?
+    func getUserAchievements() async throws -> [Achievement]
+    func getUnlockedAchievements() async throws -> [Achievement]
+    func checkAndUpdateAchievements(books: [Book], streaks: [ReadingStreak]) async throws
 }
 
 class AchievementRepository: AchievementRepositoryProtocol {
     static let shared = AchievementRepository()
-    private let db = Firestore.firestore()
+    private let apiClient = APIClient.shared
     
-    private init() {
-    }
+    private init() {}
     
     func createAchievement(_ achievement: Achievement) async throws {
-        let document = db.collection("users")
-            .document(achievement.userId)
-            .collection("achievements")
-            .document(achievement.id)
-        
-        try document.setData(from: achievement)
+        _ = try await apiClient.createAchievement(achievement)
     }
     
     func updateAchievement(_ achievement: Achievement) async throws {
-        let document = db.collection("users")
-            .document(achievement.userId)
-            .collection("achievements")
-            .document(achievement.id)
-        
-        var updatedAchievement = achievement
-        updatedAchievement.updatedAt = Date()
-        
-        try document.setData(from: updatedAchievement)
+        // APIでは作成と更新が同じエンドポイント
+        _ = try await apiClient.createAchievement(achievement)
     }
     
-    func getAchievement(userId: String, badgeId: String) async throws -> Achievement? {
-        let query = db.collection("users")
-            .document(userId)
-            .collection("achievements")
-            .whereField("badgeId", isEqualTo: badgeId)
-            .limit(to: 1)
-        
-        let snapshot = try await query.getDocuments()
-        guard let document = snapshot.documents.first else { return nil }
-        
-        return try? document.data(as: Achievement.self)
+    func getAchievement(badgeId: String) async throws -> Achievement? {
+        let achievements = try await apiClient.getAchievements()
+        return achievements.first { $0.badgeId == badgeId }
     }
     
-    func getUserAchievements(userId: String) async throws -> [Achievement] {
-        let query = db.collection("users")
-            .document(userId)
-            .collection("achievements")
-            .order(by: "createdAt", descending: false)
-        
-        let snapshot = try await query.getDocuments()
-        return snapshot.documents.compactMap { document in
-            try? document.data(as: Achievement.self)
-        }
+    func getUserAchievements() async throws -> [Achievement] {
+        return try await apiClient.getAchievements()
     }
     
-    func getUnlockedAchievements(userId: String) async throws -> [Achievement] {
-        let query = db.collection("users")
-            .document(userId)
-            .collection("achievements")
-            .whereField("isUnlocked", isEqualTo: true)
-            .order(by: "unlockedAt", descending: true)
-        
-        let snapshot = try await query.getDocuments()
-        return snapshot.documents.compactMap { document in
-            try? document.data(as: Achievement.self)
-        }
+    func getUnlockedAchievements() async throws -> [Achievement] {
+        let achievements = try await apiClient.getAchievements()
+        return achievements.filter { $0.isUnlocked }
     }
     
-    func checkAndUpdateAchievements(userId: String, userBooks: [UserBook], streaks: [ReadingStreak]) async throws {
+    func checkAndUpdateAchievements(books: [Book], streaks: [ReadingStreak]) async throws {
         // すべてのバッジを取得
         let badges = Badge.defaultBadges
         
         // ユーザーの既存のアチーブメントを取得
-        let existingAchievements = try await getUserAchievements(userId: userId)
+        let existingAchievements = try await getUserAchievements()
         let existingBadgeIds = Set(existingAchievements.map { $0.badgeId })
         
         for badge in badges {
@@ -92,14 +53,14 @@ class AchievementRepository: AchievementRepositoryProtocol {
             if let existing = existingAchievements.first(where: { $0.badgeId == badge.id }) {
                 achievement = existing
             } else {
+                // サーバー側でuserIdが設定される
                 achievement = Achievement(
-                    badgeId: badge.id,
-                    userId: userId
+                    badgeId: badge.id
                 )
             }
             
             // 進捗を計算
-            let progress = calculateProgress(for: badge, userBooks: userBooks, streaks: streaks)
+            let progress = calculateProgress(for: badge, books: books, streaks: streaks)
             
             // 進捗が変わった場合のみ更新
             if achievement.progress != progress {
@@ -114,10 +75,10 @@ class AchievementRepository: AchievementRepositoryProtocol {
         }
     }
     
-    private func calculateProgress(for badge: Badge, userBooks: [UserBook], streaks: [ReadingStreak]) -> Double {
+    private func calculateProgress(for badge: Badge, books: [Book], streaks: [ReadingStreak]) -> Double {
         switch badge.requirement.type {
         case .booksRead:
-            let completedBooks = userBooks.filter { $0.status == .completed }.count
+            let completedBooks = books.filter { $0.status == .completed }.count
             return min(Double(completedBooks) / Double(badge.requirement.value), 1.0)
             
         case .streakDays:
@@ -126,7 +87,7 @@ class AchievementRepository: AchievementRepositoryProtocol {
             
         case .genreBooks:
             guard let targetGenre = badge.requirement.genre else { return 0 }
-            let genreBooks = userBooks.filter { book in
+            let genreBooks = books.filter { book in
                 book.status == .completed && book.tags.contains(targetGenre)
             }.count
             return min(Double(genreBooks) / Double(badge.requirement.value), 1.0)
@@ -136,7 +97,7 @@ class AchievementRepository: AchievementRepositoryProtocol {
             return 0
             
         case .reviews:
-            let booksWithRating = userBooks.filter { $0.rating != nil }.count
+            let booksWithRating = books.filter { $0.rating != nil }.count
             return min(Double(booksWithRating) / Double(badge.requirement.value), 1.0)
             
         case .memos:

@@ -1,10 +1,10 @@
 import SwiftUI
 
 struct WantToReadListView: View {
-    @State private var viewModel = WantToReadListViewModel(userBookRepository: UserBookRepository.shared)
+    @State private var viewModel = WantToReadListViewModel()
     @State private var showingSortOptions = false
     @State private var editMode: EditMode = .inactive
-    @State private var selectedBook: UserBook?
+    @State private var selectedBook: Book?
     
     @ViewBuilder
     private var mainContent: some View {
@@ -52,7 +52,7 @@ struct WantToReadListView: View {
         }
     }
     
-    private func deleteButton(for book: UserBook) -> some View {
+    private func deleteButton(for book: Book) -> some View {
         Button(role: .destructive) {
             Task {
                 await viewModel.deleteBook(bookId: book.id)
@@ -62,7 +62,7 @@ struct WantToReadListView: View {
         }
     }
     
-    private func startReadingButton(for book: UserBook) -> some View {
+    private func startReadingButton(for book: Book) -> some View {
         Button {
             Task {
                 await viewModel.startReading(bookId: book.id)
@@ -165,7 +165,7 @@ struct EmptyWantToReadView: View {
 
 // 統計ヘッダー
 struct WantToReadHeaderView: View {
-    let books: [UserBook]
+    let books: [Book]
     
     private var totalCount: Int {
         books.count
@@ -177,7 +177,7 @@ struct WantToReadHeaderView: View {
         let startOfMonth = calendar.dateInterval(of: .month, for: now)?.start ?? now
         
         return books.filter { book in
-            let addedDate = book.addedToWantListDate ?? book.createdAt
+            let addedDate = book.addedDate
             return addedDate >= startOfMonth
         }.count
     }

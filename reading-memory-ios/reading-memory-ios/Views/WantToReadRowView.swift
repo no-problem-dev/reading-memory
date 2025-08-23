@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct WantToReadRowView: View {
-    let book: UserBook
+    let book: Book
     
     private var priorityColor: Color {
         guard let priority = book.priority else { return .gray }
@@ -27,15 +27,15 @@ struct WantToReadRowView: View {
     var body: some View {
         HStack(spacing: 12) {
             // 表紙画像
-            BookCoverView(userBook: book, showTitle: false, showRating: false, width: 50, height: 70)
+            BookCoverView(book: book, showTitle: false, showRating: false, width: 50, height: 70)
             
             // 本の情報
             VStack(alignment: .leading, spacing: 4) {
-                Text(book.bookTitle)
+                Text(book.title)
                     .font(.headline)
                     .lineLimit(1)
                 
-                Text(book.bookAuthor)
+                Text(book.author)
                     .font(.caption)
                     .foregroundColor(.secondary)
                     .lineLimit(1)

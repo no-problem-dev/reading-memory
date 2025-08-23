@@ -1,102 +1,72 @@
 import Foundation
-import FirebaseFirestore
 
 final class BookRepository {
-    private let db = Firestore.firestore()
-    private let collectionName = "books"
-    
     static let shared = BookRepository()
+    
+    private let apiClient = APIClient.shared
     
     private init() {}
     
-    func getBook(by id: String) async throws -> Book? {
-        let document = try await db.collection(collectionName).document(id).getDocument()
-        guard document.exists else { return nil }
-        
-        let dto = try document.data(as: BookDTO.self)
-        return dto.toDomain(id: document.documentID)
+    // MARK: - CRUD Operations
+    
+    func getBook(bookId: String) async throws -> Book? {
+        do {
+            return try await apiClient.getBook(id: bookId)
+        } catch {
+            if let appError = error as? AppError,
+               case .custom(let message) = appError,
+               message.contains("404") {
+                return nil
+            }
+            throw error
+        }
     }
     
-    func getBookByISBN(_ isbn: String) async throws -> Book? {
-        let snapshot = try await db.collection(collectionName)
-            .whereField("isbn", isEqualTo: isbn)
-            .limit(to: 1)
-            .getDocuments()
-        
-        guard let document = snapshot.documents.first else {
-            return nil
-        }
-        
-        let dto = try document.data(as: BookDTO.self)
-        return dto.toDomain(id: document.documentID)
+    func getBooks() async throws -> [Book] {
+        return try await apiClient.getBooks()
+    }
+    
+    func getBooksByStatus(status: ReadingStatus) async throws -> [Book] {
+        let allBooks = try await getBooks()
+        return allBooks.filter { $0.status == status }
+    }
+    
+    func getBookByISBN(isbn: String) async throws -> Book? {
+        let allBooks = try await getBooks()
+        return allBooks.first { $0.isbn == isbn }
     }
     
     func createBook(_ book: Book) async throws -> Book {
-        let dto = BookDTO(from: book)
-        let encoder = Firestore.Encoder()
-        var data = try encoder.encode(dto)
-        
-        // サーバータイムスタンプを使用
-        data["createdAt"] = FieldValue.serverTimestamp()
-        data["updatedAt"] = FieldValue.serverTimestamp()
-        
-        // 新しいドキュメントを作成（IDは自動生成）
-        let docRef = db.collection(collectionName).document()
-        try await docRef.setData(data)
-        
-        // 作成されたドキュメントを取得して返す
-        let document = try await docRef.getDocument()
-        let createdDto = try document.data(as: BookDTO.self)
-        return createdDto.toDomain(id: document.documentID)
-    }
-    
-    func createBookWithId(_ book: Book) async throws -> Book {
-        let dto = BookDTO(from: book)
-        let encoder = Firestore.Encoder()
-        var data = try encoder.encode(dto)
-        
-        // サーバータイムスタンプを使用
-        data["createdAt"] = FieldValue.serverTimestamp()
-        data["updatedAt"] = FieldValue.serverTimestamp()
-        
-        // 指定されたIDでドキュメントを作成
-        try await db.collection(collectionName).document(book.id).setData(data)
-        
-        // 作成されたドキュメントを取得して返す
-        let document = try await db.collection(collectionName).document(book.id).getDocument()
-        let createdDto = try document.data(as: BookDTO.self)
-        return createdDto.toDomain(id: document.documentID)
+        return try await apiClient.createBook(book)
     }
     
     func updateBook(_ book: Book) async throws {
-        let dto = BookDTO(from: book)
-        let encoder = Firestore.Encoder()
-        var data = try encoder.encode(dto)
-        
-        // updatedAtのみサーバータイムスタンプで更新
-        data["updatedAt"] = FieldValue.serverTimestamp()
-        
-        try await db.collection(collectionName).document(book.id).setData(data, merge: true)
+        _ = try await apiClient.updateBook(book)
     }
+    
+    func deleteBook(bookId: String) async throws {
+        try await apiClient.deleteBook(id: bookId)
+    }
+    
+    // MARK: - Convenience Methods
     
     func deleteBook(_ bookId: String) async throws {
-        try await db.collection(collectionName).document(bookId).delete()
+        try await deleteBook(bookId: bookId)
     }
     
-    // MARK: - 検索機能（REST API経由）
-    
-    func searchPublicBooks(query: String, limit: Int = 20) async throws -> [Book] {
-        // REST API経由で検索
-        return try await BookSearchService.shared.searchPublicBooks(query: query, limit: limit)
+    // 読みたいリスト関連
+    func getWantToReadBooks() async throws -> [Book] {
+        return try await getBooksByStatus(status: .wantToRead)
     }
     
-    func getPopularBooks(limit: Int = 20) async throws -> [Book] {
-        // REST API経由で取得
-        return try await BookSearchService.shared.getPopularBooks(limit: limit)
+    // 統計用
+    func getCompletedBooksCount() async throws -> Int {
+        let books = try await getBooksByStatus(status: .completed)
+        return books.count
     }
     
-    func getRecentlyAddedBooks(limit: Int = 20) async throws -> [Book] {
-        // REST API経由で取得
-        return try await BookSearchService.shared.getRecentBooks(limit: limit)
+    func getReadingBooksCount() async throws -> Int {
+        let books = try await getBooksByStatus(status: .reading)
+        return books.count
     }
 }

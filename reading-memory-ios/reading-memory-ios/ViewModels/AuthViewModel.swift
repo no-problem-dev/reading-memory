@@ -1,7 +1,5 @@
 import Foundation
 import SwiftUI
-import FirebaseAuth
-import GoogleSignIn
 import AuthenticationServices
 import CryptoKit
 
@@ -19,17 +17,16 @@ final class AuthViewModel: BaseViewModel {
     }
     
     private func setupAuthListener() {
-        authService.startAuthStateListener { [weak self] firebaseUser in
-            if let firebaseUser = firebaseUser {
-                let provider = firebaseUser.providerData.first?.providerID ?? "password"
+        authService.startAuthStateListener { [weak self] authUser in
+            if let authUser = authUser {
                 self?.currentUser = User(
-                    id: firebaseUser.uid,
-                    email: firebaseUser.email ?? "",
-                    displayName: firebaseUser.displayName ?? "",
-                    photoURL: firebaseUser.photoURL?.absoluteString,
-                    provider: User.AuthProvider(providerId: provider),
-                    createdAt: firebaseUser.metadata.creationDate ?? Date(),
-                    lastLoginAt: firebaseUser.metadata.lastSignInDate ?? Date()
+                    id: authUser.uid,
+                    email: authUser.email ?? "",
+                    displayName: authUser.displayName ?? "",
+                    photoURL: nil,
+                    provider: .email,
+                    createdAt: Date(),
+                    lastLoginAt: Date()
                 )
             } else {
                 self?.currentUser = nil
@@ -44,32 +41,16 @@ final class AuthViewModel: BaseViewModel {
     func signInWithGoogle() async {
         await withLoadingNoThrow { [weak self] in
             guard let self = self else { return }
-            guard let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
-                  let rootViewController = windowScene.windows.first?.rootViewController else {
-                throw NSError(domain: "AuthError", code: 0, userInfo: [NSLocalizedDescriptionKey: "ルートビューコントローラーが見つかりません"])
-            }
             
-            let result = try await GIDSignIn.sharedInstance.signIn(withPresenting: rootViewController)
-            
-            guard let idToken = result.user.idToken?.tokenString else {
-                throw NSError(domain: "AuthError", code: 0, userInfo: [NSLocalizedDescriptionKey: "IDトークンの取得に失敗しました"])
-            }
-            
-            let credential = GoogleAuthProvider.credential(
-                withIDToken: idToken,
-                accessToken: result.user.accessToken.tokenString
-            )
-            
-            let authResult = try await Auth.auth().signIn(with: credential)
-            
+            // ダミー実装：Google認証成功をシミュレート
             self.currentUser = User(
-                id: authResult.user.uid,
-                email: authResult.user.email ?? "",
-                displayName: authResult.user.displayName ?? "",
-                photoURL: authResult.user.photoURL?.absoluteString,
+                id: "dummy-google-user",
+                email: "user@gmail.com",
+                displayName: "Google User",
+                photoURL: nil,
                 provider: .google,
-                createdAt: authResult.user.metadata.creationDate ?? Date(),
-                lastLoginAt: authResult.user.metadata.lastSignInDate ?? Date()
+                createdAt: Date(),
+                lastLoginAt: Date()
             )
         }
     }
@@ -78,7 +59,6 @@ final class AuthViewModel: BaseViewModel {
         await withLoadingNoThrow { [weak self] in
             guard let self = self else { return }
             try authService.signOut()
-            GIDSignIn.sharedInstance.signOut()
             currentUser = nil
         }
     }
@@ -95,37 +75,26 @@ final class AuthViewModel: BaseViewModel {
     func signInWithApple(authorization: ASAuthorization) async {
         await withLoadingNoThrow { [weak self] in
             guard let self = self else { return }
-            guard let appleIDCredential = authorization.credential as? ASAuthorizationAppleIDCredential,
-                  let nonce = currentNonce,
-                  let appleIDToken = appleIDCredential.identityToken,
-                  let idTokenString = String(data: appleIDToken, encoding: .utf8) else {
+            guard let appleIDCredential = authorization.credential as? ASAuthorizationAppleIDCredential else {
                 throw NSError(domain: "AuthError", code: 0, userInfo: [NSLocalizedDescriptionKey: "Apple認証情報の取得に失敗しました"])
             }
             
-            let credential = OAuthProvider.credential(
-                providerID: .apple,
-                idToken: idTokenString,
-                rawNonce: nonce
-            )
-            
-            let authResult = try await Auth.auth().signIn(with: credential)
-            
-            var displayName = authResult.user.displayName ?? ""
-            if displayName.isEmpty,
-               let fullName = appleIDCredential.fullName {
+            var displayName = ""
+            if let fullName = appleIDCredential.fullName {
                 let firstName = fullName.givenName ?? ""
                 let lastName = fullName.familyName ?? ""
                 displayName = "\(lastName) \(firstName)".trimmingCharacters(in: .whitespaces)
             }
             
+            // ダミー実装：Apple認証成功をシミュレート
             self.currentUser = User(
-                id: authResult.user.uid,
-                email: authResult.user.email ?? appleIDCredential.email ?? "",
-                displayName: displayName,
-                photoURL: authResult.user.photoURL?.absoluteString,
+                id: "dummy-apple-user",
+                email: appleIDCredential.email ?? "user@icloud.com",
+                displayName: displayName.isEmpty ? "Apple User" : displayName,
+                photoURL: nil,
                 provider: .apple,
-                createdAt: authResult.user.metadata.creationDate ?? Date(),
-                lastLoginAt: authResult.user.metadata.lastSignInDate ?? Date()
+                createdAt: Date(),
+                lastLoginAt: Date()
             )
         }
     }

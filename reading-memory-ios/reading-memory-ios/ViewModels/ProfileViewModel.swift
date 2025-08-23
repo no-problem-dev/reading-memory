@@ -1,12 +1,12 @@
 import Foundation
-import FirebaseAuth
+// import FirebaseAuth
 import PhotosUI
 import SwiftUI
 
 @Observable
 final class ProfileViewModel: BaseViewModel {
     private let userProfileRepository = UserProfileRepository.shared
-    private let userBookRepository = UserBookRepository.shared
+    private let bookRepository = BookRepository.shared
     private let bookChatRepository = BookChatRepository.shared
     
     var userProfile: UserProfile?
@@ -23,7 +23,7 @@ final class ProfileViewModel: BaseViewModel {
     var editIsPublic = false
     
     // キャッシュされたデータ
-    private var cachedUserBooks: [UserBook] = []
+    private var cachedBooks: [Book] = []
     
     struct ProfileStatistics {
         var totalBooks: Int = 0
@@ -59,34 +59,34 @@ final class ProfileViewModel: BaseViewModel {
         errorMessage = nil
         
         do {
-            guard let userId = Auth.auth().currentUser?.uid else {
+            guard let userId = await AuthService.shared.currentUser?.uid else {
                 throw AppError.authenticationRequired
             }
             
             // Load user profile
-            userProfile = try await userProfileRepository.getUserProfile(userId: userId)
+            userProfile = try await userProfileRepository.getUserProfile()
             
             // If profile doesn't exist, create one
             if userProfile == nil {
-                if let currentUser = Auth.auth().currentUser {
+                if let currentUser = await AuthService.shared.currentUser {
                     let user = User(
                         id: currentUser.uid,
                         email: currentUser.email ?? "",
                         displayName: currentUser.displayName ?? "",
                         photoURL: currentUser.photoURL?.absoluteString,
-                        provider: User.AuthProvider(providerId: currentUser.providerData.first?.providerID ?? ""),
-                        createdAt: currentUser.metadata.creationDate ?? Date(),
-                        lastLoginAt: currentUser.metadata.lastSignInDate ?? Date()
+                        provider: .email, // Default provider for dummy implementation
+                        createdAt: Date(), // Use current date for dummy
+                        lastLoginAt: Date() // Use current date for dummy
                     )
                     userProfile = try await userProfileRepository.createInitialProfile(for: user)
                 }
             }
             
             // ユーザーの本を取得してキャッシュ
-            cachedUserBooks = try await userBookRepository.getUserBooks(for: userId)
+            cachedBooks = try await bookRepository.getBooks()
             
             // Load statistics
-            await loadStatistics(userId: userId)
+            await loadStatistics()
             
             // Initialize edit form
             if let profile = userProfile {
@@ -108,19 +108,19 @@ final class ProfileViewModel: BaseViewModel {
     }
     
     @MainActor
-    private func loadStatistics(userId: String) async {
+    private func loadStatistics() async {
         do {
             // キャッシュされたデータを使用
-            let userBooks = cachedUserBooks
+            let books = cachedBooks
             
             // Calculate basic statistics
-            statistics.totalBooks = userBooks.count
-            statistics.completedBooks = userBooks.filter { $0.status == .completed }.count
-            statistics.readingBooks = userBooks.filter { $0.status == .reading }.count
-            statistics.wantToReadBooks = userBooks.filter { $0.status == .wantToRead }.count
+            statistics.totalBooks = books.count
+            statistics.completedBooks = books.filter { $0.status == .completed }.count
+            statistics.readingBooks = books.filter { $0.status == .reading }.count
+            statistics.wantToReadBooks = books.filter { $0.status == .wantToRead }.count
             
             // Calculate average rating
-            let ratedBooks = userBooks.filter { $0.rating != nil && $0.rating! > 0 }
+            let ratedBooks = books.filter { $0.rating != nil && $0.rating! > 0 }
             if !ratedBooks.isEmpty {
                 let totalRating = ratedBooks.reduce(0.0) { sum, book in sum + Double(book.rating!) }
                 statistics.averageRating = totalRating / Double(ratedBooks.count)
@@ -132,14 +132,14 @@ final class ProfileViewModel: BaseViewModel {
             let currentMonth = calendar.component(.month, from: now)
             let currentYear = calendar.component(.year, from: now)
             
-            statistics.booksThisMonth = userBooks.filter { book in
+            statistics.booksThisMonth = books.filter { book in
                 guard let completedDate = book.completedDate else { return false }
                 let bookMonth = calendar.component(.month, from: completedDate)
                 let bookYear = calendar.component(.year, from: completedDate)
                 return bookMonth == currentMonth && bookYear == currentYear
             }.count
             
-            statistics.booksThisYear = userBooks.filter { book in
+            statistics.booksThisYear = books.filter { book in
                 guard let completedDate = book.completedDate else { return false }
                 let bookYear = calendar.component(.year, from: completedDate)
                 return bookYear == currentYear

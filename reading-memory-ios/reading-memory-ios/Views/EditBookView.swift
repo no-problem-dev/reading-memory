@@ -2,8 +2,8 @@ import SwiftUI
 
 struct EditBookView: View {
     @Environment(\.dismiss) private var dismiss
-    let userBook: UserBook
-    let onSave: (UserBook) -> Void
+    let book: Book
+    let onSave: (Book) -> Void
     
     @State private var status: ReadingStatus
     @State private var rating: Double
@@ -17,18 +17,18 @@ struct EditBookView: View {
     @State private var showError = false
     @State private var errorMessage: String?
     
-    init(userBook: UserBook, onSave: @escaping (UserBook) -> Void) {
-        self.userBook = userBook
+    init(book: Book, onSave: @escaping (Book) -> Void) {
+        self.book = book
         self.onSave = onSave
         
-        _status = State(initialValue: userBook.status)
-        _rating = State(initialValue: userBook.rating ?? 3.0)
-        _hasRating = State(initialValue: userBook.rating != nil)
-        _startDate = State(initialValue: userBook.startDate ?? Date())
-        _hasStartDate = State(initialValue: userBook.startDate != nil)
-        _completedDate = State(initialValue: userBook.completedDate ?? Date())
-        _hasCompletedDate = State(initialValue: userBook.completedDate != nil)
-        _notes = State(initialValue: userBook.memo ?? "")
+        _status = State(initialValue: book.status)
+        _rating = State(initialValue: book.rating ?? 3.0)
+        _hasRating = State(initialValue: book.rating != nil)
+        _startDate = State(initialValue: book.startDate ?? Date())
+        _hasStartDate = State(initialValue: book.startDate != nil)
+        _completedDate = State(initialValue: book.completedDate ?? Date())
+        _hasCompletedDate = State(initialValue: book.completedDate != nil)
+        _notes = State(initialValue: book.memo ?? "")
     }
     
     var body: some View {
@@ -182,22 +182,21 @@ struct EditBookView: View {
         
         Task {
             do {
-                let updatedUserBook = userBook.updated(
+                let updatedBook = book.updated(
                     status: status,
                     rating: hasRating ? rating : nil,
-                    readingProgress: userBook.readingProgress,
-                    currentPage: userBook.currentPage,
+                    readingProgress: book.readingProgress,
+                    currentPage: book.currentPage,
                     startDate: hasStartDate ? startDate : nil,
                     completedDate: hasCompletedDate ? completedDate : nil,
                     memo: notes.isEmpty ? nil : notes,
-                    tags: userBook.tags,
-                    isPrivate: userBook.isPrivate
+                    tags: book.tags
                 )
                 
-                try await UserBookRepository.shared.updateUserBook(updatedUserBook)
+                try await BookRepository.shared.updateBook(updatedBook)
                 
                 await MainActor.run {
-                    onSave(updatedUserBook)
+                    onSave(updatedBook)
                     dismiss()
                 }
             } catch {
@@ -213,25 +212,16 @@ struct EditBookView: View {
 
 #Preview {
     EditBookView(
-        userBook: UserBook(
-            id: "test-id",
-            userId: "test-user",
-            bookId: "test-book",
-            bookTitle: "サンプルブック",
-            bookAuthor: "サンプル著者",
-            bookCoverImageUrl: nil,
-            bookIsbn: nil,
-            status: .reading,
-            rating: 4.0,
-            readingProgress: nil,
-            currentPage: nil,
-            startDate: Date(),
-            completedDate: nil,
-            memo: "サンプルメモ",
-            tags: [],
-            isPrivate: false,
-            createdAt: Date(),
-            updatedAt: Date()
+        book: Book.new(
+            isbn: nil,
+            title: "サンプルブック",
+            author: "サンプル著者",
+            publisher: nil,
+            publishedDate: nil,
+            pageCount: nil,
+            description: nil,
+            coverImageUrl: nil,
+            dataSource: .manual
         )
     ) { _ in }
 }

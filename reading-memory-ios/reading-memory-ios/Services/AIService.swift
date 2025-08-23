@@ -9,10 +9,9 @@ final class AIService {
     private init() {}
     
     /// AI応答を生成
-    func generateAIResponse(userId: String, userBookId: String, message: String) async throws -> String {
+    func generateAIResponse(bookId: String, message: String) async throws -> String {
         let result = try await apiClient.generateAIResponse(
-            userId: userId,
-            userBookId: userBookId,
+            bookId: bookId,
             message: message
         )
         
@@ -24,10 +23,9 @@ final class AIService {
     }
     
     /// 読書メモの要約を生成
-    func generateBookSummary(userId: String, userBookId: String) async throws -> String {
+    func generateBookSummary(bookId: String) async throws -> String {
         let result = try await apiClient.generateBookSummary(
-            userId: userId,
-            userBookId: userBookId
+            bookId: bookId
         )
         
         guard result.success else {

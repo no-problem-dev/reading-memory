@@ -1,5 +1,5 @@
 import Foundation
-import FirebaseAuth
+// import FirebaseAuth
 
 @Observable
 class StreakViewModel: BaseViewModel {
@@ -14,7 +14,9 @@ class StreakViewModel: BaseViewModel {
     var recentActivities: [ReadingActivity] = []
     
     private var userId: String? {
-        Auth.auth().currentUser?.uid
+        // Note: This computed property can't be async, so we'll need to handle this differently
+        // For now, return nil and handle user ID in the async methods
+        return nil
     }
     
     override init() {
@@ -42,7 +44,7 @@ class StreakViewModel: BaseViewModel {
         
         do {
             // すべてのストリークを取得
-            streaks = try await streakRepository.getAllStreaks(userId: userId)
+            streaks = try await streakRepository.getAllStreaks()
             
             // タイプ別に分類
             combinedStreak = streaks.first { $0.type == .combined }
@@ -60,7 +62,6 @@ class StreakViewModel: BaseViewModel {
             let endDate = Date()
             let startDate = Calendar.current.date(byAdding: .day, value: -30, to: endDate) ?? endDate
             recentActivities = try await activityRepository.getActivitiesInRange(
-                userId: userId,
                 startDate: startDate,
                 endDate: endDate
             )
@@ -80,7 +81,6 @@ class StreakViewModel: BaseViewModel {
         
         do {
             try await streakRepository.recordActivity(
-                userId: userId,
                 type: type,
                 date: date
             )
@@ -98,7 +98,7 @@ class StreakViewModel: BaseViewModel {
         
         do {
             // 本の読書アクティビティを記録
-            try await activityRepository.recordBookRead(userId: userId)
+            try await activityRepository.recordBookRead()
             
             // キャッシュを無効化して再読み込み
             forceRefresh()
@@ -113,7 +113,7 @@ class StreakViewModel: BaseViewModel {
         
         do {
             // メモ作成アクティビティを記録
-            try await activityRepository.recordMemoWritten(userId: userId)
+            try await activityRepository.recordMemoWritten()
             
             // キャッシュを無効化して再読み込み
             forceRefresh()
@@ -148,10 +148,7 @@ class StreakViewModel: BaseViewModel {
         guard let userId = userId else { return (0, 0, 0) }
         
         do {
-            return try await activityRepository.getActivitySummary(
-                userId: userId,
-                days: days
-            )
+            return try await activityRepository.getActivitySummary(days: days)
         } catch {
             print("アクティビティサマリーの取得に失敗: \(error)")
             return (0, 0, 0)
@@ -172,7 +169,6 @@ class StreakViewModel: BaseViewModel {
         
         do {
             let activities = try await activityRepository.getActivitiesInRange(
-                userId: userId,
                 startDate: startDate,
                 endDate: endDate
             )

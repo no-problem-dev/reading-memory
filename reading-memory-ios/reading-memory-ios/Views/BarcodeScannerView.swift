@@ -11,6 +11,7 @@ struct BarcodeScannerView: View {
     @State private var errorMessage = ""
     @State private var showBookRegistration = false
     @State private var foundBook: Book?
+    private let authService = AuthService.shared
     
     var body: some View {
         NavigationStack {
@@ -133,12 +134,17 @@ struct BarcodeScannerView: View {
                     showBookRegistration = true
                 } else {
                     // 見つからない場合は手動入力を促す
-                    let manualBook = Book.new(
+                    guard let userId = authService.currentUser?.uid else { return }
+                    let manualBook = Book(
+                        id: UUID().uuidString,
                         isbn: isbn,
                         title: "",
                         author: "",
                         dataSource: .manual,
-                        visibility: .private
+                        status: .wantToRead,
+                        addedDate: Date(),
+                        createdAt: Date(),
+                        updatedAt: Date()
                     )
                     foundBook = manualBook
                     showBookRegistration = true
@@ -147,7 +153,7 @@ struct BarcodeScannerView: View {
         }
     }
     
-    private func parseBookInfo(from data: [String: Any]) -> Book? {
+    private func parseBookInfo(from data: [String: Any], dataSource: BookDataSource = .manual) -> Book? {
         guard let isbn = data["isbn"] as? String,
               let title = data["title"] as? String,
               let author = data["author"] as? String else {
@@ -166,7 +172,9 @@ struct BarcodeScannerView: View {
             publishedDate = formatter.date(from: dateString)
         }
         
-        return Book.new(
+        guard let userId = AuthService.shared.currentUser?.uid else { return nil }
+        return Book(
+            id: UUID().uuidString,
             isbn: isbn,
             title: title,
             author: author,
@@ -174,7 +182,12 @@ struct BarcodeScannerView: View {
             publishedDate: publishedDate,
             pageCount: pageCount,
             description: description,
-            coverImageUrl: coverUrl
+            coverImageUrl: coverUrl,
+            dataSource: dataSource,
+            status: .wantToRead,
+            addedDate: Date(),
+            createdAt: Date(),
+            updatedAt: Date()
         )
     }
     

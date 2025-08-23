@@ -102,11 +102,16 @@ struct BookSearchView: View {
                 .foregroundColor(.secondary)
             
             Button(action: {
-                selectedBook = Book.new(
+                guard let userId = AuthService.shared.currentUser?.uid else { return }
+                selectedBook = Book(
+                    id: UUID().uuidString,
                     title: "",
                     author: "",
                     dataSource: .manual,
-                    visibility: .private
+                    status: .wantToRead,
+                    addedDate: Date(),
+                    createdAt: Date(),
+                    updatedAt: Date()
                 )
                 showingRegistration = true
             }) {
@@ -239,10 +244,10 @@ struct BookSearchResultRow: View {
     }
     
     private var dataSourceColor: Color {
-        switch book.visibility {
-        case .public:
+        switch book.dataSource {
+        case .googleBooks, .openBD, .rakutenBooks:
             return .blue
-        case .private:
+        case .manual:
             return .gray
         }
     }

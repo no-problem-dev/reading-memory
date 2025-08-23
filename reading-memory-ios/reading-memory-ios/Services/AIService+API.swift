@@ -4,10 +4,9 @@ import Foundation
 extension AIService {
     
     /// AI応答を生成 (REST API版)
-    func generateAIResponseAPI(userId: String, userBookId: String, message: String) async throws -> String {
+    func generateAIResponseAPI(bookId: String, message: String) async throws -> String {
         let result = try await APIClient.shared.generateAIResponse(
-            userId: userId,
-            userBookId: userBookId,
+            bookId: bookId,
             message: message
         )
         
@@ -19,10 +18,9 @@ extension AIService {
     }
     
     /// 読書メモの要約を生成 (REST API版)
-    func generateBookSummaryAPI(userId: String, userBookId: String) async throws -> String {
+    func generateBookSummaryAPI(bookId: String) async throws -> String {
         let result = try await APIClient.shared.generateBookSummary(
-            userId: userId,
-            userBookId: userBookId
+            bookId: bookId
         )
         
         guard result.success else {

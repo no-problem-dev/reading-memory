@@ -1,5 +1,4 @@
 import Foundation
-import FirebaseAuth
 
 enum DeleteAccountError: Error, LocalizedError {
     case authenticationRequired
@@ -21,61 +20,56 @@ enum DeleteAccountError: Error, LocalizedError {
     }
 }
 
+// ダミーのAuthUser型
+class AuthUser {
+    let uid: String = "dummy-user-id"
+    let email: String? = "user@example.com"
+    let displayName: String? = "Test User"
+    let photoURL: URL? = nil
+    let isAnonymous: Bool = false
+    
+    func getIDToken() -> String {
+        // ダミーのIDトークンを返す
+        return "dummy-id-token"
+    }
+    
+    func reload() async throws {
+        // 何もしない
+    }
+    
+    func delete() async throws {
+        // 何もしない
+    }
+}
+
 @MainActor
 final class AuthService {
     static let shared = AuthService()
     
-    private var authStateListener: AuthStateDidChangeListenerHandle?
+    private var _currentUser: AuthUser? = AuthUser() // デフォルトでログイン状態
     
-    var currentUser: FirebaseAuth.User? {
-        return Auth.auth().currentUser
+    var currentUser: AuthUser? {
+        return _currentUser
     }
     
     private init() {}
     
-    func startAuthStateListener(_ handler: @escaping (FirebaseAuth.User?) -> Void) {
-        authStateListener = Auth.auth().addStateDidChangeListener { _, user in
-            handler(user)
-        }
+    func startAuthStateListener(_ handler: @escaping (AuthUser?) -> Void) {
+        // 即座に現在のユーザーを返す
+        handler(_currentUser)
     }
     
     func stopAuthStateListener() {
-        if let listener = authStateListener {
-            Auth.auth().removeStateDidChangeListener(listener)
-            authStateListener = nil
-        }
+        // 何もしない
     }
     
     func signOut() throws {
-        try Auth.auth().signOut()
+        _currentUser = nil
     }
     
-    func deleteAccount() async throws -> DeleteAccountResult {
-        do {
-            let result = try await APIClient.shared.deleteAccount()
-            return DeleteAccountResult(
-                success: result.success,
-                deletedCollections: result.deletedCollections,
-                errors: result.errors
-            )
-        } catch let error as AppError {
-            // AppErrorをDeleteAccountErrorに変換
-            switch error {
-            case .authenticationRequired:
-                throw DeleteAccountError.authenticationRequired
-            case .permissionDenied:
-                throw DeleteAccountError.permissionDenied
-            case .custom(let message):
-                if message.contains("認証") {
-                    throw DeleteAccountError.authenticationRequired
-                } else {
-                    throw DeleteAccountError.serverError
-                }
-            default:
-                throw DeleteAccountError.serverError
-            }
-        } catch {
-            throw DeleteAccountError.serverError
-        }
+    func deleteAccount() async throws {
+        let apiClient = APIClient.shared
+        _ = try await apiClient.deleteAccount()
+        _currentUser = nil
     }
 }

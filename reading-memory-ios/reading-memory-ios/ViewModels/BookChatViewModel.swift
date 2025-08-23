@@ -1,7 +1,8 @@
 import Foundation
-import FirebaseFirestore
-import FirebaseAuth
-import FirebaseStorage
+// TODO: Remove Firebase dependency
+// import FirebaseFirestore
+// import FirebaseAuth
+// import FirebaseStorage
 import UIKit
 
 @MainActor
@@ -9,7 +10,7 @@ import UIKit
 final class BookChatViewModel: BaseViewModel {
     var chats: [BookChat] = []
     
-    let userBook: UserBook
+    let book: Book
     private let repository = BookChatRepository.shared
     private let authService = AuthService.shared
     private let aiService = AIService.shared
@@ -18,71 +19,61 @@ final class BookChatViewModel: BaseViewModel {
     
     var isAIEnabled = false // AI機能の有効/無効フラグ
     
-    init(userBook: UserBook) {
-        self.userBook = userBook
+    init(book: Book) {
+        self.book = book
         super.init()
     }
     
     func loadChats() async {
         await withLoadingNoThrow { [weak self] in
-            guard let self = self,
-                  let userId = self.authService.currentUser?.uid else {
-                throw AppError.authenticationRequired
-            }
+            guard let self = self else { return }
             
             self.chats = try await self.repository.getChats(
-                userId: userId,
-                userBookId: self.userBook.id
+                bookId: self.book.id
             )
         }
     }
     
     func sendMessage(_ message: String, image: UIImage? = nil) async {
-        guard let userId = authService.currentUser?.uid else {
-            handleError(AppError.authenticationRequired)
-            return
-        }
-        
         do {
             var imageUrl: String? = nil
             
             // 画像がある場合はアップロード
             if let image = image {
-                imageUrl = try await uploadChatImage(image: image, userId: userId)
+                imageUrl = try await uploadChatImage(image: image)
             }
             
             let chat = BookChat.new(
-                userBookId: userBook.id,
-                userId: userId,
+                bookId: book.id,
                 message: message,
                 imageUrl: imageUrl
             )
             
-            let newChat = try await repository.addChat(chat, userId: userId)
+            let newChat = try await repository.addChat(chat)
             // リアルタイム同期がある場合は手動追加しない
             if listener == nil {
                 chats.append(newChat)
             }
             
             // アクティビティを記録（メモ作成）
-            try? await activityRepository.recordMemoWritten(userId: userId)
+            try? await activityRepository.recordMemoWritten()
             
             // AI応答を生成（有効な場合のみ）
             if isAIEnabled && !message.isEmpty {
-                await generateAIResponse(for: message, userId: userId)
+                await generateAIResponse(for: message)
             }
         } catch {
             handleError(error)
         }
     }
     
-    private func uploadChatImage(image: UIImage, userId: String) async throws -> String {
+    private func uploadChatImage(image: UIImage) async throws -> String {
         let storageService = StorageService.shared
         let photoId = UUID().uuidString
         
         return try await storageService.uploadImage(
             image,
-            path: .chatPhoto(userId: userId, bookId: userBook.id, photoId: photoId)
+            path: .chatPhoto(bookId: book.id, photoId: photoId)
         )
     }
     
@@ -91,12 +82,11 @@ final class BookChatViewModel: BaseViewModel {
         showError = true
     }
     
-    private func generateAIResponse(for message: String, userId: String) async {
+    private func generateAIResponse(for message: String) async {
         do {
             // AI応答を生成
             _ = try await aiService.generateAIResponse(
-                userId: userId,
-                userBookId: userBook.id,
+                bookId: book.id,
                 message: message
             )
             
@@ -113,14 +103,8 @@ final class BookChatViewModel: BaseViewModel {
     }
     
     func startListening() {
-        guard let userId = authService.currentUser?.uid else {
-            handleError(AppError.authenticationRequired)
-            return
-        }
-        
         listener = repository.listenToChats(
-            userId: userId,
-            userBookId: userBook.id
+            bookId: book.id
         ) { [weak self] result in
             DispatchQueue.main.async {
                 switch result {
@@ -139,16 +123,10 @@ final class BookChatViewModel: BaseViewModel {
     }
     
     func deleteChat(_ chat: BookChat) async {
-        guard let userId = authService.currentUser?.uid else {
-            handleError(AppError.authenticationRequired)
-            return
-        }
-        
         do {
             try await repository.deleteChat(
                 chatId: chat.id,
-                userId: userId,
-                userBookId: userBook.id
+                bookId: book.id
             )
             
             // リアルタイム同期がない場合は手動で削除

@@ -1,104 +1,65 @@
 import Foundation
-import FirebaseFirestore
-import FirebaseAuth
 
 protocol GoalRepositoryProtocol {
     func createGoal(_ goal: ReadingGoal) async throws
     func updateGoal(_ goal: ReadingGoal) async throws
-    func deleteGoal(goalId: String, userId: String) async throws
-    func getGoal(goalId: String, userId: String) async throws -> ReadingGoal?
-    func getActiveGoals(userId: String) async throws -> [ReadingGoal]
-    func getAllGoals(userId: String) async throws -> [ReadingGoal]
-    func updateGoalProgress(goalId: String, userId: String, newValue: Int) async throws
+    func deleteGoal(goalId: String) async throws
+    func getGoal(goalId: String) async throws -> ReadingGoal?
+    func getActiveGoals() async throws -> [ReadingGoal]
+    func getAllGoals() async throws -> [ReadingGoal]
+    func updateGoalProgress(goalId: String, newValue: Int) async throws
 }
 
 class GoalRepository: GoalRepositoryProtocol {
     static let shared = GoalRepository()
-    private let db = Firestore.firestore()
+    private let apiClient = APIClient.shared
     
-    private init() {
-    }
+    private init() {}
     
     func createGoal(_ goal: ReadingGoal) async throws {
-        let document = db.collection("users")
-            .document(goal.userId)
-            .collection("goals")
-            .document(goal.id)
-        
-        try document.setData(from: goal)
+        _ = try await apiClient.createGoal(goal)
     }
     
     func updateGoal(_ goal: ReadingGoal) async throws {
-        let document = db.collection("users")
-            .document(goal.userId)
-            .collection("goals")
-            .document(goal.id)
+        _ = try await apiClient.updateGoal(goal)
+    }
+    
+    func deleteGoal(goalId: String) async throws {
+        try await apiClient.deleteGoal(id: goalId)
+    }
+    
+    func getGoal(goalId: String) async throws -> ReadingGoal? {
+        let goals = try await apiClient.getGoals()
+        return goals.first { $0.id == goalId }
+    }
+    
+    func getActiveGoals() async throws -> [ReadingGoal] {
+        let goals = try await apiClient.getGoals()
+        let now = Date()
+        return goals.filter { goal in
+            goal.isActive && goal.endDate > now
+        }
+    }
+    
+    func getAllGoals() async throws -> [ReadingGoal] {
+        return try await apiClient.getGoals()
+    }
+    
+    func updateGoalProgress(goalId: String, newValue: Int) async throws {
+        guard let goal = try await getGoal(goalId: goalId) else {
+            throw AppError.custom("目標が見つかりません")
+        }
         
         var updatedGoal = goal
+        updatedGoal.currentValue = newValue
         updatedGoal.updatedAt = Date()
         
-        try document.setData(from: updatedGoal)
-    }
-    
-    func deleteGoal(goalId: String, userId: String) async throws {
-        let document = db.collection("users")
-            .document(userId)
-            .collection("goals")
-            .document(goalId)
-        
-        try await document.delete()
-    }
-    
-    func getGoal(goalId: String, userId: String) async throws -> ReadingGoal? {
-        let document = db.collection("users")
-            .document(userId)
-            .collection("goals")
-            .document(goalId)
-        
-        let snapshot = try await document.getDocument()
-        return try? snapshot.data(as: ReadingGoal.self)
-    }
-    
-    func getActiveGoals(userId: String) async throws -> [ReadingGoal] {
-        let query = db.collection("users")
-            .document(userId)
-            .collection("goals")
-            .whereField("isActive", isEqualTo: true)
-            .whereField("endDate", isGreaterThan: Date())
-        
-        let snapshot = try await query.getDocuments()
-        return snapshot.documents.compactMap { document in
-            try? document.data(as: ReadingGoal.self)
-        }
-    }
-    
-    func getAllGoals(userId: String) async throws -> [ReadingGoal] {
-        let query = db.collection("users")
-            .document(userId)
-            .collection("goals")
-            .order(by: "createdAt", descending: true)
-        
-        let snapshot = try await query.getDocuments()
-        return snapshot.documents.compactMap { document in
-            try? document.data(as: ReadingGoal.self)
-        }
-    }
-    
-    func updateGoalProgress(goalId: String, userId: String, newValue: Int) async throws {
-        let document = db.collection("users")
-            .document(userId)
-            .collection("goals")
-            .document(goalId)
-        
-        try await document.updateData([
-            "currentValue": newValue,
-            "updatedAt": FieldValue.serverTimestamp()
-        ])
+        try await updateGoal(updatedGoal)
     }
     
     // Helper method to calculate current progress based on period
-    func calculateCurrentProgress(for goal: ReadingGoal, userBooks: [UserBook]) -> Int {
-        let completedBooks = userBooks.filter { book in
+    func calculateCurrentProgress(for goal: ReadingGoal, books: [Book]) -> Int {
+        let completedBooks = books.filter { book in
             guard book.status == .completed,
                   let completedDate = book.completedDate else { return false }
             

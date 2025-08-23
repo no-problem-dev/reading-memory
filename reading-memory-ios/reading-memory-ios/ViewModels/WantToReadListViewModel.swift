@@ -3,10 +3,10 @@ import Observation
 
 @Observable
 class WantToReadListViewModel {
-    private let userBookRepository: UserBookRepositoryProtocol
+    private let bookRepository: BookRepository
     private let authService = AuthService.shared
     
-    private(set) var books: [UserBook] = []
+    private(set) var books: [Book] = []
     private(set) var isLoading = false
     private(set) var error: Error?
     
@@ -36,8 +36,8 @@ class WantToReadListViewModel {
         }
     }
     
-    init(userBookRepository: UserBookRepositoryProtocol) {
-        self.userBookRepository = userBookRepository
+    init(bookRepository: BookRepository = BookRepository.shared) {
+        self.bookRepository = bookRepository
     }
     
     @MainActor
@@ -52,8 +52,8 @@ class WantToReadListViewModel {
         }
         
         do {
-            let allBooks = try await userBookRepository.getUserBooks(for: userId)
-            self.books = allBooks.filter { $0.status == .wantToRead }
+            let allBooks = try await bookRepository.getBooks()
+            self.books = allBooks.filter { $0.status == ReadingStatus.wantToRead }
             sortBooks()
         } catch {
             self.error = error
@@ -71,7 +71,7 @@ class WantToReadListViewModel {
         let updatedBook = book.updated(priority: priority)
         
         do {
-            try await userBookRepository.updateUserBook(updatedBook)
+            try await bookRepository.updateBook(updatedBook)
             books[index] = updatedBook
             sortBooks()
         } catch {
@@ -88,7 +88,7 @@ class WantToReadListViewModel {
         let updatedBook = book.updated(plannedReadingDate: date)
         
         do {
-            try await userBookRepository.updateUserBook(updatedBook)
+            try await bookRepository.updateBook(updatedBook)
             books[index] = updatedBook
             if sortOption == .plannedDate {
                 sortBooks()
@@ -107,7 +107,7 @@ class WantToReadListViewModel {
         let updatedBook = book.updated(reminderEnabled: !book.reminderEnabled)
         
         do {
-            try await userBookRepository.updateUserBook(updatedBook)
+            try await bookRepository.updateBook(updatedBook)
             books[index] = updatedBook
         } catch {
             self.error = error
@@ -123,7 +123,7 @@ class WantToReadListViewModel {
         let updatedBook = book.updated(purchaseLinks: links)
         
         do {
-            try await userBookRepository.updateUserBook(updatedBook)
+            try await bookRepository.updateBook(updatedBook)
             books[index] = updatedBook
         } catch {
             self.error = error
@@ -142,7 +142,7 @@ class WantToReadListViewModel {
         )
         
         do {
-            try await userBookRepository.updateUserBook(updatedBook)
+            try await bookRepository.updateBook(updatedBook)
             // 読書中になったら、リストから削除
             books.remove(at: index)
         } catch {
@@ -154,9 +154,13 @@ class WantToReadListViewModel {
     @MainActor
     func deleteBook(bookId: String) async {
         guard let index = books.firstIndex(where: { $0.id == bookId }) else { return }
+        let book = books[index]
         
         do {
-            try await userBookRepository.deleteUserBook(bookId)
+            guard let userId = authService.currentUser?.uid else {
+                throw AppError.authenticationRequired
+            }
+            try await bookRepository.deleteBook(bookId: book.id)
             books.remove(at: index)
         } catch {
             self.error = error
@@ -177,7 +181,7 @@ class WantToReadListViewModel {
             // 非同期でサーバーに反映
             Task {
                 do {
-                    try await userBookRepository.updateUserBook(updatedBook)
+                    try await bookRepository.updateBook(updatedBook)
                 } catch {
                     print("Error updating book priority: \(error)")
                 }
@@ -197,14 +201,14 @@ class WantToReadListViewModel {
                 } else if book2.priority != nil {
                     return false
                 } else {
-                    return book1.addedToWantListDate ?? book1.createdAt > book2.addedToWantListDate ?? book2.createdAt
+                    return book1.addedDate > book2.addedDate
                 }
             }
         case .addedDate:
             // 追加日順（新しい順）
             books.sort { book1, book2 in
-                let date1 = book1.addedToWantListDate ?? book1.createdAt
-                let date2 = book2.addedToWantListDate ?? book2.createdAt
+                let date1 = book1.addedDate
+                let date2 = book2.addedDate
                 return date1 > date2
             }
         case .plannedDate:
@@ -217,12 +221,12 @@ class WantToReadListViewModel {
                 } else if book2.plannedReadingDate != nil {
                     return false
                 } else {
-                    return book1.addedToWantListDate ?? book1.createdAt > book2.addedToWantListDate ?? book2.createdAt
+                    return book1.addedDate > book2.addedDate
                 }
             }
         case .title:
             // タイトル順
-            books.sort { $0.bookTitle < $1.bookTitle }
+            books.sort { $0.title < $1.title }
         }
     }
 }

@@ -1,9 +1,7 @@
 import Foundation
-import FirebaseFirestore
 
 struct ReadingGoal: Identifiable, Codable {
     let id: String
-    let userId: String
     let type: GoalType
     let targetValue: Int
     var currentValue: Int
@@ -30,7 +28,6 @@ struct ReadingGoal: Identifiable, Codable {
     
     enum CodingKeys: String, CodingKey {
         case id
-        case userId
         case type
         case targetValue
         case currentValue
@@ -43,7 +40,6 @@ struct ReadingGoal: Identifiable, Codable {
     }
     
     init(id: String = UUID().uuidString,
-         userId: String,
          type: GoalType,
          targetValue: Int,
          currentValue: Int = 0,
@@ -54,7 +50,6 @@ struct ReadingGoal: Identifiable, Codable {
          createdAt: Date = Date(),
          updatedAt: Date = Date()) {
         self.id = id
-        self.userId = userId
         self.type = type
         self.targetValue = targetValue
         self.currentValue = currentValue
@@ -111,14 +106,13 @@ struct ReadingGoal: Identifiable, Codable {
         }
     }
     
-    static func createYearlyGoal(userId: String, targetBooks: Int) -> ReadingGoal {
+    static func createYearlyGoal(targetBooks: Int) -> ReadingGoal {
         let calendar = Calendar.current
         let now = Date()
         let startOfYear = calendar.dateInterval(of: .year, for: now)?.start ?? now
         let endOfYear = calendar.dateInterval(of: .year, for: now)?.end ?? now
         
         return ReadingGoal(
-            userId: userId,
             type: .bookCount,
             targetValue: targetBooks,
             period: .yearly,
@@ -127,14 +121,13 @@ struct ReadingGoal: Identifiable, Codable {
         )
     }
     
-    static func createMonthlyGoal(userId: String, targetBooks: Int) -> ReadingGoal {
+    static func createMonthlyGoal(targetBooks: Int) -> ReadingGoal {
         let calendar = Calendar.current
         let now = Date()
         let startOfMonth = calendar.dateInterval(of: .month, for: now)?.start ?? now
         let endOfMonth = calendar.dateInterval(of: .month, for: now)?.end ?? now
         
         return ReadingGoal(
-            userId: userId,
             type: .bookCount,
             targetValue: targetBooks,
             period: .monthly,

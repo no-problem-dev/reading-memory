@@ -1,45 +1,26 @@
 import Foundation
-import FirebaseFirestore
-import FirebaseAuth
 
-final class UserProfileRepository: BaseRepository {
-    typealias T = UserProfile
-    let collectionName = "userProfiles"
-    
+final class UserProfileRepository {
     static let shared = UserProfileRepository()
+    
+    private let apiClient = APIClient.shared
     
     private init() {}
     
-    func getUserProfile(userId: String) async throws -> UserProfile? {
-        let document = try await db.collection(collectionName).document(userId).getDocument()
-        return try documentToModel(document)
+    func getUserProfile() async throws -> UserProfile? {
+        return try await apiClient.getUserProfile()
     }
     
     func createUserProfile(_ profile: UserProfile) async throws -> UserProfile {
-        let data = try modelToData(profile)
-        try await db.collection(collectionName).document(profile.id).setData(data)
-        return profile
+        return try await apiClient.createUserProfile(profile)
     }
     
     func updateUserProfile(_ profile: UserProfile) async throws {
-        let updatedProfile = UserProfile(
-            id: profile.id,
-            displayName: profile.displayName,
-            profileImageUrl: profile.profileImageUrl,
-            bio: profile.bio,
-            favoriteGenres: profile.favoriteGenres,
-            readingGoal: profile.readingGoal,
-            isPublic: profile.isPublic,
-            createdAt: profile.createdAt,
-            updatedAt: Date()
-        )
-        
-        let data = try modelToData(updatedProfile)
-        try await db.collection(collectionName).document(profile.id).setData(data, merge: true)
+        _ = try await apiClient.updateUserProfile(profile)
     }
     
-    func deleteUserProfile(userId: String) async throws {
-        try await db.collection(collectionName).document(userId).delete()
+    func deleteUserProfile() async throws {
+        try await apiClient.deleteUserProfile()
     }
     
     func createInitialProfile(for user: User) async throws -> UserProfile {

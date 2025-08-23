@@ -64,8 +64,7 @@ extension GoogleBookItem {
             pageCount: volumeInfo.pageCount,
             description: volumeInfo.description,
             coverImageUrl: volumeInfo.coverImageUrl,
-            dataSource: .googleBooks,
-            visibility: .public
+            dataSource: .googleBooks
         )
     }
     

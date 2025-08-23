@@ -1,6 +1,6 @@
 import SwiftUI
 import PhotosUI
-import FirebaseStorage
+// import FirebaseStorage
 
 @Observable
 class OnboardingViewModel {
@@ -14,7 +14,7 @@ class OnboardingViewModel {
     
     var authViewModel: AuthViewModel
     private let userProfileRepository = UserProfileRepository.shared
-    private let userBookRepository = UserBookRepository.shared
+    private let bookRepository = BookRepository.shared
     private let goalRepository = GoalRepository.shared
     
     init(authViewModel: AuthViewModel) {
@@ -55,31 +55,44 @@ class OnboardingViewModel {
             _ = try await userProfileRepository.createUserProfile(profile)
             
             // 3. Create monthly reading goal
-            let goal = ReadingGoal.createMonthlyGoal(
-                userId: currentUser.id,
-                targetBooks: monthlyGoal
-            )
+            let goal = ReadingGoal.createMonthlyGoal(targetBooks: monthlyGoal)
             
             try await goalRepository.createGoal(goal)
             
             // 4. Add first book if selected
-            if let book = firstBook {
-                let userBook = UserBook(
+            if let selectedBook = firstBook {
+                let book = Book(
                     id: UUID().uuidString,
-                    userId: currentUser.id,
-                    bookTitle: book.title,
-                    bookAuthor: book.author,
-                    bookCoverImageUrl: book.coverImageUrl,
-                    bookIsbn: book.isbn,
+                    isbn: selectedBook.isbn,
+                    title: selectedBook.title,
+                    author: selectedBook.author,
+                    publisher: selectedBook.publisher,
+                    publishedDate: selectedBook.publishedDate,
+                    pageCount: selectedBook.pageCount,
+                    description: selectedBook.description,
+                    coverImageUrl: selectedBook.coverImageUrl,
+                    dataSource: selectedBook.dataSource,
                     status: .reading,
-                    tags: [],
-                    isPrivate: false,
+                    rating: nil,
+                    readingProgress: nil,
+                    currentPage: nil,
+                    addedDate: Date(),
+                    startDate: Date(),
+                    completedDate: nil,
+                    lastReadDate: nil,
+                    priority: nil,
+                    plannedReadingDate: nil,
                     reminderEnabled: false,
+                    purchaseLinks: nil,
+                    memo: nil,
+                    tags: [],
+                    aiSummary: nil,
+                    summaryGeneratedAt: nil,
                     createdAt: Date(),
                     updatedAt: Date()
                 )
                 
-                _ = try await userBookRepository.createUserBook(userBook)
+                _ = try await bookRepository.createBook(book)
             }
             
             isLoading = false
@@ -93,20 +106,10 @@ class OnboardingViewModel {
     }
     
     private func uploadProfileImage(image: UIImage, userId: String) async throws -> String {
-        guard let imageData = image.jpegData(compressionQuality: 0.8) else {
-            throw AppError.imageUploadFailed
-        }
-        
-        let storage = Storage.storage()
-        let storageRef = storage.reference()
-        let profileImageRef = storageRef.child("profile_images/\(userId).jpg")
-        
-        let metadata = StorageMetadata()
-        metadata.contentType = "image/jpeg"
-        
-        _ = try await profileImageRef.putDataAsync(imageData, metadata: metadata)
-        let downloadURL = try await profileImageRef.downloadURL()
-        
-        return downloadURL.absoluteString
+        let storageService = StorageService.shared
+        return try await storageService.uploadImage(
+            image,
+            path: .profileImage(userId: userId)
+        )
     }
 }

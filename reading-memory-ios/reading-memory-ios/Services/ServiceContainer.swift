@@ -1,5 +1,6 @@
 import Foundation
-import FirebaseFirestore
+// TODO: Remove Firebase dependency
+// import FirebaseFirestore
 
 final class ServiceContainer {
     static let shared = ServiceContainer()
@@ -8,7 +9,6 @@ final class ServiceContainer {
     
     // Repositories
     private lazy var bookRepository = BookRepository.shared
-    private lazy var userBookRepository = UserBookRepository.shared
     private lazy var bookChatRepository = BookChatRepository.shared
     private lazy var userProfileRepository = UserProfileRepository.shared
     
@@ -24,8 +24,8 @@ final class ServiceContainer {
     }
     
     @MainActor
-    func makeBookDetailViewModel(userBook: UserBook) -> BookDetailViewModel {
-        return BookDetailViewModel(userBook: userBook)
+    func makeBookDetailViewModel(book: Book) -> BookDetailViewModel {
+        return BookDetailViewModel(book: book)
     }
     
     @MainActor
@@ -39,17 +39,13 @@ final class ServiceContainer {
     }
     
     @MainActor
-    func makeBookChatViewModel(userBook: UserBook) -> BookChatViewModel {
-        return BookChatViewModel(userBook: userBook)
+    func makeBookChatViewModel(book: Book) -> BookChatViewModel {
+        return BookChatViewModel(book: book)
     }
     
     // Repository accessors
     func getBookRepository() -> BookRepository {
         return bookRepository
-    }
-    
-    func getUserBookRepository() -> UserBookRepository {
-        return userBookRepository
     }
     
     func getBookChatRepository() -> BookChatRepository {
@@ -67,28 +63,15 @@ final class ServiceContainer {
 class BookListViewModel: BaseViewModel {
     private let authService = AuthService.shared
     private let bookRepository = BookRepository.shared
-    private let userBookRepository = UserBookRepository.shared
     
-    var userBooks: [(userBook: UserBook, book: Book)] = []
+    var books: [Book] = []
     
-    func loadUserBooks() async {
+    func loadBooks() async {
         await withLoadingNoThrow { [weak self] in
-            guard let self = self,
-                  let userId = self.authService.currentUser?.uid else {
-                throw AppError.authenticationRequired
-            }
+            guard let self = self else { return }
             
-            let userBooksList = try await self.userBookRepository.getUserBooks(for: userId)
-            var booksData: [(UserBook, Book)] = []
-            
-            for userBook in userBooksList {
-                if let bookId = userBook.bookId,
-                   let book = try await self.bookRepository.getBook(by: bookId) {
-                    booksData.append((userBook, book))
-                }
-            }
-            
-            self.userBooks = booksData.sorted { $0.0.updatedAt > $1.0.updatedAt }
+            let booksList = try await self.bookRepository.getBooks()
+            self.books = booksList.sorted { $0.updatedAt > $1.updatedAt }
         }
     }
 }
@@ -97,29 +80,26 @@ class BookListViewModel: BaseViewModel {
 @Observable
 class BookDetailViewModel: BaseViewModel {
     private let authService = AuthService.shared
-    private let userBookRepository = UserBookRepository.shared
+    private let bookRepository = BookRepository.shared
     private let bookChatRepository = BookChatRepository.shared
     
-    var currentUserBook: UserBook
+    var currentBook: Book
     
-    init(userBook: UserBook) {
-        self.currentUserBook = userBook
+    init(book: Book) {
+        self.currentBook = book
         super.init()
     }
     
-    func updateUserBook(_ updatedUserBook: UserBook) {
-        self.currentUserBook = updatedUserBook
+    func updateBook(_ updatedBook: Book) {
+        self.currentBook = updatedBook
     }
     
-    func deleteUserBook() async -> Bool {
+    func deleteBook() async -> Bool {
         var result = false
         await withLoadingNoThrow { [weak self] in
-            guard let self = self,
-                  let userId = self.authService.currentUser?.uid else {
-                throw AppError.authenticationRequired
-            }
+            guard let self = self else { return }
             
-            try await self.userBookRepository.deleteUserBook(userId: userId, userBookId: self.currentUserBook.id)
+            try await self.bookRepository.deleteBook(bookId: self.currentBook.id)
             result = true
         }
         return result

@@ -1,5 +1,4 @@
 import Foundation
-import FirebaseFirestore
 
 struct Badge: Identifiable, Codable {
     let id: String

@@ -1,10 +1,8 @@
 import Foundation
-import FirebaseFirestore
 
 struct Achievement: Identifiable, Codable {
     let id: String
     let badgeId: String
-    let userId: String
     var unlockedAt: Date?
     var progress: Double
     var isUnlocked: Bool
@@ -14,7 +12,6 @@ struct Achievement: Identifiable, Codable {
     enum CodingKeys: String, CodingKey {
         case id
         case badgeId
-        case userId
         case unlockedAt
         case progress
         case isUnlocked
@@ -24,7 +21,6 @@ struct Achievement: Identifiable, Codable {
     
     init(id: String = UUID().uuidString,
          badgeId: String,
-         userId: String,
          unlockedAt: Date? = nil,
          progress: Double = 0.0,
          isUnlocked: Bool = false,
@@ -32,7 +28,6 @@ struct Achievement: Identifiable, Codable {
          updatedAt: Date = Date()) {
         self.id = id
         self.badgeId = badgeId
-        self.userId = userId
         self.unlockedAt = unlockedAt
         self.progress = progress
         self.isUnlocked = isUnlocked

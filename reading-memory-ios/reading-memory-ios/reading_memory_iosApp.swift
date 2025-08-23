@@ -1,5 +1,5 @@
 import SwiftUI
-import FirebaseCore
+// import FirebaseCore
 
 @main
 struct reading_memory_iosApp: App {

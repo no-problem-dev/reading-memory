@@ -4,7 +4,6 @@ import Foundation
 @MainActor
 final class BookSearchViewModel: BaseViewModel {
     private let bookRepository = BookRepository.shared
-    private let userBookRepository = UserBookRepository.shared
     private let authService = AuthService.shared
     private let searchService = UnifiedBookSearchService.shared
     private let cacheService = BookCacheService.shared
@@ -39,31 +38,15 @@ final class BookSearchViewModel: BaseViewModel {
         await withLoadingNoThrow { [weak self] in
             guard let self = self else { return }
             
-            // 並行して検索を実行
-            async let firestoreResults = self.searchInFirestore(query: query)
-            async let apiResults = self.searchInGoogleBooks(query: query)
-            
-            // 結果を統合
-            let (firestore, api) = await (firestoreResults, apiResults)
+            // API検索を実行
+            let apiResults = await self.searchInGoogleBooks(query: query)
             
             // 重複を排除（ISBNベース）
             var uniqueBooks: [Book] = []
             var seenISBNs: Set<String> = []
             
-            // Firestoreの結果を優先
-            for book in firestore {
-                if let isbn = book.isbn, !isbn.isEmpty {
-                    if !seenISBNs.contains(isbn) {
-                        uniqueBooks.append(book)
-                        seenISBNs.insert(isbn)
-                    }
-                } else {
-                    uniqueBooks.append(book)
-                }
-            }
-            
-            // API結果を追加（重複を除く）
-            for book in api {
+            // API結果を処理
+            for book in apiResults {
                 if let isbn = book.isbn, !isbn.isEmpty {
                     if !seenISBNs.contains(isbn) {
                         uniqueBooks.append(book)
@@ -93,27 +76,10 @@ final class BookSearchViewModel: BaseViewModel {
         isSearching = false
     }
     
-    private func searchInFirestore(query: String) async -> [Book] {
-        do {
-            return try await bookRepository.searchPublicBooks(query: query)
-        } catch {
-            print("Firestore search error: \(error)")
-            return []
-        }
-    }
-    
     private func searchInGoogleBooks(query: String) async -> [Book] {
+        guard let userId = authService.currentUser?.uid else { return [] }
         // 統合検索サービスを使用
         return await searchService.unifiedSearch(query: query)
-    }
-    
-    func loadPublicBooks() async {
-        await withLoadingNoThrow { [weak self] in
-            guard let self = self else { return }
-            
-            // TODO: Firestore から公開本を取得
-            self.publicBooks = []
-        }
     }
     
     func isBookAlreadyRegistered(_ book: Book) async -> Bool {
@@ -121,13 +87,8 @@ final class BookSearchViewModel: BaseViewModel {
         
         // ISBNで確認
         if let isbn = book.isbn, !isbn.isEmpty {
-            if let existingBook = try? await bookRepository.getBookByISBN(isbn) {
-                let userBook = try? await userBookRepository.getUserBookByBookId(
-                    userId: userId,
-                    bookId: existingBook.id
-                )
-                return userBook != nil
-            }
+            let existingBook = try? await bookRepository.getBookByISBN(isbn: isbn)
+            return existingBook != nil
         }
         
         return false

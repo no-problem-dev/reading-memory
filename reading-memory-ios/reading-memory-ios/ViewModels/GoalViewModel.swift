@@ -1,11 +1,12 @@
 import Foundation
-import FirebaseAuth
+// import FirebaseAuth
 
 @Observable
 class GoalViewModel {
     private let goalRepository = GoalRepository.shared
-    private let userBookRepository = UserBookRepository.shared
+    private let bookRepository = BookRepository.shared
     private let userProfileRepository = UserProfileRepository.shared
+    private let authService = AuthService.shared
     
     var activeGoals: [ReadingGoal] = []
     var allGoals: [ReadingGoal] = []
@@ -14,9 +15,6 @@ class GoalViewModel {
     var isLoading = false
     var errorMessage: String?
     
-    private var userId: String? {
-        Auth.auth().currentUser?.uid
-    }
     
     // 現在実行中のタスクを追跡
     private var loadTask: Task<Void, Never>?
@@ -28,7 +26,7 @@ class GoalViewModel {
     }
     
     func loadGoals() async {
-        guard let userId = userId else { return }
+        guard let user = await authService.currentUser else { return }
         
         // 既存のタスクをキャンセル
         loadTask?.cancel()
@@ -41,11 +39,11 @@ class GoalViewModel {
             
             do {
                 // アクティブな目標を取得
-                let activeGoalsList = try await goalRepository.getActiveGoals(userId: userId)
+                let activeGoalsList = try await goalRepository.getActiveGoals()
                 guard !Task.isCancelled else { return }
                 
                 // すべての目標を取得
-                let allGoalsList = try await goalRepository.getAllGoals(userId: userId)
+                let allGoalsList = try await goalRepository.getAllGoals()
                 guard !Task.isCancelled else { return }
                 
                 // メインスレッドで更新
@@ -76,17 +74,17 @@ class GoalViewModel {
     }
     
     func createYearlyGoal(targetBooks: Int) async {
-        guard let userId = userId else { return }
+        guard let user = await authService.currentUser else { return }
         
         isLoading = true
         errorMessage = nil
         
         do {
-            let goal = ReadingGoal.createYearlyGoal(userId: userId, targetBooks: targetBooks)
+            let goal = ReadingGoal.createYearlyGoal(targetBooks: targetBooks)
             try await goalRepository.createGoal(goal)
             
             // UserProfileの年間目標も更新
-            if var profile = try await userProfileRepository.getUserProfile(userId: userId) {
+            if var profile = try await userProfileRepository.getUserProfile() {
                 profile = UserProfile(
                     id: profile.id,
                     displayName: profile.displayName,
@@ -115,17 +113,17 @@ class GoalViewModel {
     }
     
     func createMonthlyGoal(targetBooks: Int) async {
-        guard let userId = userId else { return }
+        guard let user = await authService.currentUser else { return }
         
         isLoading = true
         errorMessage = nil
         
         do {
-            let goal = ReadingGoal.createMonthlyGoal(userId: userId, targetBooks: targetBooks)
+            let goal = ReadingGoal.createMonthlyGoal(targetBooks: targetBooks)
             try await goalRepository.createGoal(goal)
             
             // UserProfileの月間目標も更新
-            if var profile = try await userProfileRepository.getUserProfile(userId: userId) {
+            if var profile = try await userProfileRepository.getUserProfile() {
                 profile = UserProfile(
                     id: profile.id,
                     displayName: profile.displayName,
@@ -168,17 +166,17 @@ class GoalViewModel {
     }
     
     func deleteGoal(_ goal: ReadingGoal) async {
-        guard let userId = userId else { return }
+        guard let user = await authService.currentUser else { return }
         
         isLoading = true
         errorMessage = nil
         
         do {
-            try await goalRepository.deleteGoal(goalId: goal.id, userId: userId)
+            try await goalRepository.deleteGoal(goalId: goal.id)
             
             // UserProfileの目標も削除
             if goal.period == .yearly && goal.type == .bookCount {
-                if var profile = try await userProfileRepository.getUserProfile(userId: userId) {
+                if var profile = try await userProfileRepository.getUserProfile() {
                     profile = UserProfile(
                         id: profile.id,
                         displayName: profile.displayName,
@@ -209,7 +207,7 @@ class GoalViewModel {
     
     // 進捗更新が必要な場合のみ実行
     private func updateGoalProgressIfNeeded() async {
-        guard let userId = userId else { return }
+        guard let user = await authService.currentUser else { return }
         
         // 既存のタスクをキャンセル
         updateTask?.cancel()
@@ -219,14 +217,14 @@ class GoalViewModel {
             
             do {
                 // ユーザーの本を取得
-                let userBooks = try await userBookRepository.getUserBooks(for: userId)
+                let books = try await bookRepository.getBooks()
                 guard !Task.isCancelled else { return }
                 
                 // 更新が必要な目標を収集
                 var goalsToUpdate: [(goal: ReadingGoal, newValue: Int)] = []
                 
                 for goal in activeGoals {
-                    let currentProgress = goalRepository.calculateCurrentProgress(for: goal, userBooks: userBooks)
+                    let currentProgress = goalRepository.calculateCurrentProgress(for: goal, books: books)
                     
                     if goal.currentValue != currentProgress {
                         goalsToUpdate.append((goal, currentProgress))
@@ -240,7 +238,6 @@ class GoalViewModel {
                         
                         try await goalRepository.updateGoalProgress(
                             goalId: goal.id,
-                            userId: userId,
                             newValue: newValue
                         )
                         
@@ -278,7 +275,9 @@ class GoalViewModel {
     
     // 推奨目標を計算
     func calculateRecommendedGoal(period: ReadingGoal.GoalPeriod) -> Int {
-        guard userId != nil else { return 10 }
+        // Note: This method is not async, so we can't await. 
+        // For dummy implementation, just return default values
+        // In real implementation, this would need to be made async
         
         // 過去の読書ペースから推奨値を計算（簡易版）
         let completedGoals = allGoals.filter { $0.isCompleted && $0.period == period }

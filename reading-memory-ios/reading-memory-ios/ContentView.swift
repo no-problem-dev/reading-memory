@@ -52,7 +52,7 @@ struct ContentView: View {
         
         do {
             let userProfileRepository = UserProfileRepository.shared
-            let profile = try await userProfileRepository.getUserProfile(userId: currentUser.id)
+            let profile = try await userProfileRepository.getUserProfile()
             
             needsOnboarding = (profile == nil)
             isCheckingProfile = false

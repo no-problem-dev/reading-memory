@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct BookCoverView: View {
-    let userBook: UserBook
+    let book: Book
     var showTitle: Bool = true
     var showRating: Bool = true
     var width: CGFloat = 110
@@ -11,7 +11,7 @@ struct BookCoverView: View {
         VStack(spacing: 8) {
             // Book cover
             ZStack {
-                let imageUrl = userBook.bookCoverImageUrl
+                let imageUrl = book.coverImageUrl
                 if let imageUrl = imageUrl, !imageUrl.isEmpty {
                     AsyncImage(url: URL(string: imageUrl)) { phase in
                         switch phase {
@@ -20,26 +20,26 @@ struct BookCoverView: View {
                                 .resizable()
                                 .aspectRatio(contentMode: .fit)
                         case .failure(_):
-                            BookCoverPlaceholder(title: userBook.bookTitle)
+                            BookCoverPlaceholder(title: book.title)
                         case .empty:
                             ProgressView()
                                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                                 .background(Color.gray.opacity(0.1))
                         @unknown default:
-                            BookCoverPlaceholder(title: userBook.bookTitle)
+                            BookCoverPlaceholder(title: book.title)
                         }
                     }
                 } else {
-                    BookCoverPlaceholder(title: userBook.bookTitle)
+                    BookCoverPlaceholder(title: book.title)
                 }
                 
                 // Status badge
-                if userBook.status != .wantToRead {
+                if book.status != .wantToRead {
                     VStack {
                         Spacer()
                         HStack {
                             Spacer()
-                            BookStatusBadge(status: userBook.status)
+                            BookStatusBadge(status: book.status)
                                 .padding(4)
                         }
                     }
@@ -52,7 +52,7 @@ struct BookCoverView: View {
             
             if showTitle {
                 // Book title
-                Text(userBook.bookTitle)
+                Text(book.title)
                     .font(.caption)
                     .lineLimit(2)
                     .multilineTextAlignment(.center)
@@ -61,7 +61,7 @@ struct BookCoverView: View {
             
             if showRating {
                 // Rating
-                if let rating = userBook.rating {
+                if let rating = book.rating {
                     HStack(spacing: 2) {
                         ForEach(0..<5) { index in
                             Image(systemName: index < Int(rating) ? "star.fill" : "star")
@@ -151,25 +151,16 @@ struct BookStatusBadge: View {
 }
 
 #Preview {
-    BookCoverView(userBook: UserBook(
-        id: "1",
-        userId: "user1",
-        bookId: "book1",
-        bookTitle: "SwiftUI実践入門",
-        bookAuthor: "山田太郎",
-        bookCoverImageUrl: nil,
-        bookIsbn: nil,
-        status: .reading,
-        rating: 4.5,
-        readingProgress: nil,
-        currentPage: nil,
-        startDate: Date(),
-        completedDate: nil,
-        memo: nil,
-        tags: [],
-        isPrivate: false,
-        createdAt: Date(),
-        updatedAt: Date()
+    BookCoverView(book: Book.new(
+        isbn: nil,
+        title: "SwiftUI実践入門",
+        author: "山田太郎",
+        publisher: nil,
+        publishedDate: nil,
+        pageCount: nil,
+        description: nil,
+        coverImageUrl: nil,
+        dataSource: .manual
     ))
     .padding()
 }

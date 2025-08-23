@@ -119,15 +119,9 @@ struct SettingsView: View {
         }
         
         do {
-            let result = try await AuthService.shared.deleteAccount()
-            
-            if result.success {
-                // 削除成功 - サインアウト処理
-                await authViewModel.signOut()
-            } else {
-                // 部分的な失敗
-                deleteError = "アカウントの削除中に一部エラーが発生しました:\n\(result.errors.joined(separator: "\n"))\n\nサポートにお問い合わせください。"
-            }
+            try await AuthService.shared.deleteAccount()
+            // 削除成功 - サインアウト処理
+            await authViewModel.signOut()
         } catch {
             deleteError = error.localizedDescription
         }
