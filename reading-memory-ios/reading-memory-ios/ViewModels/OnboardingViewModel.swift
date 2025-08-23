@@ -41,25 +41,17 @@ class OnboardingViewModel {
                 )
             }
             
-            // 2. Create user profile
-            let profile = UserProfile(
-                id: currentUser.id,
+            // 2. Complete onboarding through unified API
+            let apiClient = APIClient.shared
+            _ = try await apiClient.completeOnboarding(
                 displayName: displayName.trimmingCharacters(in: .whitespacesAndNewlines),
-                profileImageUrl: profileImageUrl,
-                bio: nil,
                 favoriteGenres: Array(selectedGenres),
-                readingGoal: monthlyGoal,
-                isPublic: false
+                monthlyGoal: monthlyGoal,
+                profileImageUrl: profileImageUrl,
+                bio: nil
             )
             
-            _ = try await userProfileRepository.createUserProfile(profile)
-            
-            // 3. Create monthly reading goal
-            let goal = ReadingGoal.createMonthlyGoal(targetBooks: monthlyGoal)
-            
-            try await goalRepository.createGoal(goal)
-            
-            // 4. Add first book if selected
+            // 3. Add first book if selected
             if let selectedBook = firstBook {
                 let book = Book(
                     id: UUID().uuidString,

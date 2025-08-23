@@ -4,6 +4,7 @@ struct ContentView: View {
     @State private var authViewModel = AuthViewModel()
     @State private var needsOnboarding = false
     @State private var isCheckingProfile = true
+    @State private var isInitializing = false
     
     var body: some View {
         Group {
@@ -31,36 +32,45 @@ struct ContentView: View {
             }
         }
         .task {
-            await checkUserProfile()
+            await initializeUserIfNeeded()
         }
         .onChange(of: authViewModel.currentUser) { oldUser, newUser in
             if oldUser != newUser {
                 Task {
-                    await checkUserProfile()
+                    await initializeUserIfNeeded()
                 }
             }
         }
     }
     
     @MainActor
-    private func checkUserProfile() async {
-        guard let currentUser = authViewModel.currentUser else {
+    private func initializeUserIfNeeded() async {
+        guard authViewModel.currentUser != nil else {
             isCheckingProfile = false
             needsOnboarding = false
             return
         }
         
+        isInitializing = true
+        
         do {
-            let userProfileRepository = UserProfileRepository.shared
-            let profile = try await userProfileRepository.getUserProfile()
+            // Step 1: Initialize user (creates user document if needed)
+            let apiClient = APIClient.shared
+            _ = try await apiClient.initializeUser()
             
-            needsOnboarding = (profile == nil)
+            // Step 2: Check onboarding status
+            let status = try await apiClient.getOnboardingStatus()
+            
+            needsOnboarding = status.needsOnboarding
             isCheckingProfile = false
+            isInitializing = false
             
         } catch {
-            // If there's an error checking profile, assume onboarding is needed
+            print("Error initializing user: \(error)")
+            // If there's an error, assume onboarding is needed
             needsOnboarding = true
             isCheckingProfile = false
+            isInitializing = false
         }
     }
 }

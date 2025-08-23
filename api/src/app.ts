@@ -5,6 +5,7 @@ import compression from 'compression';
 import { config } from './config';
 import { errorHandler } from './middleware/errorHandler';
 import { logger } from './utils/logger';
+import authRoutes from './routes/auth.routes';
 import aiRoutes from './routes/ai.routes';
 import booksRoutes from './routes/books.routes';
 import usersRoutes from './routes/users.routes';
@@ -46,6 +47,7 @@ export const createApp = (): Application => {
   });
   
   // API routes
+  app.use('/api/v1/auth', authRoutes);
   app.use('/api/v1', usersRoutes);  // Changed to handle /api/v1/profile
   app.use('/api/v1/users', aiRoutes);
   app.use('/api/v1/books', booksRoutes);

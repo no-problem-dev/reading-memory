@@ -78,6 +78,52 @@ final class APIClient {
     
     // MARK: - Public Methods
     
+    // MARK: Auth関連
+    
+    func initializeUser() async throws -> InitializeUserResult {
+        let request = try await makeRequest(
+            method: "POST",
+            path: "/api/v1/auth/initialize"
+        )
+        
+        return try await execute(request, responseType: InitializeUserResult.self)
+    }
+    
+    func getOnboardingStatus() async throws -> OnboardingStatus {
+        let request = try await makeRequest(
+            method: "GET",
+            path: "/api/v1/auth/onboarding-status"
+        )
+        
+        return try await execute(request, responseType: OnboardingStatus.self)
+    }
+    
+    func completeOnboarding(displayName: String, favoriteGenres: [String], monthlyGoal: Int, profileImageUrl: String? = nil, bio: String? = nil) async throws -> OnboardingResult {
+        var body: [String: Any] = [
+            "displayName": displayName,
+            "favoriteGenres": favoriteGenres,
+            "monthlyGoal": monthlyGoal
+        ]
+        
+        if let profileImageUrl = profileImageUrl {
+            body["profileImageUrl"] = profileImageUrl
+        }
+        
+        if let bio = bio {
+            body["bio"] = bio
+        }
+        
+        let jsonData = try JSONSerialization.data(withJSONObject: body, options: [])
+        
+        let request = try await makeRequest(
+            method: "POST",
+            path: "/api/v1/auth/complete-onboarding",
+            body: jsonData
+        )
+        
+        return try await execute(request, responseType: OnboardingResult.self)
+    }
+    
     // MARK: AI関連
     
     func generateAIResponse(bookId: String, message: String) async throws -> AIResponseResult {
