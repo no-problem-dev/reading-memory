@@ -20,7 +20,7 @@ const uploadFile = async (
       },
     });
     
-    stream.on('error', (err) => {
+    stream.on('error', () => {
       reject(new ApiError(500, 'INTERNAL_ERROR', 'Failed to upload image'));
     });
     
