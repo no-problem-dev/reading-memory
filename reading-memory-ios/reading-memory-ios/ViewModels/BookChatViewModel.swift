@@ -49,7 +49,7 @@ final class BookChatViewModel: BaseViewModel {
                 imageUrl: imageUrl
             )
             
-            let newChat = try await repository.addChat(chat)
+            let newChat = try await repository.addChat(chat, bookId: book.id)
             // リアルタイム同期がある場合は手動追加しない
             if listener == nil {
                 chats.append(newChat)

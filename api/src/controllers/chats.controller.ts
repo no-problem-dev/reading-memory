@@ -3,6 +3,7 @@ import { AuthRequest } from '../middleware/auth';
 import { ApiError } from '../middleware/errorHandler';
 import { getFirestore } from '../config/firebase';
 import { FieldValue, Query } from 'firebase-admin/firestore';
+import { serializeTimestamps } from '../utils/timestamp';
 
 export const getChats = async (
   req: AuthRequest,
@@ -39,7 +40,7 @@ export const getChats = async (
     }
     
     const snapshot = await query.get();
-    const chats = snapshot.docs.map(doc => ({
+    const chats = snapshot.docs.map(doc => serializeTimestamps({
       id: doc.id,
       ...doc.data()
     }));
@@ -84,8 +85,10 @@ export const createChat = async (
     const doc = await docRef.get();
     
     res.status(201).json({
-      id: doc.id,
-      ...doc.data()
+      chat: serializeTimestamps({
+        id: doc.id,
+        ...doc.data()
+      })
     });
   } catch (error) {
     next(error);
@@ -124,8 +127,10 @@ export const updateChat = async (
     const updatedDoc = await chatRef.get();
     
     res.json({
-      id: updatedDoc.id,
-      ...updatedDoc.data()
+      chat: serializeTimestamps({
+        id: updatedDoc.id,
+        ...updatedDoc.data()
+      })
     });
   } catch (error) {
     next(error);

@@ -13,6 +13,8 @@ import activitiesRoutes from './routes/activities.routes';
 import goalsRoutes from './routes/goals.routes';
 import achievementsRoutes from './routes/achievements.routes';
 import streaksRoutes from './routes/streaks.routes';
+import chatsRoutes from './routes/chats.routes';
+import uploadRoutes from './routes/upload.routes';
 
 export const createApp = (): Application => {
   const app = express();
@@ -49,12 +51,14 @@ export const createApp = (): Application => {
   // API routes
   app.use('/api/v1/auth', authRoutes);
   app.use('/api/v1', usersRoutes);  // Changed to handle /api/v1/profile
-  app.use('/api/v1/users', aiRoutes);
+  app.use('/api/v1', aiRoutes);
   app.use('/api/v1/books', booksRoutes);
+  app.use('/api/v1', chatsRoutes);  // Chat routes nested under books
   app.use('/api/v1/activities', activitiesRoutes);
   app.use('/api/v1/goals', goalsRoutes);
   app.use('/api/v1/achievements', achievementsRoutes);
   app.use('/api/v1/streaks', streaksRoutes);
+  app.use('/api/v1/upload', uploadRoutes);
   
   // 404 handler
   app.use((_req, res) => {

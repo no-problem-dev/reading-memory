@@ -4,6 +4,8 @@ import UIKit
 final class StorageService {
     static let shared = StorageService()
     
+    private let apiClient = APIClient.shared
+    
     private init() {}
     
     enum StoragePath {
@@ -25,21 +27,28 @@ final class StorageService {
     
     /// 画像をアップロード
     func uploadImage(_ image: UIImage, path: StoragePath, compressionQuality: CGFloat = 0.8) async throws -> String {
-        // TODO: 実際のアップロード処理を実装
-        // 現在はダミーURLを返す
-        return "https://example.com/\(path.path)"
+        guard let imageData = image.jpegData(compressionQuality: compressionQuality) else {
+            throw AppError.custom("画像の変換に失敗しました")
+        }
+        
+        switch path {
+        case .profileImage:
+            return try await apiClient.uploadProfileImage(imageData: imageData)
+        case .bookCover(_, let bookId):
+            return try await apiClient.uploadBookCover(bookId: bookId, imageData: imageData)
+        case .chatPhoto(let bookId, _):
+            return try await apiClient.uploadChatPhoto(bookId: bookId, imageData: imageData)
+        }
     }
     
     /// データをアップロード
     func uploadData(_ data: Data, path: String) async throws -> String {
-        // TODO: 実際のアップロード処理を実装
-        // 現在はダミーURLを返す
-        return "https://example.com/\(path)"
+        // 現在は画像アップロードのみ対応
+        throw AppError.custom("データアップロードは未実装です")
     }
     
     /// 画像を削除
     func deleteImage(at url: String) async throws {
-        // TODO: 実際の削除処理を実装
-        // 現在は何もしない
+        try await apiClient.deleteImage(url: url)
     }
 }

@@ -8,11 +8,10 @@ const router = Router();
 
 // Generate AI response for book chat
 router.post(
-  '/:userId/books/:userBookId/ai-response',
+  '/books/:bookId/ai-response',
   authenticate,
   [
-    param('userId').notEmpty().withMessage('User ID is required'),
-    param('userBookId').notEmpty().withMessage('User Book ID is required'),
+    param('bookId').notEmpty().withMessage('Book ID is required'),
     body('message').notEmpty().withMessage('Message is required'),
   ],
   validateRequest,
@@ -21,11 +20,10 @@ router.post(
 
 // Generate book summary
 router.post(
-  '/:userId/books/:userBookId/summary',
+  '/books/:bookId/summary',
   authenticate,
   [
-    param('userId').notEmpty().withMessage('User ID is required'),
-    param('userBookId').notEmpty().withMessage('User Book ID is required'),
+    param('bookId').notEmpty().withMessage('Book ID is required'),
   ],
   validateRequest,
   aiController.generateBookSummary

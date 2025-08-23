@@ -8,6 +8,9 @@ export const config = {
   googleBooksApiKey: process.env.GOOGLE_BOOKS_API_KEY || '',
   claudeApiKey: process.env.CLAUDE_API_KEY || '',
   gcpProjectId: process.env.GCP_PROJECT_ID || 'reading-memory',
+  firebase: {
+    projectId: process.env.FIREBASE_PROJECT_ID || process.env.GCP_PROJECT_ID || 'reading-memory',
+  },
   cors: {
     origin: process.env.CORS_ORIGIN || '*',
     credentials: true,

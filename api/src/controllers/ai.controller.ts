@@ -11,38 +11,34 @@ export const generateAIResponse = async (
   next: NextFunction
 ): Promise<void> => {
   try {
-    const { userId, userBookId } = req.params;
+    const userId = req.user!.uid;
+    const { bookId } = req.params;
     const { message } = req.body;
-    
-    // Verify user authorization
-    if (req.user?.uid !== userId) {
-      throw new ApiError(403, 'PERMISSION_DENIED', '他のユーザーのデータにはアクセスできません');
-    }
     
     const db = getFirestore();
     
-    // Get UserBook information
-    const userBookDoc = await db
+    // Get book information
+    const bookDoc = await db
       .collection('users')
       .doc(userId)
-      .collection('userBooks')
-      .doc(userBookId)
+      .collection('books')
+      .doc(bookId)
       .get();
     
-    if (!userBookDoc.exists) {
+    if (!bookDoc.exists) {
       throw new ApiError(404, 'NOT_FOUND', '本が見つかりません');
     }
     
-    const userBookData = userBookDoc.data()!;
-    const bookTitle = userBookData.bookTitle || '不明な本';
-    const bookAuthor = userBookData.bookAuthor || '不明な著者';
+    const bookData = bookDoc.data()!;
+    const bookTitle = bookData.title || '不明な本';
+    const bookAuthor = bookData.author || '不明な著者';
     
     // Get recent chat history
     const chatsSnapshot = await db
       .collection('users')
       .doc(userId)
-      .collection('userBooks')
-      .doc(userBookId)
+      .collection('books')
+      .doc(bookId)
       .collection('chats')
       .orderBy('createdAt', 'desc')
       .limit(20)
@@ -53,7 +49,7 @@ export const generateAIResponse = async (
         const data = doc.data();
         return {
           message: data.message,
-          isAI: data.isAI || false,
+          isAI: data.messageType === 'ai',
         };
       })
       .reverse();
@@ -71,18 +67,16 @@ export const generateAIResponse = async (
     const chatRef = db
       .collection('users')
       .doc(userId)
-      .collection('userBooks')
-      .doc(userBookId)
+      .collection('books')
+      .doc(bookId)
       .collection('chats')
       .doc();
     
     await chatRef.set({
-      id: chatRef.id,
-      userBookId: userBookId,
-      userId: userId,
       message: aiResponse,
-      isAI: true,
+      messageType: 'ai',
       createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
     });
     
     res.json({
@@ -101,37 +95,33 @@ export const generateBookSummary = async (
   next: NextFunction
 ): Promise<void> => {
   try {
-    const { userId, userBookId } = req.params;
-    
-    // Verify user authorization
-    if (req.user?.uid !== userId) {
-      throw new ApiError(403, 'PERMISSION_DENIED', '他のユーザーのデータにはアクセスできません');
-    }
+    const userId = req.user!.uid;
+    const { bookId } = req.params;
     
     const db = getFirestore();
     
-    // Get UserBook information
-    const userBookDoc = await db
+    // Get book information
+    const bookDoc = await db
       .collection('users')
       .doc(userId)
-      .collection('userBooks')
-      .doc(userBookId)
+      .collection('books')
+      .doc(bookId)
       .get();
     
-    if (!userBookDoc.exists) {
+    if (!bookDoc.exists) {
       throw new ApiError(404, 'NOT_FOUND', '本が見つかりません');
     }
     
-    const userBookData = userBookDoc.data()!;
-    const bookTitle = userBookData.bookTitle || '不明な本';
-    const bookAuthor = userBookData.bookAuthor || '不明な著者';
+    const bookData = bookDoc.data()!;
+    const bookTitle = bookData.title || '不明な本';
+    const bookAuthor = bookData.author || '不明な著者';
     
     // Get all chat history
     const chatsSnapshot = await db
       .collection('users')
       .doc(userId)
-      .collection('userBooks')
-      .doc(userBookId)
+      .collection('books')
+      .doc(bookId)
       .collection('chats')
       .orderBy('createdAt', 'asc')
       .get();
@@ -140,7 +130,7 @@ export const generateBookSummary = async (
       const data = doc.data();
       return {
         message: data.message,
-        isAI: data.isAI || false,
+        isAI: data.messageType === 'ai',
       };
     });
     
@@ -160,12 +150,12 @@ export const generateBookSummary = async (
       chats
     );
     
-    // Save summary to UserBook
+    // Save summary to book
     await db
       .collection('users')
       .doc(userId)
-      .collection('userBooks')
-      .doc(userBookId)
+      .collection('books')
+      .doc(bookId)
       .update({
         aiSummary: summary,
         summaryGeneratedAt: admin.firestore.FieldValue.serverTimestamp(),

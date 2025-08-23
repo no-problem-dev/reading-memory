@@ -568,6 +568,155 @@ final class APIClient {
         
         _ = try await execute(request, responseType: EmptyResponse.self)
     }
+    
+    // MARK: - Chats
+    
+    func getChats(bookId: String) async throws -> [BookChat] {
+        let request = try await makeRequest(
+            method: "GET",
+            path: "/api/v1/books/\(bookId)/chats"
+        )
+        
+        let response = try await execute(request, responseType: ChatsResponse.self)
+        return response.chats.map { $0.toDomain(bookId: bookId) }
+    }
+    
+    func createChat(bookId: String, message: String, messageType: MessageType) async throws -> BookChat {
+        let encoder = JSONEncoder()
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss.SSSZZZZZ"
+        formatter.calendar = Calendar(identifier: .iso8601)
+        formatter.timeZone = TimeZone(secondsFromGMT: 0)
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        encoder.dateEncodingStrategy = .formatted(formatter)
+        
+        let body = try encoder.encode([
+            "message": message,
+            "messageType": messageType.rawValue
+        ])
+        
+        let request = try await makeRequest(
+            method: "POST",
+            path: "/api/v1/books/\(bookId)/chats",
+            body: body
+        )
+        
+        let response = try await execute(request, responseType: ChatResponse.self)
+        return response.chat.toDomain(bookId: bookId)
+    }
+    
+    func updateChat(bookId: String, chatId: String, message: String) async throws -> BookChat {
+        let encoder = JSONEncoder()
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss.SSSZZZZZ"
+        formatter.calendar = Calendar(identifier: .iso8601)
+        formatter.timeZone = TimeZone(secondsFromGMT: 0)
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        encoder.dateEncodingStrategy = .formatted(formatter)
+        
+        let body = try encoder.encode([
+            "message": message
+        ])
+        
+        let request = try await makeRequest(
+            method: "PUT",
+            path: "/api/v1/books/\(bookId)/chats/\(chatId)",
+            body: body
+        )
+        
+        let response = try await execute(request, responseType: ChatResponse.self)
+        return response.chat.toDomain(bookId: bookId)
+    }
+    
+    func deleteChat(bookId: String, chatId: String) async throws {
+        let request = try await makeRequest(
+            method: "DELETE",
+            path: "/api/v1/books/\(bookId)/chats/\(chatId)"
+        )
+        
+        _ = try await execute(request, responseType: EmptyResponse.self)
+    }
+    
+    // MARK: - Upload
+    
+    func uploadProfileImage(imageData: Data) async throws -> String {
+        var request = try await makeRequest(
+            method: "POST",
+            path: "/api/v1/upload/profile-image"
+        )
+        
+        let boundary = UUID().uuidString
+        request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
+        
+        var body = Data()
+        body.append("--\(boundary)\r\n".data(using: .utf8)!)
+        body.append("Content-Disposition: form-data; name=\"image\"; filename=\"profile.jpg\"\r\n".data(using: .utf8)!)
+        body.append("Content-Type: image/jpeg\r\n\r\n".data(using: .utf8)!)
+        body.append(imageData)
+        body.append("\r\n--\(boundary)--\r\n".data(using: .utf8)!)
+        
+        request.httpBody = body
+        
+        let response = try await execute(request, responseType: UploadResponse.self)
+        return response.url
+    }
+    
+    func uploadBookCover(bookId: String, imageData: Data) async throws -> String {
+        var request = try await makeRequest(
+            method: "POST",
+            path: "/api/v1/upload/books/\(bookId)/cover"
+        )
+        
+        let boundary = UUID().uuidString
+        request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
+        
+        var body = Data()
+        body.append("--\(boundary)\r\n".data(using: .utf8)!)
+        body.append("Content-Disposition: form-data; name=\"image\"; filename=\"cover.jpg\"\r\n".data(using: .utf8)!)
+        body.append("Content-Type: image/jpeg\r\n\r\n".data(using: .utf8)!)
+        body.append(imageData)
+        body.append("\r\n--\(boundary)--\r\n".data(using: .utf8)!)
+        
+        request.httpBody = body
+        
+        let response = try await execute(request, responseType: UploadResponse.self)
+        return response.url
+    }
+    
+    func uploadChatPhoto(bookId: String, imageData: Data) async throws -> String {
+        var request = try await makeRequest(
+            method: "POST",
+            path: "/api/v1/upload/books/\(bookId)/chat-photo"
+        )
+        
+        let boundary = UUID().uuidString
+        request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
+        
+        var body = Data()
+        body.append("--\(boundary)\r\n".data(using: .utf8)!)
+        body.append("Content-Disposition: form-data; name=\"image\"; filename=\"photo.jpg\"\r\n".data(using: .utf8)!)
+        body.append("Content-Type: image/jpeg\r\n\r\n".data(using: .utf8)!)
+        body.append(imageData)
+        body.append("\r\n--\(boundary)--\r\n".data(using: .utf8)!)
+        
+        request.httpBody = body
+        
+        let response = try await execute(request, responseType: UploadResponse.self)
+        return response.url
+    }
+    
+    func deleteImage(url: String) async throws {
+        let encoder = JSONEncoder()
+        let body = try encoder.encode(["url": url])
+        
+        let request = try await makeRequest(
+            method: "DELETE",
+            path: "/api/v1/upload/images",
+            body: body
+        )
+        
+        _ = try await execute(request, responseType: EmptyResponse.self)
+    }
 }
 
 // MARK: - Response Types
@@ -652,6 +801,19 @@ struct StreakResponse: Decodable {
 
 struct UserProfileResponse: Decodable {
     let profile: UserProfile
+}
+
+struct ChatsResponse: Decodable {
+    let chats: [ChatDTO]
+}
+
+struct ChatResponse: Decodable {
+    let chat: ChatDTO
+}
+
+struct UploadResponse: Decodable {
+    let success: Bool
+    let url: String
 }
 
 // MARK: - Request Types
