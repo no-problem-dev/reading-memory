@@ -509,7 +509,7 @@ final class APIClient {
         
         do {
             let response = try await execute(request, responseType: UserProfileResponse.self)
-            return response.profile
+            return response.profile.toDomain()
         } catch {
             if let apiError = error as? AppError,
                case .custom(let message) = apiError,
@@ -528,7 +528,16 @@ final class APIClient {
         formatter.timeZone = TimeZone(secondsFromGMT: 0)
         formatter.locale = Locale(identifier: "en_US_POSIX")
         encoder.dateEncodingStrategy = .formatted(formatter)
-        let body = try encoder.encode(profile)
+        
+        let createRequest = CreateUserProfileRequest(
+            displayName: profile.displayName,
+            favoriteGenres: profile.favoriteGenres,
+            readingGoal: profile.readingGoal,
+            monthlyGoal: profile.monthlyGoal,
+            bio: profile.bio,
+            isPublic: profile.isPublic
+        )
+        let body = try encoder.encode(createRequest)
         
         let request = try await makeRequest(
             method: "POST",
@@ -537,7 +546,7 @@ final class APIClient {
         )
         
         let response = try await execute(request, responseType: UserProfileResponse.self)
-        return response.profile
+        return response.profile.toDomain()
     }
     
     func updateUserProfile(_ profile: UserProfile) async throws -> UserProfile {
@@ -548,7 +557,17 @@ final class APIClient {
         formatter.timeZone = TimeZone(secondsFromGMT: 0)
         formatter.locale = Locale(identifier: "en_US_POSIX")
         encoder.dateEncodingStrategy = .formatted(formatter)
-        let body = try encoder.encode(profile)
+        
+        let updateRequest = UpdateUserProfileRequest(
+            displayName: profile.displayName,
+            profileImageUrl: profile.profileImageUrl,
+            bio: profile.bio,
+            favoriteGenres: profile.favoriteGenres,
+            readingGoal: profile.readingGoal,
+            monthlyGoal: profile.monthlyGoal,
+            isPublic: profile.isPublic
+        )
+        let body = try encoder.encode(updateRequest)
         
         let request = try await makeRequest(
             method: "PUT",
@@ -557,7 +576,7 @@ final class APIClient {
         )
         
         let response = try await execute(request, responseType: UserProfileResponse.self)
-        return response.profile
+        return response.profile.toDomain()
     }
     
     func deleteUserProfile() async throws {
@@ -800,7 +819,7 @@ struct StreakResponse: Decodable {
 }
 
 struct UserProfileResponse: Decodable {
-    let profile: UserProfile
+    let profile: UserProfileDTO
 }
 
 struct ChatsResponse: Decodable {
