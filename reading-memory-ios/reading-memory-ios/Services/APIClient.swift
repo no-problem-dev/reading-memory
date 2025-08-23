@@ -64,6 +64,11 @@ final class APIClient {
                 decoder.dateDecodingStrategy = .iso8601
                 return try decoder.decode(T.self, from: data)
             } catch {
+                // デバッグ用: レスポンスの内容を出力
+                if let responseString = String(data: data, encoding: .utf8) {
+                    print("DEBUG: Failed to decode response for \(T.self): \(responseString)")
+                }
+                print("DEBUG: Decoding error: \(error)")
                 throw AppError.custom("レスポンスの解析に失敗しました")
             }
         } else {

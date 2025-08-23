@@ -3,6 +3,7 @@ import { AuthRequest } from '../middleware/auth';
 import { ApiError } from '../middleware/errorHandler';
 import { getFirestore } from '../config/firebase';
 import { FieldValue, Query } from 'firebase-admin/firestore';
+import { serializeTimestamps } from '../utils/timestamp';
 
 // Get all streaks
 export const getStreaks = async (
@@ -22,7 +23,7 @@ export const getStreaks = async (
     }
     
     const snapshot = await query.get();
-    const streaks = snapshot.docs.map(doc => ({
+    const streaks = snapshot.docs.map(doc => serializeTimestamps({
       id: doc.id,
       ...doc.data()
     }));
@@ -51,8 +52,10 @@ export const getStreak = async (
     }
     
     res.json({
-      id: doc.id,
-      ...doc.data()
+      streak: serializeTimestamps({
+        id: doc.id,
+        ...doc.data()
+      })
     });
   } catch (error) {
     next(error);
@@ -92,10 +95,10 @@ export const getStreakByType = async (
       });
     } else {
       const doc = snapshot.docs[0];
-      res.json({
+      res.json(serializeTimestamps({
         id: doc.id,
         ...doc.data()
-      });
+      }));
     }
   } catch (error) {
     next(error);
@@ -154,9 +157,11 @@ export const recordActivity = async (
     if (lastActivity && isSameDay(lastActivity, startOfDay)) {
       // Already recorded for this date
       res.json({
-        id: streakRef.id,
-        ...currentData,
-        message: 'Activity already recorded for this date'
+        streak: serializeTimestamps({
+          id: streakRef.id,
+          ...currentData,
+          message: 'Activity already recorded for this date'
+        })
       });
       return;
     }
@@ -207,8 +212,10 @@ export const recordActivity = async (
     const updatedDoc = await streakRef.get();
     
     res.json({
-      id: updatedDoc.id,
-      ...updatedDoc.data()
+      streak: serializeTimestamps({
+        id: updatedDoc.id,
+        ...updatedDoc.data()
+      })
     });
   } catch (error) {
     next(error);
@@ -302,7 +309,7 @@ export const getStreakStatistics = async (
     });
     statistics.totalActiveDays = allDates.size;
     
-    res.json({ statistics, period });
+    res.json(serializeTimestamps({ statistics, period }));
   } catch (error) {
     next(error);
   }
@@ -336,8 +343,10 @@ export const resetStreak = async (
     const updatedDoc = await streakRef.get();
     
     res.json({
-      id: updatedDoc.id,
-      ...updatedDoc.data()
+      streak: serializeTimestamps({
+        id: updatedDoc.id,
+        ...updatedDoc.data()
+      })
     });
   } catch (error) {
     next(error);

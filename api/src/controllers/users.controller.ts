@@ -4,6 +4,7 @@ import { ApiError } from '../middleware/errorHandler';
 import { getFirestore, getStorage, getAuth } from '../config/firebase';
 import { logger } from '../utils/logger';
 import * as admin from 'firebase-admin';
+import { serializeTimestamps } from '../utils/timestamp';
 
 interface DeleteResult {
   success: boolean;
@@ -50,9 +51,7 @@ export const getProfile = async (
     
     const profile = profileDoc.data() as UserProfile;
     res.json({
-      ...profile,
-      createdAt: profile.createdAt.toDate().toISOString(),
-      updatedAt: profile.updatedAt.toDate().toISOString(),
+      profile: serializeTimestamps(profile)
     });
   } catch (error) {
     next(error);
@@ -102,9 +101,7 @@ export const createProfile = async (
     await db.doc(`userProfiles/${uid}`).set(profile);
     
     res.status(201).json({
-      ...profile,
-      createdAt: profile.createdAt.toDate().toISOString(),
-      updatedAt: profile.updatedAt.toDate().toISOString(),
+      profile: serializeTimestamps(profile)
     });
   } catch (error) {
     next(error);
@@ -160,9 +157,7 @@ export const updateProfile = async (
     const data = updatedProfile.data() as UserProfile;
     
     res.json({
-      ...data,
-      createdAt: data.createdAt.toDate().toISOString(),
-      updatedAt: data.updatedAt.toDate().toISOString(),
+      profile: serializeTimestamps(data)
     });
   } catch (error) {
     next(error);

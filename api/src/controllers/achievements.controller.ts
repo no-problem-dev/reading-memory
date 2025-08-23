@@ -3,6 +3,7 @@ import { AuthRequest } from '../middleware/auth';
 import { ApiError } from '../middleware/errorHandler';
 import { getFirestore } from '../config/firebase';
 import { FieldValue, Query } from 'firebase-admin/firestore';
+import { serializeTimestamps } from '../utils/timestamp';
 
 // Badge definitions (would normally be in a separate config/database)
 const BADGES: Record<string, any> = {
@@ -136,14 +137,14 @@ export const getBadgesWithAchievements = async (
       const achievement = userAchievements.get(badge.id);
       return {
         badge,
-        achievement: achievement || {
+        achievement: serializeTimestamps(achievement || {
           id: null,
           badgeId: badge.id,
           userId,
           unlockedAt: null,
           progress: 0,
           isUnlocked: false
-        }
+        })
       };
     });
     
@@ -181,7 +182,7 @@ export const getAchievements = async (
     }
     
     const snapshot = await query.get();
-    const achievements = snapshot.docs.map(doc => ({
+    const achievements = snapshot.docs.map(doc => serializeTimestamps({
       id: doc.id,
       ...doc.data()
     }));
@@ -210,8 +211,10 @@ export const getAchievement = async (
     }
     
     res.json({
-      id: doc.id,
-      ...doc.data()
+      achievement: serializeTimestamps({
+        id: doc.id,
+        ...doc.data()
+      })
     });
   } catch (error) {
     next(error);
@@ -285,8 +288,10 @@ export const updateAchievementProgress = async (
     const doc = await achievementRef.get();
     
     res.json({
-      id: doc.id,
-      ...doc.data()
+      achievement: serializeTimestamps({
+        id: doc.id,
+        ...doc.data()
+      })
     });
   } catch (error) {
     next(error);
@@ -360,10 +365,10 @@ export const checkAndUpdateAchievements = async (
       updatedAchievements.push(result);
     }
     
-    res.json({
+    res.json(serializeTimestamps({
       checkedBadges: updates.length,
       updatedAchievements
-    });
+    }));
   } catch (error) {
     next(error);
   }
@@ -411,10 +416,10 @@ async function updateSingleAchievement(db: any, userId: string, badgeId: string,
   }
   
   const doc = await achievementRef.get();
-  return {
+  return serializeTimestamps({
     id: doc.id,
     ...doc.data()
-  };
+  });
 }
 
 // Get achievement statistics

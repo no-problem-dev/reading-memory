@@ -3,6 +3,7 @@ import { AuthRequest } from '../middleware/auth';
 import { ApiError } from '../middleware/errorHandler';
 import { getFirestore } from '../config/firebase';
 import { FieldValue, Query } from 'firebase-admin/firestore';
+import { serializeTimestamps } from '../utils/timestamp';
 
 // Get activities for a date range
 export const getActivities = async (
@@ -35,7 +36,7 @@ export const getActivities = async (
     }
     
     const snapshot = await query.get();
-    const activities = snapshot.docs.map(doc => ({
+    const activities = snapshot.docs.map(doc => serializeTimestamps({
       id: doc.id,
       ...doc.data()
     }));
@@ -74,10 +75,10 @@ export const getActivityByDate = async (
         readingMinutes: null
       });
     } else {
-      res.json({
+      res.json(serializeTimestamps({
         id: doc.id,
         ...doc.data()
-      });
+      }));
     }
   } catch (error) {
     next(error);
@@ -133,10 +134,10 @@ export const upsertActivity = async (
     
     const updatedDoc = await activityRef.get();
     
-    res.json({
+    res.json(serializeTimestamps({
       id: updatedDoc.id,
       ...updatedDoc.data()
-    });
+    }));
   } catch (error) {
     next(error);
   }
@@ -193,10 +194,10 @@ export const incrementActivity = async (
     
     const updatedDoc = await activityRef.get();
     
-    res.json({
+    res.json(serializeTimestamps({
       id: updatedDoc.id,
       ...updatedDoc.data()
-    });
+    }));
   } catch (error) {
     next(error);
   }
@@ -261,7 +262,7 @@ export const getActivitySummary = async (
       }
     });
     
-    res.json({
+    res.json(serializeTimestamps({
       period,
       startDate,
       endDate,
@@ -274,7 +275,7 @@ export const getActivitySummary = async (
         averageBooksPerDay: activeDays > 0 ? totalBooksRead / activeDays : 0,
         averageMemosPerDay: activeDays > 0 ? totalMemosWritten / activeDays : 0
       }
-    });
+    }));
   } catch (error) {
     next(error);
   }

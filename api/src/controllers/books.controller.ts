@@ -5,6 +5,7 @@ import { BookSearchService } from '../services/bookSearchService';
 import { config } from '../config';
 import { getFirestore } from '../config/firebase';
 import { FieldValue, Query } from 'firebase-admin/firestore';
+import { serializeTimestamps } from '../utils/timestamp';
 
 // Search endpoints (existing)
 export const searchBookByISBN = async (
@@ -91,7 +92,7 @@ export const getBooks = async (
     }
     
     const snapshot = await query.get();
-    const books = snapshot.docs.map(doc => ({
+    const books = snapshot.docs.map(doc => serializeTimestamps({
       id: doc.id,
       ...doc.data()
     }));
@@ -119,8 +120,10 @@ export const getBook = async (
     }
     
     res.json({
-      id: doc.id,
-      ...doc.data()
+      book: serializeTimestamps({
+        id: doc.id,
+        ...doc.data()
+      })
     });
   } catch (error) {
     next(error);
@@ -154,10 +157,10 @@ export const createBook = async (
     const doc = await docRef.get();
     
     res.status(201).json({
-      book: {
+      book: serializeTimestamps({
         id: doc.id,
         ...doc.data()
-      }
+      })
     });
   } catch (error) {
     next(error);
@@ -194,10 +197,10 @@ export const updateBook = async (
     const updatedDoc = await bookRef.get();
     
     res.json({
-      book: {
+      book: serializeTimestamps({
         id: updatedDoc.id,
         ...updatedDoc.data()
-      }
+      })
     });
   } catch (error) {
     next(error);

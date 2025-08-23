@@ -3,6 +3,7 @@ import { AuthRequest } from '../middleware/auth';
 import { ApiError } from '../middleware/errorHandler';
 import { getFirestore } from '../config/firebase';
 import { FieldValue, Query } from 'firebase-admin/firestore';
+import { serializeTimestamps } from '../utils/timestamp';
 
 // Get all goals
 export const getGoals = async (
@@ -36,7 +37,7 @@ export const getGoals = async (
     query = query.orderBy('createdAt', 'desc');
     
     const snapshot = await query.get();
-    const goals = snapshot.docs.map(doc => ({
+    const goals = snapshot.docs.map(doc => serializeTimestamps({
       id: doc.id,
       ...doc.data()
     }));
@@ -65,8 +66,10 @@ export const getGoal = async (
     }
     
     res.json({
-      id: doc.id,
-      ...doc.data()
+      goal: serializeTimestamps({
+        id: doc.id,
+        ...doc.data()
+      })
     });
   } catch (error) {
     next(error);
@@ -114,8 +117,10 @@ export const createGoal = async (
     const doc = await docRef.get();
     
     res.status(201).json({
-      id: doc.id,
-      ...doc.data()
+      goal: serializeTimestamps({
+        id: doc.id,
+        ...doc.data()
+      })
     });
   } catch (error) {
     next(error);
@@ -163,8 +168,10 @@ export const updateGoal = async (
     const updatedDoc = await goalRef.get();
     
     res.json({
-      id: updatedDoc.id,
-      ...updatedDoc.data()
+      goal: serializeTimestamps({
+        id: updatedDoc.id,
+        ...updatedDoc.data()
+      })
     });
   } catch (error) {
     next(error);
@@ -234,8 +241,10 @@ export const updateGoalProgress = async (
     const updatedDoc = await goalRef.get();
     
     res.json({
-      id: updatedDoc.id,
-      ...updatedDoc.data()
+      goal: serializeTimestamps({
+        id: updatedDoc.id,
+        ...updatedDoc.data()
+      })
     });
   } catch (error) {
     next(error);
