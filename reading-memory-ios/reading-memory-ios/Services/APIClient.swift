@@ -61,7 +61,48 @@ final class APIClient {
         if httpResponse.statusCode >= 200 && httpResponse.statusCode < 300 {
             do {
                 let decoder = JSONDecoder()
-                decoder.dateDecodingStrategy = .iso8601
+                
+                // Custom ISO8601 date formatter that handles milliseconds
+                let formatter = DateFormatter()
+                formatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss.SSSZZZZZ"
+                formatter.calendar = Calendar(identifier: .iso8601)
+                formatter.timeZone = TimeZone(secondsFromGMT: 0)
+                formatter.locale = Locale(identifier: "en_US_POSIX")
+                
+                decoder.dateDecodingStrategy = .custom { decoder in
+                    let container = try decoder.singleValueContainer()
+                    let dateString = try container.decode(String.self)
+                    
+                    // Try with milliseconds first
+                    if let date = formatter.date(from: dateString) {
+                        return date
+                    }
+                    
+                    // Try without milliseconds
+                    formatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ssZZZZZ"
+                    if let date = formatter.date(from: dateString) {
+                        return date
+                    }
+                    
+                    // Try basic ISO8601
+                    let isoFormatter = ISO8601DateFormatter()
+                    isoFormatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+                    if let date = isoFormatter.date(from: dateString) {
+                        return date
+                    }
+                    
+                    // Try without fractional seconds
+                    isoFormatter.formatOptions = [.withInternetDateTime]
+                    if let date = isoFormatter.date(from: dateString) {
+                        return date
+                    }
+                    
+                    throw DecodingError.dataCorruptedError(
+                        in: container,
+                        debugDescription: "Cannot decode date string \(dateString)"
+                    )
+                }
+                
                 return try decoder.decode(T.self, from: data)
             } catch {
                 // デバッグ用: レスポンスの内容を出力
@@ -133,7 +174,12 @@ final class APIClient {
     
     func generateAIResponse(bookId: String, message: String) async throws -> AIResponseResult {
         let encoder = JSONEncoder()
-        encoder.dateEncodingStrategy = .iso8601
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss.SSSZZZZZ"
+        formatter.calendar = Calendar(identifier: .iso8601)
+        formatter.timeZone = TimeZone(secondsFromGMT: 0)
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        encoder.dateEncodingStrategy = .formatted(formatter)
         let body = try encoder.encode([
             "message": message
         ])
@@ -248,7 +294,12 @@ final class APIClient {
     func createBook(_ book: Book) async throws -> Book {
         let bookData = BookCreateRequest(from: book)
         let encoder = JSONEncoder()
-        encoder.dateEncodingStrategy = .iso8601
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss.SSSZZZZZ"
+        formatter.calendar = Calendar(identifier: .iso8601)
+        formatter.timeZone = TimeZone(secondsFromGMT: 0)
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        encoder.dateEncodingStrategy = .formatted(formatter)
         let body = try encoder.encode(bookData)
         
         let request = try await makeRequest(
@@ -264,7 +315,12 @@ final class APIClient {
     func updateBook(_ book: Book) async throws -> Book {
         let bookData = BookUpdateRequest(from: book)
         let encoder = JSONEncoder()
-        encoder.dateEncodingStrategy = .iso8601
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss.SSSZZZZZ"
+        formatter.calendar = Calendar(identifier: .iso8601)
+        formatter.timeZone = TimeZone(secondsFromGMT: 0)
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        encoder.dateEncodingStrategy = .formatted(formatter)
         let body = try encoder.encode(bookData)
         
         let request = try await makeRequest(
@@ -300,7 +356,12 @@ final class APIClient {
     
     func createActivity(_ activity: ReadingActivity) async throws -> ReadingActivity {
         let encoder = JSONEncoder()
-        encoder.dateEncodingStrategy = .iso8601
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss.SSSZZZZZ"
+        formatter.calendar = Calendar(identifier: .iso8601)
+        formatter.timeZone = TimeZone(secondsFromGMT: 0)
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        encoder.dateEncodingStrategy = .formatted(formatter)
         let body = try encoder.encode(activity)
         
         let request = try await makeRequest(
@@ -327,7 +388,12 @@ final class APIClient {
     
     func createGoal(_ goal: ReadingGoal) async throws -> ReadingGoal {
         let encoder = JSONEncoder()
-        encoder.dateEncodingStrategy = .iso8601
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss.SSSZZZZZ"
+        formatter.calendar = Calendar(identifier: .iso8601)
+        formatter.timeZone = TimeZone(secondsFromGMT: 0)
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        encoder.dateEncodingStrategy = .formatted(formatter)
         let body = try encoder.encode(goal)
         
         let request = try await makeRequest(
@@ -342,7 +408,12 @@ final class APIClient {
     
     func updateGoal(_ goal: ReadingGoal) async throws -> ReadingGoal {
         let encoder = JSONEncoder()
-        encoder.dateEncodingStrategy = .iso8601
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss.SSSZZZZZ"
+        formatter.calendar = Calendar(identifier: .iso8601)
+        formatter.timeZone = TimeZone(secondsFromGMT: 0)
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        encoder.dateEncodingStrategy = .formatted(formatter)
         let body = try encoder.encode(goal)
         
         let request = try await makeRequest(
@@ -378,7 +449,12 @@ final class APIClient {
     
     func createAchievement(_ achievement: Achievement) async throws -> Achievement {
         let encoder = JSONEncoder()
-        encoder.dateEncodingStrategy = .iso8601
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss.SSSZZZZZ"
+        formatter.calendar = Calendar(identifier: .iso8601)
+        formatter.timeZone = TimeZone(secondsFromGMT: 0)
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        encoder.dateEncodingStrategy = .formatted(formatter)
         let body = try encoder.encode(achievement)
         
         let request = try await makeRequest(
@@ -405,7 +481,12 @@ final class APIClient {
     
     func createOrUpdateStreak(_ streak: ReadingStreak) async throws -> ReadingStreak {
         let encoder = JSONEncoder()
-        encoder.dateEncodingStrategy = .iso8601
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss.SSSZZZZZ"
+        formatter.calendar = Calendar(identifier: .iso8601)
+        formatter.timeZone = TimeZone(secondsFromGMT: 0)
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        encoder.dateEncodingStrategy = .formatted(formatter)
         let body = try encoder.encode(streak)
         
         let request = try await makeRequest(
@@ -441,7 +522,12 @@ final class APIClient {
     
     func createUserProfile(_ profile: UserProfile) async throws -> UserProfile {
         let encoder = JSONEncoder()
-        encoder.dateEncodingStrategy = .iso8601
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss.SSSZZZZZ"
+        formatter.calendar = Calendar(identifier: .iso8601)
+        formatter.timeZone = TimeZone(secondsFromGMT: 0)
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        encoder.dateEncodingStrategy = .formatted(formatter)
         let body = try encoder.encode(profile)
         
         let request = try await makeRequest(
@@ -456,7 +542,12 @@ final class APIClient {
     
     func updateUserProfile(_ profile: UserProfile) async throws -> UserProfile {
         let encoder = JSONEncoder()
-        encoder.dateEncodingStrategy = .iso8601
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss.SSSZZZZZ"
+        formatter.calendar = Calendar(identifier: .iso8601)
+        formatter.timeZone = TimeZone(secondsFromGMT: 0)
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        encoder.dateEncodingStrategy = .formatted(formatter)
         let body = try encoder.encode(profile)
         
         let request = try await makeRequest(
