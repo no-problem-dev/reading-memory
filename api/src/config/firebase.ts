@@ -8,13 +8,13 @@ export const initializeFirebase = async () => {
       // In production, use default application credentials
       admin.initializeApp({
         projectId: config.gcpProjectId,
-        storageBucket: `${config.gcpProjectId}.firebasestorage.app`,
+        storageBucket: `${config.gcpProjectId}.appspot.com`,
       });
     } else {
       // In development, use service account key file or default credentials
       admin.initializeApp({
         projectId: config.gcpProjectId,
-        storageBucket: `${config.gcpProjectId}.firebasestorage.app`,
+        storageBucket: `${config.gcpProjectId}.appspot.com`,
       });
     }
     

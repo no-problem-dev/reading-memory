@@ -3,6 +3,7 @@ import { AuthRequest } from '../middleware/auth';
 import { ApiError } from '../middleware/errorHandler';
 import { getFirestore, getStorage } from '../config/firebase';
 import { v4 as uuidv4 } from 'uuid';
+import { logger } from '../utils/logger';
 
 // Helper function to upload file
 const uploadFile = async (
@@ -13,6 +14,8 @@ const uploadFile = async (
   const bucket = storage.bucket();
   const blob = bucket.file(filename);
   
+  logger.info(`Uploading file: ${filename}, mimetype: ${file.mimetype}, size: ${file.size}, bucket: ${bucket.name}`);
+  
   return new Promise((resolve, reject) => {
     const stream = blob.createWriteStream({
       metadata: {
@@ -20,7 +23,8 @@ const uploadFile = async (
       },
     });
     
-    stream.on('error', () => {
+    stream.on('error', (error) => {
+      logger.error('Stream error during upload:', error);
       reject(new ApiError(500, 'INTERNAL_ERROR', 'Failed to upload image'));
     });
     
@@ -33,6 +37,7 @@ const uploadFile = async (
         const publicUrl = `https://storage.googleapis.com/${bucket.name}/${filename}`;
         resolve(publicUrl);
       } catch (error) {
+        logger.error('Error making file public:', error);
         reject(error);
       }
     });
@@ -51,18 +56,26 @@ export const uploadProfileImage = async (
     const userId = req.user!.uid;
     const file = req.file;
     
+    logger.info(`Upload profile image request for user: ${userId}`);
+    
     if (!file) {
+      logger.error('No file provided in request');
       throw new ApiError(400, 'INVALID_ARGUMENT', 'No image file provided');
     }
     
+    logger.info(`File received: ${file.originalname}, size: ${file.size}, mimetype: ${file.mimetype}`);
+    
     const filename = `users/${userId}/profile/${uuidv4()}.jpg`;
     const publicUrl = await uploadFile(file, filename);
+    
+    logger.info(`Upload successful: ${publicUrl}`);
     
     res.json({
       success: true,
       url: publicUrl,
     });
   } catch (error) {
+    logger.error('Upload profile image error:', error);
     next(error);
   }
 };
