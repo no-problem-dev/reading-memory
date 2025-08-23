@@ -1,14 +1,38 @@
 import UIKit
 import GoogleSignIn
 import FirebaseCore
+import FirebaseAuth
 
 class AppDelegate: NSObject, UIApplicationDelegate {
+    private let hasLaunchedBeforeKey = "com.readingmemory.hasLaunchedBefore"
+    
     func application(_ application: UIApplication,
                      didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey : Any]? = nil) -> Bool {
         // Firebase初期化
         FirebaseApp.configure()
         
+        // 初回起動チェック
+        checkFirstLaunchAndSignOut()
+        
         return true
+    }
+    
+    private func checkFirstLaunchAndSignOut() {
+        let userDefaults = UserDefaults.standard
+        let hasLaunchedBefore = userDefaults.bool(forKey: hasLaunchedBeforeKey)
+        
+        if !hasLaunchedBefore {
+            // 初回起動の場合、Firebase Authからサインアウト
+            do {
+                try Auth.auth().signOut()
+                print("First launch detected: Signed out from Firebase Auth")
+            } catch {
+                print("Error signing out on first launch: \(error)")
+            }
+            
+            // 初回起動フラグを設定
+            userDefaults.set(true, forKey: hasLaunchedBeforeKey)
+        }
     }
     
     func application(_ app: UIApplication,
