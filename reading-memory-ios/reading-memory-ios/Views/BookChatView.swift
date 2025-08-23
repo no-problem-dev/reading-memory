@@ -109,7 +109,7 @@ struct BookChatView: View {
                     viewModel.toggleAI()
                 } label: {
                     HStack(spacing: 4) {
-                        Image(systemName: viewModel.isAIEnabled ? "sparkles" : "sparkles.circle")
+                        Image(systemName: viewModel.isAIEnabled ? "sparkles" : "sparkle")
                             .font(.system(size: 16))
                         Text("AI")
                             .font(.caption)
