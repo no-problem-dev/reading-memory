@@ -33,4 +33,31 @@ final class BookRegistrationViewModel: BaseViewModel {
         }
         return result
     }
+    
+    func registerBookFromSearchResult(_ searchResult: BookSearchResult) async -> Bool {
+        var result = false
+        await withLoadingNoThrow { [weak self] in
+            guard let self = self else {
+                throw AppError.authenticationRequired
+            }
+            
+            print("DEBUG: Registering book from search result...")
+            print("Title: \(searchResult.title)")
+            print("Author: \(searchResult.author)")
+            print("ISBN: \(searchResult.isbn ?? "nil")")
+            print("Cover Image URL: \(searchResult.coverImageUrl ?? "nil")")
+            print("Data Source: \(searchResult.dataSource.rawValue)")
+            
+            // 検索結果から本を作成（画像のアップロードを含む）
+            let createdBook = try await self.bookRepository.createBookFromSearchResult(searchResult)
+            
+            // アクティビティを記録（読みたいリストに追加）
+            if createdBook.status == .wantToRead {
+                try? await self.activityRepository.recordBookRead()
+            }
+            
+            result = true
+        }
+        return result
+    }
 }

@@ -9,7 +9,7 @@ final class BookSearchViewModel: BaseViewModel {
     private let cacheService = BookCacheService.shared
     
     // 検索結果
-    var searchResults: [Book] = []
+    var searchResults: [BookSearchResult] = []
     var publicBooks: [Book] = []  // Firestore内の公開本
     var isSearching = false
     var searchQuery = ""
@@ -27,11 +27,11 @@ final class BookSearchViewModel: BaseViewModel {
         
         searchQuery = query
         
-        // キャッシュをチェック
-        if let cachedResults = cacheService.getCachedResults(for: query) {
-            searchResults = cachedResults
-            return
-        }
+        // TODO: キャッシュ機能をBookSearchResultに対応させる
+        // if let cachedResults = cacheService.getCachedResults(for: query) {
+        //     searchResults = cachedResults
+        //     return
+        // }
         
         isSearching = true
         
@@ -42,7 +42,7 @@ final class BookSearchViewModel: BaseViewModel {
             let apiResults = await self.searchInGoogleBooks(query: query)
             
             // 重複を排除（ISBNベース）
-            var uniqueBooks: [Book] = []
+            var uniqueBooks: [BookSearchResult] = []
             var seenISBNs: Set<String> = []
             
             // API結果を処理
@@ -66,8 +66,8 @@ final class BookSearchViewModel: BaseViewModel {
             
             self.searchResults = uniqueBooks
             
-            // 結果をキャッシュに保存
-            self.cacheService.cacheSearchResults(uniqueBooks, for: query)
+            // TODO: キャッシュ機能をBookSearchResultに対応させる
+            // self.cacheService.cacheSearchResults(uniqueBooks, for: query)
             
             // 検索履歴に追加
             self.cacheService.addRecentSearch(query)
@@ -76,17 +76,14 @@ final class BookSearchViewModel: BaseViewModel {
         isSearching = false
     }
     
-    private func searchInGoogleBooks(query: String) async -> [Book] {
-        guard let userId = authService.currentUser?.uid else { return [] }
+    private func searchInGoogleBooks(query: String) async -> [BookSearchResult] {
         // 統合検索サービスを使用
         return await searchService.unifiedSearch(query: query)
     }
     
-    func isBookAlreadyRegistered(_ book: Book) async -> Bool {
-        guard let userId = authService.currentUser?.uid else { return false }
-        
+    func isBookAlreadyRegistered(_ searchResult: BookSearchResult) async -> Bool {
         // ISBNで確認
-        if let isbn = book.isbn, !isbn.isEmpty {
+        if let isbn = searchResult.isbn, !isbn.isEmpty {
             let existingBook = try? await bookRepository.getBookByISBN(isbn: isbn)
             return existingBook != nil
         }

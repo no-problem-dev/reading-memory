@@ -9,6 +9,7 @@ class OnboardingViewModel {
     var selectedGenres: Set<String> = []
     var monthlyGoal = 3
     var firstBook: Book?
+    var firstBookSearchResult: BookSearchResult?
     var isLoading = false
     var errorMessage: String?
     
@@ -49,7 +50,11 @@ class OnboardingViewModel {
             )
             
             // 3. Add first book if selected
-            if let selectedBook = firstBook {
+            if let searchResult = firstBookSearchResult {
+                // 検索結果から本を作成（画像のアップロードを含む）
+                _ = try await bookRepository.createBookFromSearchResult(searchResult)
+            } else if let selectedBook = firstBook {
+                // 既存の本を保存
                 let book = Book(
                     id: UUID().uuidString,
                     isbn: selectedBook.isbn,

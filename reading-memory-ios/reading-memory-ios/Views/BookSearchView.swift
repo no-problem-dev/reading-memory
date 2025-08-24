@@ -4,7 +4,7 @@ struct BookSearchView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var viewModel = BookSearchViewModel()
     @State private var searchText = ""
-    @State private var selectedBook: Book?
+    @State private var selectedSearchResult: BookSearchResult?
     @State private var showingRegistration = false
     @State private var searchFocused = false
     
@@ -60,8 +60,8 @@ struct BookSearchView: View {
                 }
             }
             .sheet(isPresented: $showingRegistration) {
-                if let book = selectedBook {
-                    BookRegistrationView(prefilledBook: book)
+                if let searchResult = selectedSearchResult {
+                    BookRegistrationView(searchResult: searchResult)
                 }
             }
         }
@@ -250,15 +250,10 @@ struct BookSearchView: View {
                 
                 Button {
                     guard let userId = AuthService.shared.currentUser?.uid else { return }
-                    selectedBook = Book(
-                        id: UUID().uuidString,
+                    selectedSearchResult = BookSearchResult(
                         title: "",
                         author: "",
-                        dataSource: .manual,
-                        status: .wantToRead,
-                        addedDate: Date(),
-                        createdAt: Date(),
-                        updatedAt: Date()
+                        dataSource: .manual
                     )
                     showingRegistration = true
                 } label: {
@@ -294,9 +289,9 @@ struct BookSearchView: View {
     private var searchResultsList: some View {
         ScrollView {
             LazyVStack(spacing: MemorySpacing.xs) {
-                ForEach(viewModel.searchResults) { book in
-                    BookSearchResultRow(book: book) {
-                        selectedBook = book
+                ForEach(viewModel.searchResults) { searchResult in
+                    BookSearchResultRow(searchResult: searchResult) {
+                        selectedSearchResult = searchResult
                         showingRegistration = true
                     }
                     .padding(.horizontal, MemorySpacing.md)
@@ -311,7 +306,7 @@ struct BookSearchView: View {
 // MARK: - Search Result Row
 
 struct BookSearchResultRow: View {
-    let book: Book
+    let searchResult: BookSearchResult
     let onTap: () -> Void
     @State private var isRegistered = false
     
@@ -319,20 +314,29 @@ struct BookSearchResultRow: View {
         Button(action: onTap) {
             HStack(spacing: MemorySpacing.md) {
                 // Book cover
-                RemoteImage(imageId: book.coverImageId)
+                Group {
+                    if let coverImageUrl = searchResult.coverImageUrl {
+                        RemoteImage(urlString: coverImageUrl)
+                    } else {
+                        Image(systemName: "book.closed")
+                            .foregroundColor(.secondary)
+                            .frame(maxWidth: .infinity, maxHeight: .infinity)
+                            .background(Color(.secondarySystemFill))
+                    }
+                }
                 .frame(width: 60, height: 90)
                 .cornerRadius(MemoryRadius.small)
                 .memoryShadow(.soft)
                 
                 // Book info
                 VStack(alignment: .leading, spacing: MemorySpacing.xs) {
-                    Text(book.title)
+                    Text(searchResult.title)
                         .font(.headline)
                         .foregroundColor(Color(.label))
                         .lineLimit(2)
                         .multilineTextAlignment(.leading)
                     
-                    Text(book.author)
+                    Text(searchResult.author)
                         .font(.subheadline)
                         .foregroundColor(Color(.secondaryLabel))
                         .lineLimit(1)
@@ -389,12 +393,12 @@ struct BookSearchResultRow: View {
         .disabled(isRegistered)
         .task {
             let viewModel = BookSearchViewModel()
-            isRegistered = await viewModel.isBookAlreadyRegistered(book)
+            isRegistered = await viewModel.isBookAlreadyRegistered(searchResult)
         }
     }
     
     private var dataSourceText: String {
-        switch book.dataSource {
+        switch searchResult.dataSource {
         case .googleBooks:
             return "Google Books"
         case .openBD:
@@ -407,7 +411,7 @@ struct BookSearchResultRow: View {
     }
     
     private var dataSourceIcon: String {
-        switch book.dataSource {
+        switch searchResult.dataSource {
         case .googleBooks, .openBD, .rakutenBooks:
             return "globe"
         case .manual:
@@ -416,7 +420,7 @@ struct BookSearchResultRow: View {
     }
     
     private var dataSourceColor: Color {
-        switch book.dataSource {
+        switch searchResult.dataSource {
         case .googleBooks:
             return MemoryTheme.Colors.primaryBlue
         case .openBD:

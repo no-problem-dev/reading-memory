@@ -150,8 +150,9 @@ struct OnboardingView: View {
             }
         }
         .sheet(isPresented: $isShowingBookSearch) {
-            OnboardingBookSearchView(onBookSelected: { book in
-                viewModel.firstBook = book
+            OnboardingBookSearchView(onBookSelected: { searchResult in
+                viewModel.firstBookSearchResult = searchResult
+                viewModel.firstBook = searchResult.toBook()  // 表示用にBookオブジェクトも作成
                 isShowingBookSearch = false
             })
                     }
@@ -166,9 +167,8 @@ struct OnboardingView: View {
             return !viewModel.displayName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
         case 2:
             return !viewModel.selectedGenres.isEmpty && viewModel.monthlyGoal > 0
-        case 4:
-            return viewModel.firstBook != nil || !firstChatMessage.isEmpty
         default:
+            // ステップ0, 3, 4では常に進める
             return true
         }
     }

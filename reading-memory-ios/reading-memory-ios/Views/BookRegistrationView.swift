@@ -28,12 +28,20 @@ struct BookRegistrationView: View {
     @State private var selectedStatus: ReadingStatus = .wantToRead
     
     let prefilledBook: Book?
+    let searchResult: BookSearchResult?
     
     init(prefilledBook: Book? = nil) {
         self.prefilledBook = prefilledBook
+        self.searchResult = nil
         if let book = prefilledBook {
             _selectedStatus = State(initialValue: book.status)
         }
+    }
+    
+    init(searchResult: BookSearchResult) {
+        self.prefilledBook = nil
+        self.searchResult = searchResult
+        _selectedStatus = State(initialValue: .wantToRead)
     }
     
     var body: some View {
@@ -55,6 +63,9 @@ struct BookRegistrationView: View {
                         // Cover image preview
                         if let imageId = coverImageId, !imageId.isEmpty {
                             coverImageSection(imageId: imageId)
+                                .padding(.horizontal, MemorySpacing.md)
+                        } else if let coverImageUrl = searchResult?.coverImageUrl {
+                            coverImageUrlSection(coverImageUrl: coverImageUrl)
                                 .padding(.horizontal, MemorySpacing.md)
                         }
                         
@@ -215,6 +226,20 @@ struct BookRegistrationView: View {
                 }
                 description = book.description ?? ""
                 coverImageId = book.coverImageId
+            } else if let searchResult = searchResult {
+                title = searchResult.title
+                author = searchResult.author
+                isbn = searchResult.isbn ?? ""
+                publisher = searchResult.publisher ?? ""
+                if let date = searchResult.publishedDate {
+                    publishedDate = date
+                    hasPublishedDate = true
+                }
+                if let pages = searchResult.pageCount {
+                    pageCount = String(pages)
+                }
+                description = searchResult.description ?? ""
+                // 検索結果の画像は後でアップロードされる
             }
         }
     }
@@ -296,6 +321,19 @@ struct BookRegistrationView: View {
                 .foregroundColor(MemoryTheme.Colors.inkGray)
             
             RemoteImage(imageId: imageId)
+                .frame(maxHeight: 250)
+                .cornerRadius(MemoryRadius.medium)
+                .memoryShadow(.medium)
+        }
+    }
+    
+    private func coverImageUrlSection(coverImageUrl: String) -> some View {
+        VStack(spacing: MemorySpacing.md) {
+            Text("表紙プレビュー")
+                .font(MemoryTheme.Fonts.caption())
+                .foregroundColor(MemoryTheme.Colors.inkGray)
+            
+            RemoteImage(urlString: coverImageUrl)
                 .frame(maxHeight: 250)
                 .cornerRadius(MemoryRadius.medium)
                 .memoryShadow(.medium)
@@ -429,7 +467,28 @@ struct BookRegistrationView: View {
                 )
             }
             
-            let success = await viewModel.registerBook(book)
+            // searchResultがある場合は専用のメソッドを使用
+            let success: Bool
+            if let searchResult = searchResult {
+                // 検索結果からの登録（入力された情報で上書き）
+                var updatedSearchResult = searchResult
+                // フォームで編集された情報を反映（簡易的な実装）
+                let modifiedSearchResult = BookSearchResult(
+                    isbn: isbn.isEmpty ? searchResult.isbn : isbn,
+                    title: title.trimmingCharacters(in: .whitespacesAndNewlines),
+                    author: author.trimmingCharacters(in: .whitespacesAndNewlines),
+                    publisher: publisher.isEmpty ? searchResult.publisher : publisher.trimmingCharacters(in: .whitespacesAndNewlines),
+                    publishedDate: hasPublishedDate ? publishedDate : searchResult.publishedDate,
+                    pageCount: Int(pageCount) ?? searchResult.pageCount,
+                    description: description.isEmpty ? searchResult.description : description.trimmingCharacters(in: .whitespacesAndNewlines),
+                    coverImageUrl: searchResult.coverImageUrl,
+                    dataSource: searchResult.dataSource
+                )
+                success = await viewModel.registerBookFromSearchResult(modifiedSearchResult)
+            } else {
+                success = await viewModel.registerBook(book)
+            }
+            
             if success {
                 dismiss()
             }

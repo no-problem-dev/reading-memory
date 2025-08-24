@@ -47,15 +47,23 @@ private class CachedImage {
     }
 }
 
-/// 画像IDからAsyncImageを表示するView
+/// 画像IDまたはURLからAsyncImageを表示するView
 struct RemoteImage: View {
     let imageId: String?
+    let urlString: String?
     let contentMode: ContentMode
     
     @State private var imageUrl: URL?
     
     init(imageId: String?, contentMode: ContentMode = .fit) {
         self.imageId = imageId
+        self.urlString = nil
+        self.contentMode = contentMode
+    }
+    
+    init(urlString: String?, contentMode: ContentMode = .fit) {
+        self.imageId = nil
+        self.urlString = urlString
         self.contentMode = contentMode
     }
     
@@ -78,7 +86,13 @@ struct RemoteImage: View {
             }
         }
         .task {
-            imageUrl = await ImageService.shared.getImageUrl(id: imageId)
+            if let urlString = urlString {
+                // URL文字列が提供されている場合は直接使用
+                imageUrl = URL(string: urlString)
+            } else if let imageId = imageId {
+                // imageIdが提供されている場合はImageServiceから取得
+                imageUrl = await ImageService.shared.getImageUrl(id: imageId)
+            }
         }
     }
 }

@@ -86,6 +86,8 @@ export interface BookSearchResult {
   publishedDate?: string;
   pageCount?: number;
   description?: string;
+  // Note: coverImageUrl is only used for external book search results.
+  // When saving to database, iOS app should upload the image and use coverImageId instead.
   coverImageUrl?: string;
   dataSource: 'googleBooks' | 'openBD' | 'manual';
 }

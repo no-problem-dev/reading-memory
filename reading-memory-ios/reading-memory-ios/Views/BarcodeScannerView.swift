@@ -10,7 +10,7 @@ struct BarcodeScannerView: View {
     @State private var showError = false
     @State private var errorMessage = ""
     @State private var showBookRegistration = false
-    @State private var foundBook: Book?
+    @State private var foundSearchResult: BookSearchResult?
     private let authService = AuthService.shared
     
     var body: some View {
@@ -159,9 +159,9 @@ struct BarcodeScannerView: View {
             Text(errorMessage)
         }
         .fullScreenCover(isPresented: $showBookRegistration) {
-            if let book = foundBook {
-                BookRegistrationView(prefilledBook: book)
-                                }
+            if let searchResult = foundSearchResult {
+                BookRegistrationView(searchResult: searchResult)
+            }
         }
         .overlay {
             if isSearching {
@@ -209,25 +209,20 @@ struct BarcodeScannerView: View {
             await MainActor.run {
                 isSearching = false
                 
-                if let book = books.first {
-                    // API から取得した本は public として扱う
-                    foundBook = book
+                if let searchResult = books.first {
+                    // API から取得した本
+                    foundSearchResult = searchResult
                     showBookRegistration = true
                 } else {
                     // 見つからない場合は手動入力を促す
                     guard let userId = authService.currentUser?.uid else { return }
-                    let manualBook = Book(
-                        id: UUID().uuidString,
+                    let manualSearchResult = BookSearchResult(
                         isbn: isbn,
                         title: "",
                         author: "",
-                        dataSource: .manual,
-                        status: .wantToRead,
-                        addedDate: Date(),
-                        createdAt: Date(),
-                        updatedAt: Date()
+                        dataSource: .manual
                     )
-                    foundBook = manualBook
+                    foundSearchResult = manualSearchResult
                     showBookRegistration = true
                 }
             }

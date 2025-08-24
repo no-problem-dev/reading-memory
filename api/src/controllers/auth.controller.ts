@@ -128,7 +128,7 @@ export const completeOnboarding = async (
     const profileData = {
       id: uid,
       displayName: displayName.trim(),
-      profileImageUrl: req.body.profileImageUrl || null,
+      avatarImageId: req.body.avatarImageId || null,
       bio: req.body.bio || null,
       favoriteGenres,
       readingGoal: monthlyGoal,

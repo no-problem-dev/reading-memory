@@ -1,4 +1,5 @@
 import Foundation
+import UIKit
 
 final class BookRepository {
     static let shared = BookRepository()
@@ -37,6 +38,62 @@ final class BookRepository {
     }
     
     func createBook(_ book: Book) async throws -> Book {
+        return try await apiClient.createBook(book)
+    }
+    
+    /// 検索結果から本を作成（画像のアップロードを含む）
+    func createBookFromSearchResult(_ searchResult: BookSearchResult) async throws -> Book {
+        var book = searchResult.toBook()
+        
+        // coverImageUrlがある場合は画像をアップロード
+        if let coverImageUrl = searchResult.coverImageUrl,
+           let url = URL(string: coverImageUrl) {
+            do {
+                // 画像をダウンロード
+                let (data, _) = try await URLSession.shared.data(from: url)
+                
+                if let image = UIImage(data: data) {
+                    // 画像をアップロードしてIDを取得
+                    let imageId = try await StorageService.shared.uploadImage(image)
+                    
+                    // bookのcoverImageIdを更新
+                    book = Book(
+                        id: book.id,
+                        isbn: book.isbn,
+                        title: book.title,
+                        author: book.author,
+                        publisher: book.publisher,
+                        publishedDate: book.publishedDate,
+                        pageCount: book.pageCount,
+                        description: book.description,
+                        coverImageId: imageId,  // アップロードしたimageIdを設定
+                        dataSource: book.dataSource,
+                        status: book.status,
+                        rating: book.rating,
+                        readingProgress: book.readingProgress,
+                        currentPage: book.currentPage,
+                        addedDate: book.addedDate,
+                        startDate: book.startDate,
+                        completedDate: book.completedDate,
+                        lastReadDate: book.lastReadDate,
+                        priority: book.priority,
+                        plannedReadingDate: book.plannedReadingDate,
+                        reminderEnabled: book.reminderEnabled,
+                        purchaseLinks: book.purchaseLinks,
+                        memo: book.memo,
+                        tags: book.tags,
+                        aiSummary: book.aiSummary,
+                        summaryGeneratedAt: book.summaryGeneratedAt,
+                        createdAt: book.createdAt,
+                        updatedAt: book.updatedAt
+                    )
+                }
+            } catch {
+                // 画像のアップロードに失敗してもbook作成は続行
+                print("Failed to upload cover image: \(error)")
+            }
+        }
+        
         return try await apiClient.createBook(book)
     }
     

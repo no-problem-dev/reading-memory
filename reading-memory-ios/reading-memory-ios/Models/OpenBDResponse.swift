@@ -246,7 +246,7 @@ extension OpenBDResponse {
         let author = authors?.joined(separator: ", ") ?? "著者不明"
         let publisher = onix.publishingDetail?.imprint?.imprintName
         let publishedDate = onix.publishingDetail?.publishingDate?.first(where: { $0.publishingDateRole == "01" })?.date
-        let coverImageUrl = extractCoverImageUrl()
+        _ = extractCoverImageUrl()
         
         return Book.new(
             isbn: isbn,

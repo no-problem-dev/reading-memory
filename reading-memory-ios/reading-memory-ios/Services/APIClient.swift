@@ -204,23 +204,23 @@ final class APIClient {
     
     // MARK: 書籍検索
     
-    func searchBookByISBN(_ isbn: String) async throws -> BookSearchResult {
+    func searchBookByISBN(_ isbn: String) async throws -> BookSearchAPIResponse {
         let request = try await makeRequest(
             method: "GET",
             path: "/api/v1/books/search/isbn/\(isbn)"
         )
         
-        return try await execute(request, responseType: BookSearchResult.self)
+        return try await execute(request, responseType: BookSearchAPIResponse.self)
     }
     
-    func searchBooksByQuery(_ query: String) async throws -> BookSearchResult {
+    func searchBooksByQuery(_ query: String) async throws -> BookSearchAPIResponse {
         let request = try await makeRequest(
             method: "GET",
             path: "/api/v1/books/search",
             queryItems: [URLQueryItem(name: "q", value: query)]
         )
         
-        return try await execute(request, responseType: BookSearchResult.self)
+        return try await execute(request, responseType: BookSearchAPIResponse.self)
     }
     
     // MARK: 公開本
@@ -731,8 +731,8 @@ struct SummaryResult: Decodable {
     let summary: String
 }
 
-struct BookSearchResult: Decodable {
-    let books: [APIBookDTO]
+struct BookSearchAPIResponse: Decodable {
+    let books: [BookSearchResultDTO]
 }
 
 struct PublicBooksResult: Decodable {

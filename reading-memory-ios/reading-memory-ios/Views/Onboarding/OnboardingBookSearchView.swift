@@ -5,7 +5,7 @@ struct OnboardingBookSearchView: View {
     @State private var viewModel = BookSearchViewModel()
     @State private var searchText = ""
     
-    let onBookSelected: (Book) -> Void
+    let onBookSelected: (BookSearchResult) -> Void
     
     var body: some View {
         NavigationStack {
@@ -100,9 +100,9 @@ struct OnboardingBookSearchView: View {
     private var searchResultsList: some View {
         ScrollView {
             LazyVStack(spacing: 12) {
-                ForEach(viewModel.searchResults) { book in
-                    OnboardingBookSearchResultRow(book: book) {
-                        onBookSelected(book)
+                ForEach(viewModel.searchResults) { searchResult in
+                    OnboardingBookSearchResultRow(searchResult: searchResult) {
+                        onBookSelected(searchResult)
                         dismiss()
                     }
                 }
@@ -119,31 +119,40 @@ struct OnboardingBookSearchView: View {
 
 // MARK: - Onboarding Book Search Result Row
 struct OnboardingBookSearchResultRow: View {
-    let book: Book
+    let searchResult: BookSearchResult
     let onTap: () -> Void
     
     var body: some View {
         Button(action: onTap) {
             HStack(spacing: 12) {
                 // Book cover
-                RemoteImage(imageId: book.coverImageId)
-                    .frame(width: 50, height: 75)
-                    .cornerRadius(4)
+                Group {
+                    if let coverImageUrl = searchResult.coverImageUrl {
+                        RemoteImage(urlString: coverImageUrl)
+                    } else {
+                        Image(systemName: "book.closed")
+                            .foregroundColor(.secondary)
+                            .frame(maxWidth: .infinity, maxHeight: .infinity)
+                            .background(Color(.secondarySystemFill))
+                    }
+                }
+                .frame(width: 50, height: 75)
+                .cornerRadius(4)
                 
                 // Book info
                 VStack(alignment: .leading, spacing: 4) {
-                    Text(book.title)
+                    Text(searchResult.title)
                         .font(.headline)
                         .foregroundColor(.primary)
                         .lineLimit(2)
                         .multilineTextAlignment(.leading)
                     
-                    Text(book.author)
+                    Text(searchResult.author)
                         .font(.subheadline)
                         .foregroundColor(.secondary)
                         .lineLimit(1)
                     
-                    if let publisher = book.publisher {
+                    if let publisher = searchResult.publisher {
                         Text(publisher)
                             .font(.caption)
                             .foregroundColor(.secondary)
