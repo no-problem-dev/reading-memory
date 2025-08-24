@@ -30,9 +30,9 @@ struct ChatImageView: View {
                         .tint(MemoryTheme.Colors.primaryBlue)
                 )
         }
-    }
-    .task {
-        imageUrl = await ImageService.shared.getImageUrl(id: imageId)
+        .task {
+            imageUrl = await ImageService.shared.getImageUrl(id: imageId)
+        }
     }
 }
 

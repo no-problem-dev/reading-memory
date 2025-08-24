@@ -34,9 +34,9 @@ struct ProfileImageView: View {
                 .foregroundColor(MemoryTheme.Colors.primaryBlue)
                 .frame(width: size, height: size)
         }
-    }
-    .task {
-        imageUrl = await ImageService.shared.getImageUrl(id: imageId)
+        .task {
+            imageUrl = await ImageService.shared.getImageUrl(id: imageId)
+        }
     }
 }
 

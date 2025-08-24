@@ -88,7 +88,7 @@ class GoalViewModel {
                 profile = UserProfile(
                     id: profile.id,
                     displayName: profile.displayName,
-                    profileImageUrl: profile.profileImageUrl,
+                    avatarImageId: profile.avatarImageId,
                     bio: profile.bio,
                     favoriteGenres: profile.favoriteGenres,
                     readingGoal: targetBooks,
@@ -127,7 +127,7 @@ class GoalViewModel {
                 profile = UserProfile(
                     id: profile.id,
                     displayName: profile.displayName,
-                    profileImageUrl: profile.profileImageUrl,
+                    avatarImageId: profile.avatarImageId,
                     bio: profile.bio,
                     favoriteGenres: profile.favoriteGenres,
                     readingGoal: profile.readingGoal,
@@ -180,7 +180,7 @@ class GoalViewModel {
                     profile = UserProfile(
                         id: profile.id,
                         displayName: profile.displayName,
-                        profileImageUrl: profile.profileImageUrl,
+                        avatarImageId: profile.avatarImageId,
                         bio: profile.bio,
                         favoriteGenres: profile.favoriteGenres,
                         readingGoal: nil,

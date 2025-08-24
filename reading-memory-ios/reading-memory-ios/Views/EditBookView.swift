@@ -461,7 +461,7 @@ struct EditBookView: View {
             publishedDate: nil,
             pageCount: nil,
             description: nil,
-            coverImageUrl: nil,
+            coverImageId: nil,
             dataSource: .manual
         )
     ) { _ in }

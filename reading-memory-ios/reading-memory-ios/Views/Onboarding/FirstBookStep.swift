@@ -118,32 +118,10 @@ struct BookCard: View {
     var body: some View {
         HStack(spacing: 16) {
             // Book cover
-            if let imageUrl = book.coverImageUrl,
-               let url = URL(string: imageUrl) {
-                AsyncImage(url: url) { image in
-                    image
-                        .resizable()
-                        .aspectRatio(contentMode: .fit)
-                } placeholder: {
-                    RoundedRectangle(cornerRadius: 8)
-                        .fill(Color.gray.opacity(0.2))
-                        .overlay(
-                            Image(systemName: "book.closed")
-                                .foregroundColor(.gray)
-                        )
-                }
+            RemoteImage(imageId: book.coverImageId)
                 .frame(width: 80, height: 120)
                 .cornerRadius(8)
                 .shadow(radius: 4)
-            } else {
-                RoundedRectangle(cornerRadius: 8)
-                    .fill(Color.gray.opacity(0.2))
-                    .overlay(
-                        Image(systemName: "book.closed")
-                            .foregroundColor(.gray)
-                    )
-                    .frame(width: 80, height: 120)
-            }
             
             // Book info
             VStack(alignment: .leading, spacing: 8) {

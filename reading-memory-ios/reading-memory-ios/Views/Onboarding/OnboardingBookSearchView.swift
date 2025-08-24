@@ -126,27 +126,9 @@ struct OnboardingBookSearchResultRow: View {
         Button(action: onTap) {
             HStack(spacing: 12) {
                 // Book cover
-                if let imageUrl = book.coverImageUrl,
-                   let url = URL(string: imageUrl) {
-                    AsyncImage(url: url) { image in
-                        image
-                            .resizable()
-                            .aspectRatio(contentMode: .fit)
-                    } placeholder: {
-                        RoundedRectangle(cornerRadius: 4)
-                            .fill(Color.gray.opacity(0.2))
-                    }
+                RemoteImage(imageId: book.coverImageId)
                     .frame(width: 50, height: 75)
                     .cornerRadius(4)
-                } else {
-                    RoundedRectangle(cornerRadius: 4)
-                        .fill(Color.gray.opacity(0.2))
-                        .frame(width: 50, height: 75)
-                        .overlay(
-                            Image(systemName: "book.closed")
-                                .foregroundColor(.gray)
-                        )
-                }
                 
                 // Book info
                 VStack(alignment: .leading, spacing: 4) {

@@ -1,8 +1,8 @@
 import Foundation
 import UIKit
 
-final class ImageEntityEntityRepository {
-    static let shared = ImageEntityEntityRepository()
+final class ImageEntityRepository {
+    static let shared = ImageEntityRepository()
     
     private let apiClient = APIClient.shared
     private var imageCache: [String: ImageEntity] = [:]
