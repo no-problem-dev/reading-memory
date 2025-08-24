@@ -616,7 +616,7 @@ struct SimpleEditBookView: View {
             publishedDate: book.publishedDate,
             pageCount: book.pageCount,
             description: book.description,
-            coverImageUrl: book.coverImageUrl,
+            coverImageId: book.coverImageId,
             dataSource: book.dataSource,
             status: status,
             rating: rating,

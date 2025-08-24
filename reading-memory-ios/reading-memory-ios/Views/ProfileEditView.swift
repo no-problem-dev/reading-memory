@@ -25,23 +25,8 @@ struct ProfileEditView: View {
                                         .aspectRatio(contentMode: .fill)
                                         .frame(width: 100, height: 100)
                                         .clipShape(Circle())
-                                } else if let imageUrl = viewModel.userProfile?.profileImageUrl,
-                                        let url = URL(string: imageUrl) {
-                                    AsyncImage(url: url) { image in
-                                        image
-                                            .resizable()
-                                            .aspectRatio(contentMode: .fill)
-                                            .frame(width: 100, height: 100)
-                                            .clipShape(Circle())
-                                    } placeholder: {
-                                        Image(systemName: "person.circle.fill")
-                                            .font(.system(size: 100))
-                                            .foregroundStyle(.gray)
-                                    }
                                 } else {
-                                    Image(systemName: "person.circle.fill")
-                                        .font(.system(size: 100))
-                                        .foregroundStyle(.gray)
+                                    ProfileImageView(imageId: viewModel.userProfile?.avatarImageId, size: 100)
                                 }
                                 
                                 Text("写真を変更")

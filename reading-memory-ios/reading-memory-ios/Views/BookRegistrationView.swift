@@ -24,7 +24,7 @@ struct BookRegistrationView: View {
     @State private var description = ""
     @State private var showDatePicker = false
     @State private var hasPublishedDate = false
-    @State private var coverUrl: String?
+    @State private var coverImageId: String?
     @State private var selectedStatus: ReadingStatus = .wantToRead
     
     let prefilledBook: Book?
@@ -53,8 +53,8 @@ struct BookRegistrationView: View {
                 ScrollView {
                     VStack(spacing: MemorySpacing.lg) {
                         // Cover image preview
-                        if let url = coverUrl, !url.isEmpty {
-                            coverImageSection(url: url)
+                        if let imageId = coverImageId, !imageId.isEmpty {
+                            coverImageSection(imageId: imageId)
                                 .padding(.horizontal, MemorySpacing.md)
                         }
                         
@@ -214,7 +214,7 @@ struct BookRegistrationView: View {
                     pageCount = String(pages)
                 }
                 description = book.description ?? ""
-                coverUrl = book.coverImageUrl
+                coverImageId = book.coverImageId
             }
         }
     }
@@ -289,44 +289,16 @@ struct BookRegistrationView: View {
         }
     }
     
-    private func coverImageSection(url: String) -> some View {
+    private func coverImageSection(imageId: String) -> some View {
         VStack(spacing: MemorySpacing.md) {
             Text("表紙プレビュー")
                 .font(MemoryTheme.Fonts.caption())
                 .foregroundColor(MemoryTheme.Colors.inkGray)
             
-            AsyncImage(url: URL(string: url)) { phase in
-                switch phase {
-                case .success(let image):
-                    image
-                        .resizable()
-                        .aspectRatio(contentMode: .fit)
-                        .frame(maxHeight: 250)
-                        .cornerRadius(MemoryRadius.medium)
-                        .memoryShadow(.medium)
-                case .failure(_):
-                    VStack(spacing: MemorySpacing.sm) {
-                        Image(systemName: "photo.badge.exclamationmark")
-                            .font(.system(size: 40))
-                            .foregroundColor(MemoryTheme.Colors.inkLightGray)
-                        Text("画像を読み込めませんでした")
-                            .font(MemoryTheme.Fonts.caption())
-                            .foregroundColor(MemoryTheme.Colors.inkGray)
-                    }
-                    .frame(height: 200)
-                    .frame(maxWidth: .infinity)
-                    .background(MemoryTheme.Colors.cardBackground)
-                    .cornerRadius(MemoryRadius.medium)
-                case .empty:
-                    ProgressView()
-                        .frame(height: 200)
-                        .frame(maxWidth: .infinity)
-                        .background(MemoryTheme.Colors.cardBackground)
-                        .cornerRadius(MemoryRadius.medium)
-                @unknown default:
-                    EmptyView()
-                }
-            }
+            RemoteImage(imageId: imageId)
+                .frame(maxHeight: 250)
+                .cornerRadius(MemoryRadius.medium)
+                .memoryShadow(.medium)
         }
     }
     
@@ -429,7 +401,7 @@ struct BookRegistrationView: View {
                     publishedDate: hasPublishedDate ? publishedDate : prefilledBook.publishedDate,
                     pageCount: Int(pageCount) ?? prefilledBook.pageCount,
                     description: description.isEmpty ? prefilledBook.description : description.trimmingCharacters(in: .whitespacesAndNewlines),
-                    coverImageUrl: coverUrl ?? prefilledBook.coverImageUrl,
+                    coverImageId: coverImageId ?? prefilledBook.coverImageId,
                     dataSource: prefilledBook.dataSource,
                     status: prefilledBook.status,
                     addedDate: prefilledBook.addedDate,
@@ -448,7 +420,7 @@ struct BookRegistrationView: View {
                     publishedDate: hasPublishedDate ? publishedDate : nil,
                     pageCount: Int(pageCount),
                     description: description.isEmpty ? nil : description.trimmingCharacters(in: .whitespacesAndNewlines),
-                    coverImageUrl: coverUrl,
+                    coverImageId: coverImageId,
                     dataSource: .manual,
                     status: selectedStatus,
                     addedDate: Date(),

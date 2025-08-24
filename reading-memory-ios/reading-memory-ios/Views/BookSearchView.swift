@@ -319,19 +319,7 @@ struct BookSearchResultRow: View {
         Button(action: onTap) {
             HStack(spacing: MemorySpacing.md) {
                 // Book cover
-                Group {
-                    if let imageUrl = book.coverImageUrl {
-                        CachedAsyncImage(url: URL(string: imageUrl)) { image in
-                            image
-                                .resizable()
-                                .aspectRatio(contentMode: .fit)
-                        } placeholder: {
-                            BookCoverPlaceholder()
-                        }
-                    } else {
-                        BookCoverPlaceholder()
-                    }
-                }
+                RemoteImage(imageId: book.coverImageId)
                 .frame(width: 60, height: 90)
                 .cornerRadius(MemoryRadius.small)
                 .memoryShadow(.soft)

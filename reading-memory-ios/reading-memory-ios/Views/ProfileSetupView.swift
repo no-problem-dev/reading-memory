@@ -168,16 +168,16 @@ struct ProfileSetupView: View {
             let userProfileRepository = UserProfileRepository.shared
             
             // Upload profile image if selected
-            var profileImageUrl: String?
+            var avatarImageId: String?
             if let profileImage = profileImage {
-                profileImageUrl = try await uploadProfileImage(image: profileImage, userId: currentUser.id)
+                avatarImageId = try await uploadProfileImage(image: profileImage, userId: currentUser.id)
             }
             
             // Create minimal profile
             let profile = UserProfile(
                 id: currentUser.id,
                 displayName: displayName.trimmingCharacters(in: .whitespacesAndNewlines),
-                profileImageUrl: profileImageUrl,
+                avatarImageId: avatarImageId,
                 bio: nil,
                 favoriteGenres: [],
                 readingGoal: nil,
@@ -198,10 +198,7 @@ struct ProfileSetupView: View {
     
     private func uploadProfileImage(image: UIImage, userId: String) async throws -> String {
         let storageService = StorageService.shared
-        return try await storageService.uploadImage(
-            image,
-            path: .profileImage(userId: userId)
-        )
+        return try await storageService.uploadImage(image)
     }
 }
 

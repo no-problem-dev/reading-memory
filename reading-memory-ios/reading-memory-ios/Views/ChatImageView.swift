@@ -7,13 +7,35 @@ struct ChatImageView: View {
     @State private var imageUrl: URL?
     
     var body: some View {
-        if let imageUrl = imageUrl {
-            CachedAsyncImage(url: imageUrl) { image in
-                image
-                    .resizable()
-                    .aspectRatio(contentMode: .fit)
-                    .cornerRadius(MemoryRadius.medium)
-            } placeholder: {
+        Group {
+            if let imageUrl = imageUrl {
+                AsyncImage(url: imageUrl) { phase in
+                    switch phase {
+                    case .empty:
+                        RoundedRectangle(cornerRadius: MemoryRadius.medium)
+                            .fill(MemoryTheme.Colors.inkPale)
+                            .overlay(
+                                ProgressView()
+                                    .tint(MemoryTheme.Colors.primaryBlue)
+                            )
+                    case .success(let image):
+                        image
+                            .resizable()
+                            .aspectRatio(contentMode: .fit)
+                            .cornerRadius(MemoryRadius.medium)
+                    case .failure(_):
+                        RoundedRectangle(cornerRadius: MemoryRadius.medium)
+                            .fill(MemoryTheme.Colors.inkPale)
+                            .overlay(
+                                Image(systemName: "photo.fill")
+                                    .foregroundColor(.gray)
+                            )
+                    @unknown default:
+                        EmptyView()
+                    }
+                }
+            } else if imageId != nil {
+                // 画像IDがあるがURLがまだ取得できていない場合
                 RoundedRectangle(cornerRadius: MemoryRadius.medium)
                     .fill(MemoryTheme.Colors.inkPale)
                     .overlay(
@@ -21,14 +43,6 @@ struct ChatImageView: View {
                             .tint(MemoryTheme.Colors.primaryBlue)
                     )
             }
-        } else if imageId != nil {
-            // 画像IDがあるがURLがまだ取得できていない場合
-            RoundedRectangle(cornerRadius: MemoryRadius.medium)
-                .fill(MemoryTheme.Colors.inkPale)
-                .overlay(
-                    ProgressView()
-                        .tint(MemoryTheme.Colors.primaryBlue)
-                )
         }
         .task {
             imageUrl = await ImageService.shared.getImageUrl(id: imageId)
