@@ -16,60 +16,130 @@ struct BarcodeScannerView: View {
     var body: some View {
         NavigationStack {
             ZStack {
+                // Camera view
                 CameraView(scannedISBN: $scannedISBN)
                     .ignoresSafeArea()
                 
+                // Dark overlay
+                Color.black.opacity(0.3)
+                    .ignoresSafeArea()
+                
+                // Scanner UI
                 VStack {
+                    // Top bar with close button
+                    HStack {
+                        Button {
+                            dismiss()
+                        } label: {
+                            Image(systemName: "xmark")
+                                .font(.system(size: 20))
+                                .foregroundColor(.white)
+                                .frame(width: 44, height: 44)
+                                .background(Color.black.opacity(0.5))
+                                .clipShape(Circle())
+                                .memoryShadow(.medium)
+                        }
+                        .padding(.leading, MemorySpacing.md)
+                        
+                        Spacer()
+                    }
+                    .padding(.top, MemorySpacing.md)
+                    
                     Spacer()
                     
-                    VStack(spacing: 16) {
-                        Text("バーコードをスキャン")
-                            .font(.headline)
-                            .foregroundColor(.white)
+                    // Scanner frame
+                    VStack(spacing: MemorySpacing.lg) {
+                        // Instructions
+                        VStack(spacing: MemorySpacing.sm) {
+                            Text("バーコードをスキャン")
+                                .font(MemoryTheme.Fonts.title3())
+                                .foregroundColor(.white)
+                                .shadow(color: .black.opacity(0.5), radius: 4)
+                            
+                            Text("本の裏表紙にあるバーコードを\n枠内に合わせてください")
+                                .font(MemoryTheme.Fonts.subheadline())
+                                .foregroundColor(.white.opacity(0.9))
+                                .multilineTextAlignment(.center)
+                                .shadow(color: .black.opacity(0.5), radius: 4)
+                        }
                         
-                        Text("本の裏表紙にあるバーコードを\n枠内に合わせてください")
-                            .font(.caption)
-                            .foregroundColor(.white.opacity(0.8))
-                            .multilineTextAlignment(.center)
-                        
-                        RoundedRectangle(cornerRadius: 12)
-                            .stroke(Color.white, lineWidth: 2)
-                            .frame(width: 250, height: 100)
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 12)
-                                    .stroke(Color.yellow, lineWidth: 3)
-                                    .opacity(scannedISBN != nil ? 1 : 0)
-                                    .animation(.easeInOut(duration: 0.3), value: scannedISBN != nil)
-                            )
+                        // Scanner frame
+                        ZStack {
+                            // Base frame
+                            RoundedRectangle(cornerRadius: MemoryRadius.large)
+                                .stroke(
+                                    LinearGradient(
+                                        gradient: Gradient(colors: [
+                                            MemoryTheme.Colors.primaryBlue.opacity(0.8),
+                                            MemoryTheme.Colors.primaryBlueLight.opacity(0.8)
+                                        ]),
+                                        startPoint: .topLeading,
+                                        endPoint: .bottomTrailing
+                                    ),
+                                    lineWidth: 3
+                                )
+                                .frame(width: 280, height: 120)
+                            
+                            // Animated scanning line
+                            if scannedISBN == nil {
+                                ScanningLineView()
+                            }
+                            
+                            // Success overlay
+                            if scannedISBN != nil {
+                                RoundedRectangle(cornerRadius: MemoryRadius.large)
+                                    .stroke(MemoryTheme.Colors.success, lineWidth: 4)
+                                    .frame(width: 280, height: 120)
+                                    .overlay(
+                                        HStack(spacing: MemorySpacing.sm) {
+                                            Image(systemName: "checkmark.circle.fill")
+                                                .font(.system(size: 24))
+                                            Text("スキャン成功！")
+                                                .font(MemoryTheme.Fonts.headline())
+                                        }
+                                        .foregroundColor(MemoryTheme.Colors.success)
+                                        .padding(MemorySpacing.md)
+                                        .background(Color.black.opacity(0.7))
+                                        .cornerRadius(MemoryRadius.medium)
+                                    )
+                                    .transition(.scale.combined(with: .opacity))
+                            }
+                        }
+                        .animation(MemoryTheme.Animation.spring, value: scannedISBN != nil)
                     }
                     .padding(.bottom, 100)
                     
                     Spacer()
                     
-                    Button(action: {
+                    // Manual entry button
+                    Button {
                         showManualEntry = true
-                    }) {
-                        Label("手動で入力", systemImage: "keyboard")
-                            .font(.caption)
-                            .foregroundColor(.white)
-                            .padding(.horizontal, 16)
-                            .padding(.vertical, 8)
-                            .background(Color.black.opacity(0.5))
-                            .cornerRadius(20)
+                    } label: {
+                        HStack(spacing: MemorySpacing.xs) {
+                            Image(systemName: "keyboard")
+                                .font(.system(size: 16))
+                            Text("ISBNを手動で入力")
+                                .font(MemoryTheme.Fonts.subheadline())
+                        }
+                        .foregroundColor(.white)
+                        .padding(.horizontal, MemorySpacing.lg)
+                        .padding(.vertical, MemorySpacing.sm)
+                        .background(
+                            LinearGradient(
+                                gradient: Gradient(colors: [
+                                    MemoryTheme.Colors.inkBlack.opacity(0.6),
+                                    MemoryTheme.Colors.inkBlack.opacity(0.4)
+                                ]),
+                                startPoint: .top,
+                                endPoint: .bottom
+                            )
+                        )
+                        .cornerRadius(MemoryRadius.full)
+                        .memoryShadow(.medium)
                     }
-                    .padding(.bottom, 40)
+                    .padding(.bottom, MemorySpacing.xl)
                 }
             }
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarLeading) {
-                    Button("キャンセル") {
-                        dismiss()
-                    }
-                    .foregroundColor(.white)
-                }
-            }
-            .background(Color.black)
         }
         .onChange(of: scannedISBN) { oldValue, newValue in
             if let isbn = newValue {
@@ -80,7 +150,7 @@ struct BarcodeScannerView: View {
             ManualISBNEntryView(onSubmit: { isbn in
                 searchBook(isbn: isbn)
             })
-        }
+                    }
         .alert("エラー", isPresented: $showError) {
             Button("OK") {
                 scannedISBN = nil
@@ -91,21 +161,32 @@ struct BarcodeScannerView: View {
         .fullScreenCover(isPresented: $showBookRegistration) {
             if let book = foundBook {
                 BookRegistrationView(prefilledBook: book)
-            }
+                                }
         }
         .overlay {
             if isSearching {
-                Color.black.opacity(0.7)
-                    .ignoresSafeArea()
-                    .overlay(
-                        VStack(spacing: 16) {
-                            ProgressView()
-                                .scaleEffect(1.5)
-                                .tint(.white)
-                            Text("書籍情報を検索中...")
-                                .foregroundColor(.white)
-                        }
+                ZStack {
+                    Color.black.opacity(0.8)
+                        .ignoresSafeArea()
+                    
+                    VStack(spacing: MemorySpacing.lg) {
+                        ProgressView()
+                            .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                            .scaleEffect(1.5)
+                        
+                        Text("書籍情報を検索中...")
+                            .font(MemoryTheme.Fonts.body())
+                            .foregroundColor(.white)
+                    }
+                    .padding(MemorySpacing.xl)
+                    .background(
+                        RoundedRectangle(cornerRadius: MemoryRadius.large)
+                            .fill(MemoryTheme.Colors.inkBlack.opacity(0.9))
                     )
+                    .memoryShadow(.medium)
+                }
+                .transition(.opacity)
+                .animation(MemoryTheme.Animation.fast, value: isSearching)
             }
         }
     }
@@ -153,44 +234,6 @@ struct BarcodeScannerView: View {
         }
     }
     
-    private func parseBookInfo(from data: [String: Any], dataSource: BookDataSource = .manual) -> Book? {
-        guard let isbn = data["isbn"] as? String,
-              let title = data["title"] as? String,
-              let author = data["author"] as? String else {
-            return nil
-        }
-        
-        let publisher = data["publisher"] as? String
-        let pageCount = data["pageCount"] as? Int
-        let description = data["description"] as? String
-        let coverUrl = data["coverUrl"] as? String
-        
-        var publishedDate: Date?
-        if let dateString = data["publishedDate"] as? String {
-            let formatter = DateFormatter()
-            formatter.dateFormat = "yyyy-MM-dd"
-            publishedDate = formatter.date(from: dateString)
-        }
-        
-        guard let userId = AuthService.shared.currentUser?.uid else { return nil }
-        return Book(
-            id: UUID().uuidString,
-            isbn: isbn,
-            title: title,
-            author: author,
-            publisher: publisher,
-            publishedDate: publishedDate,
-            pageCount: pageCount,
-            description: description,
-            coverImageUrl: coverUrl,
-            dataSource: dataSource,
-            status: .wantToRead,
-            addedDate: Date(),
-            createdAt: Date(),
-            updatedAt: Date()
-        )
-    }
-    
     private func showError(message: String) {
         errorMessage = message
         showError = true
@@ -198,7 +241,39 @@ struct BarcodeScannerView: View {
     }
 }
 
-// カメラビュー
+// MARK: - Scanning Line Animation
+
+struct ScanningLineView: View {
+    @State private var animating = false
+    
+    var body: some View {
+        Rectangle()
+            .fill(
+                LinearGradient(
+                    gradient: Gradient(colors: [
+                        Color.clear,
+                        MemoryTheme.Colors.primaryBlue.opacity(0.8),
+                        MemoryTheme.Colors.primaryBlue,
+                        MemoryTheme.Colors.primaryBlue.opacity(0.8),
+                        Color.clear
+                    ]),
+                    startPoint: .leading,
+                    endPoint: .trailing
+                )
+            )
+            .frame(width: 260, height: 2)
+            .offset(y: animating ? 50 : -50)
+            .animation(
+                Animation.easeInOut(duration: 2)
+                    .repeatForever(autoreverses: true),
+                value: animating
+            )
+            .onAppear { animating = true }
+    }
+}
+
+// MARK: - Camera View (UIKit Integration)
+
 struct CameraView: UIViewControllerRepresentable {
     @Binding var scannedISBN: String?
     
@@ -227,7 +302,8 @@ struct CameraView: UIViewControllerRepresentable {
     }
 }
 
-// カメラビューコントローラー
+// MARK: - Camera View Controller
+
 protocol CameraViewControllerDelegate: AnyObject {
     func didScanBarcode(_ isbn: String)
 }
@@ -320,7 +396,8 @@ class CameraViewController: UIViewController, AVCaptureMetadataOutputObjectsDele
     }
 }
 
-// 手動ISBN入力ビュー
+// MARK: - Manual ISBN Entry View
+
 struct ManualISBNEntryView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var isbn = ""
@@ -328,33 +405,94 @@ struct ManualISBNEntryView: View {
     
     var body: some View {
         NavigationStack {
-            Form {
-                Section {
-                    TextField("ISBN (10桁または13桁)", text: $isbn)
-                        .keyboardType(.numberPad)
-                } footer: {
-                    Text("本の裏表紙に記載されているISBNコードを入力してください")
-                        .font(.caption)
+            ZStack {
+                // Background gradient
+                LinearGradient(
+                    gradient: Gradient(colors: [
+                        MemoryTheme.Colors.background,
+                        MemoryTheme.Colors.secondaryBackground
+                    ]),
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+                .ignoresSafeArea()
+                
+                VStack(spacing: MemorySpacing.lg) {
+                    // Header
+                    VStack(spacing: MemorySpacing.sm) {
+                        Image(systemName: "barcode")
+                            .font(.system(size: 60))
+                            .foregroundStyle(
+                                LinearGradient(
+                                    gradient: Gradient(colors: [
+                                        MemoryTheme.Colors.primaryBlue,
+                                        MemoryTheme.Colors.primaryBlueDark
+                                    ]),
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                )
+                            )
+                            .padding(.bottom, MemorySpacing.sm)
+                        
+                        Text("ISBNコードを入力")
+                            .font(MemoryTheme.Fonts.title3())
+                            .foregroundColor(MemoryTheme.Colors.inkBlack)
+                        
+                        Text("本の裏表紙に記載されている\n10桁または13桁の数字")
+                            .font(MemoryTheme.Fonts.subheadline())
+                            .foregroundColor(MemoryTheme.Colors.inkGray)
+                            .multilineTextAlignment(.center)
+                    }
+                    .padding(.top, MemorySpacing.xl)
+                    
+                    // Input field
+                    VStack(alignment: .leading, spacing: MemorySpacing.xs) {
+                        Text("ISBN")
+                            .font(MemoryTheme.Fonts.caption())
+                            .foregroundColor(MemoryTheme.Colors.inkGray)
+                        
+                        TextField("978-4-123456-78-9", text: $isbn)
+                            .font(MemoryTheme.Fonts.title3())
+                            .keyboardType(.numberPad)
+                            .multilineTextAlignment(.center)
+                            .padding(MemorySpacing.md)
+                            .background(MemoryTheme.Colors.cardBackground)
+                            .cornerRadius(MemoryRadius.medium)
+                            .memoryShadow(.soft)
+                    }
+                    .padding(.horizontal, MemorySpacing.xl)
+                    
+                    Spacer()
                 }
             }
-            .navigationTitle("ISBNを入力")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
-                    Button("キャンセル") {
+                    Button {
                         dismiss()
+                    } label: {
+                        Text("キャンセル")
+                            .font(MemoryTheme.Fonts.subheadline())
+                            .foregroundColor(MemoryTheme.Colors.inkGray)
                     }
                 }
                 
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("検索") {
+                    Button {
                         onSubmit(isbn)
                         dismiss()
+                    } label: {
+                        Text("検索")
+                            .font(MemoryTheme.Fonts.headline())
+                            .foregroundColor(isbn.isEmpty ? MemoryTheme.Colors.inkLightGray : MemoryTheme.Colors.primaryBlue)
                     }
-                    .fontWeight(.semibold)
                     .disabled(isbn.isEmpty)
                 }
             }
         }
     }
 }
+
+#Preview {
+    BarcodeScannerView()
+        }

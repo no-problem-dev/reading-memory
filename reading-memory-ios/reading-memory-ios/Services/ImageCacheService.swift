@@ -28,7 +28,7 @@ final class ImageCacheService {
         }
         
         // ディスクキャッシュをチェック
-        let fileName = url.lastPathComponent
+        let fileName = sha256(url.absoluteString)
         let fileURL = cacheDirectory.appendingPathComponent(fileName)
         
         if let diskImage = UIImage(contentsOfFile: fileURL.path) {
@@ -59,7 +59,7 @@ final class ImageCacheService {
         // ディスクキャッシュに保存
         guard let data = image.jpegData(compressionQuality: 0.8) else { return }
         
-        let fileName = url.lastPathComponent
+        let fileName = sha256(url.absoluteString)
         let fileURL = cacheDirectory.appendingPathComponent(fileName)
         
         do {
@@ -91,5 +91,27 @@ final class ImageCacheService {
         }
         
         return totalSize
+    }
+    
+    // URLからユニークなファイル名を生成
+    private func sha256(_ string: String) -> String {
+        // URLをBase64エンコードして安全なファイル名に変換
+        guard let data = string.data(using: .utf8) else {
+            return "\(string.hashValue).jpg"
+        }
+        
+        // Base64エンコードして、ファイル名に使えない文字を置換
+        let base64 = data.base64EncodedString()
+            .replacingOccurrences(of: "/", with: "_")
+            .replacingOccurrences(of: "+", with: "-")
+            .replacingOccurrences(of: "=", with: "")
+        
+        // 長すぎる場合は切り詰める
+        let maxLength = 200
+        if base64.count > maxLength {
+            return String(base64.prefix(maxLength)) + ".jpg"
+        }
+        
+        return base64 + ".jpg"
     }
 }

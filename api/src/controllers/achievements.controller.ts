@@ -455,15 +455,15 @@ export const getAchievementStatistics = async (
       const badge = BADGES[badgeId as keyof typeof BADGES];
       if (badge) {
         switch (badge.tier) {
-          case 'bronze':
-            bronzeCount++;
-            break;
-          case 'silver':
-            silverCount++;
-            break;
-          case 'gold':
-            goldCount++;
-            break;
+        case 'bronze':
+          bronzeCount++;
+          break;
+        case 'silver':
+          silverCount++;
+          break;
+        case 'gold':
+          goldCount++;
+          break;
         }
       }
     });

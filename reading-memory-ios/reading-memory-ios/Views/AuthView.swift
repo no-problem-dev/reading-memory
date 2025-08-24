@@ -6,51 +6,123 @@ struct AuthView: View {
     
     var body: some View {
         ZStack {
-            Color(UIColor.systemBackground)
-                .ignoresSafeArea()
+            // Gradient Background
+            LinearGradient(
+                gradient: Gradient(colors: [
+                    MemoryTheme.Colors.primaryBlue.opacity(0.05),
+                    MemoryTheme.Colors.warmCoral.opacity(0.03),
+                    Color(.systemBackground)
+                ]),
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+            .ignoresSafeArea()
             
-            VStack(spacing: 40) {
-                VStack(spacing: 20) {
-                    Image(systemName: "book.fill")
-                        .font(.system(size: 80))
-                        .foregroundStyle(.tint)
+            VStack(spacing: 0) {
+                // Logo and Title Section
+                VStack(spacing: MemorySpacing.xl) {
+                    // Book Icon with gradient
+                    ZStack {
+                        Circle()
+                            .fill(
+                                LinearGradient(
+                                    gradient: Gradient(colors: [
+                                        MemoryTheme.Colors.primaryBlueLight.opacity(0.2),
+                                        MemoryTheme.Colors.primaryBlue.opacity(0.1)
+                                    ]),
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                )
+                            )
+                            .frame(width: 120, height: 120)
+                            .memoryShadow(.soft)
+                        
+                        Image(systemName: "books.vertical.fill")
+                            .font(.system(size: 60))
+                            .foregroundStyle(
+                                LinearGradient(
+                                    gradient: Gradient(colors: [
+                                        MemoryTheme.Colors.primaryBlue,
+                                        MemoryTheme.Colors.primaryBlueDark
+                                    ]),
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                )
+                            )
+                    }
                     
-                    VStack(spacing: 8) {
+                    VStack(spacing: MemorySpacing.sm) {
                         Text("読書メモリー")
                             .font(.largeTitle)
-                            .fontWeight(.bold)
+                            .foregroundColor(Color(.label))
                         
-                        Text("本と過ごした時間を、ずっと大切に")
-                            .font(.subheadline)
-                            .foregroundColor(.secondary)
+                        VStack(spacing: MemorySpacing.xs) {
+                            Text("本と過ごした時間を")
+                                .font(.callout)
+                                .foregroundColor(Color(.secondaryLabel))
+                            Text("ずっと大切に")
+                                .font(.callout)
+                                .foregroundColor(Color(.secondaryLabel))
+                        }
                     }
                 }
-                .padding(.top, 60)
+                .padding(.top, 80)
                 
                 Spacer()
                 
-                VStack(spacing: 16) {
+                // Sign In Buttons
+                VStack(spacing: MemorySpacing.md) {
+                    // Feature Highlights
+                    VStack(spacing: MemorySpacing.sm) {
+                        FeatureHighlight(
+                            icon: "bubble.left.and.bubble.right.fill",
+                            text: "本とおしゃべりして、感想を記録",
+                            color: MemoryTheme.Colors.primaryBlue
+                        )
+                        
+                        FeatureHighlight(
+                            icon: "sparkles",
+                            text: "AIが読書体験をサポート",
+                            color: MemoryTheme.Colors.warmCoral
+                        )
+                        
+                        FeatureHighlight(
+                            icon: "books.vertical.fill",
+                            text: "美しい本棚で思い出を整理",
+                            color: MemoryTheme.Colors.goldenMemory
+                        )
+                    }
+                    .padding(.horizontal, MemorySpacing.xl)
+                    .padding(.bottom, MemorySpacing.lg)
+                    
+                    // Google Sign In
                     Button(action: {
                         Task {
                             await authViewModel.signInWithGoogle()
                         }
                     }) {
-                        HStack {
+                        HStack(spacing: MemorySpacing.sm) {
                             Image(systemName: "globe")
-                                .font(.title3)
+                                .font(.system(size: 20))
+                                .foregroundColor(MemoryTheme.Colors.primaryBlue)
                             Text("Googleでサインイン")
-                                .fontWeight(.medium)
+                                .font(.headline)
+                                .foregroundColor(Color(.label))
                         }
                         .frame(maxWidth: .infinity)
-                        .frame(height: 54)
-                        .background(Color(UIColor.systemBackground))
+                        .frame(height: 56)
+                        .background(Color(.tertiarySystemBackground))
                         .overlay(
-                            RoundedRectangle(cornerRadius: 12)
-                                .stroke(Color(UIColor.separator), lineWidth: 1)
+                            RoundedRectangle(cornerRadius: MemoryRadius.large)
+                                .stroke(MemoryTheme.Colors.primaryBlue.opacity(0.3), lineWidth: 1)
                         )
+                        .cornerRadius(MemoryRadius.large)
+                        .memoryShadow(.soft)
                     }
-                    .foregroundColor(.primary)
+                    .buttonStyle(PlainButtonStyle())
+                    .padding(.horizontal, MemorySpacing.lg)
                     
+                    // Apple Sign In
                     SignInWithAppleButton(
                         onRequest: { request in
                             let appleRequest = authViewModel.startSignInWithAppleFlow()
@@ -69,19 +141,24 @@ struct AuthView: View {
                         }
                     )
                     .signInWithAppleButtonStyle(.black)
-                    .frame(height: 54)
-                    .cornerRadius(12)
+                    .frame(height: 56)
+                    .cornerRadius(MemoryRadius.large)
+                    .padding(.horizontal, MemorySpacing.lg)
                 }
-                .padding(.horizontal, 32)
-                .padding(.bottom, 40)
+                .padding(.bottom, 50)
             }
             
             if authViewModel.isLoading {
                 Color.black.opacity(0.4)
                     .ignoresSafeArea()
-                ProgressView()
-                    .tint(.white)
-                    .scaleEffect(1.5)
+                VStack(spacing: MemorySpacing.md) {
+                    ProgressView()
+                        .tint(.white)
+                        .scaleEffect(1.5)
+                    Text("サインイン中...")
+                        .font(.callout)
+                        .foregroundColor(.white)
+                }
             }
         }
         .alert("エラー", isPresented: Binding(
@@ -93,6 +170,26 @@ struct AuthView: View {
             }
         } message: {
             Text(authViewModel.errorMessage ?? "")
+        }
+    }
+}
+
+struct FeatureHighlight: View {
+    let icon: String
+    let text: String
+    let color: Color
+    
+    var body: some View {
+        HStack(spacing: MemorySpacing.sm) {
+            Image(systemName: icon)
+                .font(.system(size: 16))
+                .foregroundColor(color)
+                .frame(width: 24)
+            
+            Text(text)
+                .font(.subheadline)
+                .foregroundColor(Color(.secondaryLabel))
+                .frame(maxWidth: .infinity, alignment: .leading)
         }
     }
 }

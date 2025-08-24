@@ -3,107 +3,99 @@ import SwiftUI
 struct MainTabView: View {
     @Environment(AuthViewModel.self) private var authViewModel
     @State private var selectedTab = 0
-    @State private var showProfile = false
     @State private var showAddBook = false
     
     var body: some View {
-        ZStack(alignment: .bottom) {
+        ZStack {
+            // Background
+            Color(.systemBackground)
+                .ignoresSafeArea()
+            
+            // Main Content
             TabView(selection: $selectedTab) {
                 // 本棚（ホーム）
                 BookShelfHomeView(showAddBook: $showAddBook)
                     .tabItem {
-                        Image(systemName: "books.vertical.fill")
-                        Text("本棚")
+                        Label {
+                            Text("メモリー")
+                        } icon: {
+                            Image(systemName: selectedTab == 0 ? "books.vertical.fill" : "books.vertical")
+                        }
                     }
                     .tag(0)
                 
                 // 記録（統計・目標・アチーブメント）
                 RecordsHubView()
                     .tabItem {
-                        Image(systemName: "chart.line.uptrend.xyaxis")
-                        Text("記録")
+                        Label {
+                            Text("記録")
+                        } icon: {
+                            Image(systemName: selectedTab == 1 ? "chart.line.uptrend.xyaxis.circle.fill" : "chart.line.uptrend.xyaxis.circle")
+                        }
                     }
                     .tag(1)
                 
                 // 発見（読みたいリスト・検索）
                 DiscoveryView()
                     .tabItem {
-                        Image(systemName: "sparkle.magnifyingglass")
-                        Text("発見")
+                        Label {
+                            Text("発見")
+                        } icon: {
+                            Image(systemName: selectedTab == 2 ? "sparkle.magnifyingglass" : "magnifyingglass")
+                        }
                     }
                     .tag(2)
+                
+                // プロフィール
+                ProfileTabView()
+                    .tabItem {
+                        Label {
+                            Text("プロフィール")
+                        } icon: {
+                            // カスタムアイコンまたはシステムアイコン
+                            if selectedTab == 3 {
+                                Image(systemName: "person.crop.circle.fill")
+                            } else {
+                                Image(systemName: "person.crop.circle")
+                            }
+                        }
+                    }
+                    .tag(3)
             }
-            .overlay(alignment: .topTrailing) {
-                // プロフィールアイコン
-                Button {
-                    showProfile = true
-                } label: {
-                    ProfileIconView()
-                        .padding()
-                }
-            }
+            .tint(MemoryTheme.Colors.primaryBlue)
             
             // FAB for adding books (only show on home tab)
             if selectedTab == 0 {
-                FloatingActionButton {
-                    showAddBook = true
+                VStack {
+                    Spacer()
+                    HStack {
+                        Spacer()
+                        MemoryFloatingActionButton {
+                            showAddBook = true
+                        }
+                        .padding(.bottom, 100) // Increased to avoid tab bar
+                        .padding(.trailing, MemorySpacing.lg)
+                    }
                 }
-                .padding(.bottom, 80)
-                .padding(.trailing, 20)
-                .frame(maxWidth: .infinity, alignment: .trailing)
+                .transition(.scale.combined(with: .opacity))
+                .animation(.spring(), value: selectedTab)
             }
         }
-        .sheet(isPresented: $showProfile) {
-            ProfileNavigationView()
-        }
         .sheet(isPresented: $showAddBook) {
-            BookRegistrationView()
+            BookAdditionFlowView()
         }
     }
 }
 
-// Floating Action Button
-struct FloatingActionButton: View {
+// Memory Floating Action Button wrapper
+struct MemoryFloatingActionButton: View {
     let action: () -> Void
     
     var body: some View {
-        Button(action: action) {
-            Image(systemName: "plus")
-                .font(.title2)
-                .fontWeight(.semibold)
-                .foregroundStyle(.white)
-                .frame(width: 56, height: 56)
-                .background(Color.accentColor)
-                .clipShape(Circle())
-                .shadow(color: .black.opacity(0.2), radius: 4, x: 0, y: 2)
-        }
+        FloatingActionButton(action: action, icon: "plus")
     }
 }
 
-// Profile Icon View
-struct ProfileIconView: View {
-    @Environment(AuthViewModel.self) private var authViewModel
-    
-    var body: some View {
-        if let photoURL = authViewModel.currentUser?.photoURL,
-           let url = URL(string: photoURL) {
-            AsyncImage(url: url) { image in
-                image
-                    .resizable()
-                    .scaledToFill()
-            } placeholder: {
-                Image(systemName: "person.circle.fill")
-                    .font(.title)
-            }
-            .frame(width: 32, height: 32)
-            .clipShape(Circle())
-        } else {
-            Image(systemName: "person.circle.fill")
-                .font(.title)
-                .frame(width: 32, height: 32)
-        }
-    }
-}
 
 #Preview {
     MainTabView()

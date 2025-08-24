@@ -4,7 +4,7 @@ import Observation
 @Observable
 class WantToReadListViewModel {
     private let bookRepository: BookRepository
-    private let authService = AuthService.shared
+    @MainActor private let authService = AuthService.shared
     
     private(set) var books: [Book] = []
     private(set) var isLoading = false

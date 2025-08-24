@@ -8,129 +8,211 @@ struct BookChatView: View {
     @State private var selectedImage: UIImage?
     @FocusState private var isInputFocused: Bool
     @State private var scrollToBottom = false
+    @Environment(\.dismiss) var dismiss
     
     init(book: Book) {
         viewModel = ServiceContainer.shared.makeBookChatViewModel(book: book)
     }
     
     var body: some View {
-        VStack(spacing: 0) {
-            // メッセージリスト
-            ScrollViewReader { proxy in
-                ScrollView {
-                    LazyVStack(spacing: 12) {
-                        ForEach(viewModel.chats) { chat in
-                            ChatBubbleView(chat: chat) {
-                                Task {
-                                    await viewModel.deleteChat(chat)
-                                }
-                            }
-                            .id(chat.id)
-                        }
-                    }
-                    .padding()
-                }
-                .refreshable {
-                    await viewModel.loadChats()
-                }
-                .onAppear {
-                    // 初回表示時に最後のメッセージまでスクロール
-                    if let lastChat = viewModel.chats.last {
-                        proxy.scrollTo(lastChat.id, anchor: .bottom)
-                    }
-                }
-                .onChange(of: scrollToBottom) { _, shouldScroll in
-                    if shouldScroll {
-                        withAnimation {
-                            if let lastChat = viewModel.chats.last {
-                                proxy.scrollTo(lastChat.id, anchor: .bottom)
-                            }
-                        }
-                        scrollToBottom = false
-                    }
-                }
-            }
+        ZStack {
+            // Background
+            MemoryTheme.Colors.secondaryBackground
+                .ignoresSafeArea()
             
-            Divider()
-            
-            // 入力エリア
-            VStack(spacing: 8) {
-                // 選択された画像のプレビュー
-                if let selectedImage {
-                    HStack {
-                        Image(uiImage: selectedImage)
-                            .resizable()
-                            .aspectRatio(contentMode: .fit)
-                            .frame(height: 100)
-                            .cornerRadius(8)
-                            .overlay(
-                                Button {
-                                    self.selectedImage = nil
-                                    self.selectedPhoto = nil
-                                } label: {
-                                    Image(systemName: "xmark.circle.fill")
-                                        .font(.title2)
-                                        .foregroundStyle(.white, .black.opacity(0.6))
-                                }
-                                .padding(4),
-                                alignment: .topTrailing
-                            )
-                        Spacer()
-                    }
-                    .padding(.horizontal)
-                }
-                
-                HStack(spacing: 12) {
-                    // カメラボタン
-                    PhotosPicker(selection: $selectedPhoto,
-                                matching: .images,
-                                photoLibrary: .shared()) {
-                        Image(systemName: "camera.fill")
-                            .font(.system(size: 24))
-                            .foregroundStyle(.blue)
+            VStack(spacing: 0) {
+                // Custom Navigation Bar
+                HStack {
+                    Button(action: { dismiss() }) {
+                        Image(systemName: "xmark")
+                            .font(.system(size: 20))
+                            .foregroundColor(MemoryTheme.Colors.inkGray)
+                            .frame(width: 44, height: 44)
                     }
                     
-                    TextField("メモを入力...", text: $messageText, axis: .vertical)
-                        .textFieldStyle(.plain)
-                        .padding(.horizontal, 16)
-                        .padding(.vertical, 12)
-                        .background(Color(.systemGray6))
-                        .cornerRadius(20)
-                        .lineLimit(1...5)
-                        .focused($isInputFocused)
+                    Spacer()
                     
+                    VStack(spacing: 2) {
+                        Text("本とおしゃべり")
+                            .font(MemoryTheme.Fonts.headline())
+                            .foregroundColor(MemoryTheme.Colors.inkBlack)
+                        Text(viewModel.book.title)
+                            .font(MemoryTheme.Fonts.caption())
+                            .foregroundColor(MemoryTheme.Colors.inkGray)
+                            .lineLimit(1)
+                    }
+                    
+                    Spacer()
+                    
+                    // AI Toggle
                     Button {
-                        Task {
-                            await sendMessage()
+                        withAnimation(MemoryTheme.Animation.fast) {
+                            viewModel.toggleAI()
                         }
                     } label: {
-                        Image(systemName: "arrow.up.circle.fill")
-                            .font(.system(size: 32))
-                            .foregroundStyle((messageText.isEmpty && selectedImage == nil) ? Color(.systemGray3) : .blue)
+                        HStack(spacing: 4) {
+                            Image(systemName: viewModel.isAIEnabled ? "sparkles" : "sparkle")
+                                .font(.system(size: 16))
+                                .symbolEffect(.bounce, value: viewModel.isAIEnabled)
+                            Text("AI")
+                                .font(MemoryTheme.Fonts.caption())
+                        }
+                        .foregroundColor(viewModel.isAIEnabled ? MemoryTheme.Colors.primaryBlue : MemoryTheme.Colors.inkGray)
+                        .padding(.horizontal, MemorySpacing.sm)
+                        .padding(.vertical, MemorySpacing.xs)
+                        .background(
+                            viewModel.isAIEnabled 
+                                ? MemoryTheme.Colors.primaryBlue.opacity(0.1)
+                                : MemoryTheme.Colors.inkPale
+                        )
+                        .cornerRadius(MemoryRadius.full)
                     }
-                    .disabled((messageText.isEmpty && selectedImage == nil) || viewModel.isLoading)
+                    .padding(.trailing, MemorySpacing.xs)
                 }
-                .padding(.horizontal)
-                .padding(.bottom)
+                .padding(.horizontal, MemorySpacing.sm)
+                .padding(.top, 8)
+                .padding(.bottom, MemorySpacing.xs)
+                .background(MemoryTheme.Colors.background)
+                
+                Divider()
+                    .foregroundColor(MemoryTheme.Colors.inkPale)
+                
+                // メッセージリスト
+                ScrollViewReader { proxy in
+                    ScrollView {
+                        LazyVStack(spacing: MemorySpacing.md) {
+                            // Welcome message if no chats
+                            if viewModel.chats.isEmpty {
+                                EmptyChatView()
+                                    .padding(.top, MemorySpacing.xxl)
+                            }
+                            
+                            ForEach(viewModel.chats) { chat in
+                                ChatBubbleView(chat: chat) {
+                                    Task {
+                                        await viewModel.deleteChat(chat)
+                                    }
+                                }
+                                .id(chat.id)
+                            }
+                        }
+                        .padding(.horizontal, MemorySpacing.md)
+                        .padding(.vertical, MemorySpacing.md)
+                    }
+                    .refreshable {
+                        await viewModel.loadChats()
+                    }
+                    .onAppear {
+                        if let lastChat = viewModel.chats.last {
+                            proxy.scrollTo(lastChat.id, anchor: .bottom)
+                        }
+                    }
+                    .onChange(of: scrollToBottom) { _, shouldScroll in
+                        if shouldScroll {
+                            withAnimation(MemoryTheme.Animation.normal) {
+                                if let lastChat = viewModel.chats.last {
+                                    proxy.scrollTo(lastChat.id, anchor: .bottom)
+                                }
+                            }
+                            scrollToBottom = false
+                        }
+                    }
+                }
+                
+                // 入力エリア
+                VStack(spacing: MemorySpacing.xs) {
+                    // 選択された画像のプレビュー
+                    if let selectedImage {
+                        HStack {
+                            Image(uiImage: selectedImage)
+                                .resizable()
+                                .aspectRatio(contentMode: .fit)
+                                .frame(height: 100)
+                                .cornerRadius(MemoryRadius.medium)
+                                .overlay(
+                                    Button {
+                                        withAnimation(MemoryTheme.Animation.fast) {
+                                            self.selectedImage = nil
+                                            self.selectedPhoto = nil
+                                        }
+                                    } label: {
+                                        Image(systemName: "xmark.circle.fill")
+                                            .font(.title2)
+                                            .foregroundStyle(.white, MemoryTheme.Colors.inkBlack.opacity(0.6))
+                                    }
+                                    .padding(4),
+                                    alignment: .topTrailing
+                                )
+                            Spacer()
+                        }
+                        .padding(.horizontal, MemorySpacing.md)
+                        .transition(.scale.combined(with: .opacity))
+                    }
+                    
+                    HStack(spacing: MemorySpacing.sm) {
+                        // カメラボタン
+                        PhotosPicker(selection: $selectedPhoto,
+                                    matching: .images,
+                                    photoLibrary: .shared()) {
+                            Image(systemName: "camera.fill")
+                                .font(.system(size: 22))
+                                .foregroundColor(MemoryTheme.Colors.primaryBlue)
+                                .frame(width: 44, height: 44)
+                        }
+                        
+                        // テキストフィールド
+                        HStack {
+                            TextField("気づいたことを書いてみよう...", text: $messageText, axis: .vertical)
+                                .font(MemoryTheme.Fonts.body())
+                                .foregroundColor(MemoryTheme.Colors.inkBlack)
+                                .textFieldStyle(.plain)
+                                .lineLimit(1...5)
+                                .focused($isInputFocused)
+                        }
+                        .padding(.horizontal, MemorySpacing.md)
+                        .padding(.vertical, MemorySpacing.sm)
+                        .background(MemoryTheme.Colors.inkWhite)
+                        .cornerRadius(MemoryRadius.full)
+                        
+                        // 送信ボタン
+                        Button {
+                            Task {
+                                await sendMessage()
+                            }
+                        } label: {
+                            Image(systemName: "arrow.up.circle.fill")
+                                .font(.system(size: 32))
+                                .foregroundStyle(
+                                    canSend
+                                        ? LinearGradient(
+                                            gradient: Gradient(colors: [
+                                                MemoryTheme.Colors.primaryBlueLight,
+                                                MemoryTheme.Colors.primaryBlue
+                                            ]),
+                                            startPoint: .topLeading,
+                                            endPoint: .bottomTrailing
+                                        )
+                                        : LinearGradient(
+                                            gradient: Gradient(colors: [
+                                                MemoryTheme.Colors.inkLightGray,
+                                                MemoryTheme.Colors.inkLightGray
+                                            ]),
+                                            startPoint: .topLeading,
+                                            endPoint: .bottomTrailing
+                                        )
+                                )
+                        }
+                        .disabled(!canSend || viewModel.isLoading)
+                        .scaleEffect(canSend ? 1.0 : 0.9)
+                        .animation(MemoryTheme.Animation.fast, value: canSend)
+                    }
+                    .padding(.horizontal, MemorySpacing.md)
+                    .padding(.vertical, MemorySpacing.sm)
+                }
+                .background(MemoryTheme.Colors.background)
             }
         }
-        .navigationTitle("チャットメモ")
-        .navigationBarTitleDisplayMode(.inline)
-        .toolbar {
-            ToolbarItem(placement: .navigationBarTrailing) {
-                Button {
-                    viewModel.toggleAI()
-                } label: {
-                    HStack(spacing: 4) {
-                        Image(systemName: viewModel.isAIEnabled ? "sparkles" : "sparkle")
-                            .font(.system(size: 16))
-                        Text("AI")
-                            .font(.caption)
-                    }
-                    .foregroundStyle(viewModel.isAIEnabled ? .blue : .secondary)
-                }
-            }
-        }
+        .navigationBarHidden(true)
         .onAppear {
             Task {
                 await viewModel.loadChats()
@@ -150,6 +232,10 @@ struct BookChatView: View {
         }
     }
     
+    private var canSend: Bool {
+        !messageText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || selectedImage != nil
+    }
+    
     private func sendMessage() async {
         let message = messageText.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !message.isEmpty || selectedImage != nil else { return }
@@ -160,8 +246,6 @@ struct BookChatView: View {
         selectedPhoto = nil
         
         await viewModel.sendMessage(message, image: image)
-        
-        // メッセージ送信後にスクロール
         scrollToBottom = true
     }
     
@@ -172,7 +256,6 @@ struct BookChatView: View {
         do {
             if let data = try await item.loadTransferable(type: Data.self),
                let image = UIImage(data: data) {
-                // Resize image to reduce file size
                 let resizedImage = image.resized(to: CGSize(width: 800, height: 800))
                 selectedImage = resizedImage
             }
@@ -182,33 +265,88 @@ struct BookChatView: View {
     }
 }
 
+// Empty Chat View
+struct EmptyChatView: View {
+    
+    var body: some View {
+        VStack(spacing: MemorySpacing.lg) {
+            Image(systemName: "bubble.left.and.bubble.right")
+                .font(.system(size: 50))
+                .foregroundStyle(
+                    LinearGradient(
+                        gradient: Gradient(colors: [
+                            MemoryTheme.Colors.primaryBlueLight,
+                            MemoryTheme.Colors.primaryBlue
+                        ]),
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                )
+            
+            VStack(spacing: MemorySpacing.xs) {
+                Text("本とおしゃべりを始めよう")
+                    .font(MemoryTheme.Fonts.title3())
+                    .foregroundColor(MemoryTheme.Colors.inkBlack)
+                
+                Text("読みながら感じたことを\n自由に書いてみてください")
+                    .font(MemoryTheme.Fonts.callout())
+                    .foregroundColor(MemoryTheme.Colors.inkGray)
+                    .multilineTextAlignment(.center)
+            }
+        }
+        .padding(MemorySpacing.xl)
+    }
+}
+
 // チャットバブル
 struct ChatBubbleView: View {
     let chat: BookChat
     let onDelete: () -> Void
     @State private var showDeleteConfirmation = false
+    @State private var isPressed = false
     
     var body: some View {
-        HStack {
+        HStack(alignment: .bottom, spacing: MemorySpacing.xs) {
             if !chat.isAI {
                 Spacer(minLength: 60)
+            } else {
+                // AI Avatar
+                ZStack {
+                    Circle()
+                        .fill(
+                            LinearGradient(
+                                gradient: Gradient(colors: [
+                                    MemoryTheme.Colors.primaryBlueLight.opacity(0.2),
+                                    MemoryTheme.Colors.primaryBlue.opacity(0.1)
+                                ]),
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                        )
+                        .frame(width: 32, height: 32)
+                    
+                    Image(systemName: "sparkles")
+                        .font(.system(size: 16))
+                        .foregroundColor(MemoryTheme.Colors.primaryBlue)
+                }
             }
             
-            VStack(alignment: chat.isAI ? .leading : .trailing, spacing: 4) {
+            VStack(alignment: chat.isAI ? .leading : .trailing, spacing: MemorySpacing.xs) {
                 // 画像がある場合は表示
                 if let imageUrl = chat.imageUrl, let url = URL(string: imageUrl) {
                     CachedAsyncImage(url: url) { image in
                         image
                             .resizable()
                             .aspectRatio(contentMode: .fit)
-                            .frame(maxWidth: 200, maxHeight: 200)
-                            .cornerRadius(16)
+                            .frame(maxWidth: 240, maxHeight: 240)
+                            .cornerRadius(MemoryRadius.medium)
                     } placeholder: {
-                        RoundedRectangle(cornerRadius: 16)
-                            .fill(Color(.systemGray5))
-                            .frame(width: 200, height: 150)
+                        RoundedRectangle(cornerRadius: MemoryRadius.medium)
+                            .fill(MemoryTheme.Colors.inkPale)
+                            .frame(width: 240, height: 180)
                             .overlay(
                                 ProgressView()
+                                    .tint(MemoryTheme.Colors.primaryBlue)
                             )
                     }
                 }
@@ -216,17 +354,33 @@ struct ChatBubbleView: View {
                 // メッセージがある場合は表示
                 if !chat.message.isEmpty {
                     Text(chat.message)
-                        .padding(.horizontal, 16)
-                        .padding(.vertical, 10)
-                        .background(chat.isAI ? Color(.systemGray5) : Color.blue)
-                        .foregroundStyle(chat.isAI ? .primary : Color.white)
-                        .cornerRadius(16)
+                        .font(MemoryTheme.Fonts.callout())
+                        .foregroundColor(chat.isAI ? MemoryTheme.Colors.inkBlack : .white)
+                        .padding(.horizontal, MemorySpacing.md)
+                        .padding(.vertical, MemorySpacing.sm)
+                        .background(
+                            chat.isAI
+                                ? AnyView(MemoryTheme.Colors.cardBackground)
+                                : AnyView(
+                                    LinearGradient(
+                                        gradient: Gradient(colors: [
+                                            MemoryTheme.Colors.primaryBlueLight,
+                                            MemoryTheme.Colors.primaryBlue
+                                        ]),
+                                        startPoint: .topLeading,
+                                        endPoint: .bottomTrailing
+                                    )
+                                )
+                        )
+                        .cornerRadius(MemoryRadius.medium)
+                        .cornerRadius(4, corners: chat.isAI ? [.topLeft] : [.topRight])
                 }
                 
                 Text(formatDate(chat.createdAt))
-                    .font(.caption2)
-                    .foregroundStyle(.secondary)
+                    .font(MemoryTheme.Fonts.caption())
+                    .foregroundColor(MemoryTheme.Colors.inkLightGray)
             }
+            .scaleEffect(isPressed ? 0.95 : 1.0)
             .contextMenu {
                 Button(role: .destructive) {
                     showDeleteConfirmation = true
@@ -236,12 +390,19 @@ struct ChatBubbleView: View {
             }
             .confirmationDialog("メモを削除しますか？", isPresented: $showDeleteConfirmation, titleVisibility: .visible) {
                 Button("削除", role: .destructive) {
-                    onDelete()
+                    withAnimation(MemoryTheme.Animation.normal) {
+                        onDelete()
+                    }
                 }
                 Button("キャンセル", role: .cancel) {}
             } message: {
                 Text("この操作は取り消せません")
             }
+            .onLongPressGesture(minimumDuration: 0.1, maximumDistance: .infinity, pressing: { pressing in
+                withAnimation(MemoryTheme.Animation.fast) {
+                    isPressed = pressing
+                }
+            }, perform: {})
             
             if chat.isAI {
                 Spacer(minLength: 60)
@@ -265,6 +426,27 @@ struct ChatBubbleView: View {
         }
         
         return formatter.string(from: date)
+    }
+}
+
+// Corner Radius Extension
+extension View {
+    func cornerRadius(_ radius: CGFloat, corners: UIRectCorner) -> some View {
+        clipShape(RoundedCorner(radius: radius, corners: corners))
+    }
+}
+
+struct RoundedCorner: Shape {
+    var radius: CGFloat = .infinity
+    var corners: UIRectCorner = .allCorners
+    
+    func path(in rect: CGRect) -> Path {
+        let path = UIBezierPath(
+            roundedRect: rect,
+            byRoundingCorners: corners,
+            cornerRadii: CGSize(width: radius, height: radius)
+        )
+        return Path(path.cgPath)
     }
 }
 

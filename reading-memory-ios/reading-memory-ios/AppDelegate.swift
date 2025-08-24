@@ -14,6 +14,12 @@ class AppDelegate: NSObject, UIApplicationDelegate {
         // 初回起動チェック
         checkFirstLaunchAndSignOut()
         
+        // 開発中は毎回キャッシュをクリア（問題が解決したら削除）
+        #if DEBUG
+        ImageCacheService.shared.clearCache()
+        print("Image cache cleared on launch (DEBUG mode)")
+        #endif
+        
         return true
     }
     

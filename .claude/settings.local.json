@@ -115,7 +115,8 @@
       "Bash(grep:*)",
       "Bash(gcloud builds list:*)",
       "Bash(gcloud run revisions describe:*)",
-      "Bash(gcloud run revisions:*)"
+      "Bash(gcloud run revisions:*)",
+      "Bash(npx eslint:*)"
     ],
     "deny": []
   }

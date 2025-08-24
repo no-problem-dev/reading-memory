@@ -1,4 +1,4 @@
-import axios from "axios";
+import axios from 'axios';
 
 interface GoogleBooksResponse {
   totalItems: number;
@@ -87,7 +87,7 @@ export interface BookSearchResult {
   pageCount?: number;
   description?: string;
   coverImageUrl?: string;
-  dataSource: "googleBooks" | "openBD" | "manual";
+  dataSource: 'googleBooks' | 'openBD' | 'manual';
 }
 
 export class BookSearchService {
@@ -98,7 +98,7 @@ export class BookSearchService {
   }
 
   async searchByISBN(isbn: string): Promise<BookSearchResult[]> {
-    const normalizedISBN = isbn.replace(/-/g, "");
+    const normalizedISBN = isbn.replace(/-/g, '');
     const results: BookSearchResult[] = [];
 
     // OpenBD API検索
@@ -108,7 +108,7 @@ export class BookSearchService {
         results.push(openBDResult);
       }
     } catch (error) {
-      console.error("OpenBD search error:", error);
+      console.error('OpenBD search error:', error);
     }
 
     // Google Books API検索（OpenBDで見つからない場合）
@@ -117,7 +117,7 @@ export class BookSearchService {
         const googleResult = await this.searchGoogleBooks(`isbn:${normalizedISBN}`);
         results.push(...googleResult);
       } catch (error) {
-        console.error("Google Books search error:", error);
+        console.error('Google Books search error:', error);
       }
     }
 
@@ -132,7 +132,7 @@ export class BookSearchService {
       const googleResults = await this.searchGoogleBooks(query);
       results.push(...googleResults);
     } catch (error) {
-      console.error("Google Books search error:", error);
+      console.error('Google Books search error:', error);
     }
 
     return results;
@@ -158,13 +158,13 @@ export class BookSearchService {
   private async searchGoogleBooks(query: string): Promise<BookSearchResult[]> {
     try {
       const response = await axios.get<GoogleBooksResponse>(
-        "https://www.googleapis.com/books/v1/volumes",
+        'https://www.googleapis.com/books/v1/volumes',
         {
           params: {
             q: query,
             key: this.googleBooksApiKey,
             maxResults: 20,
-            printType: "books",
+            printType: 'books',
           },
         }
       );
@@ -187,28 +187,28 @@ export class BookSearchService {
     const collateral = onix.CollateralDetail || {};
 
     // タイトル
-    let title = summary.title || "";
+    let title = summary.title || '';
     if (!title && descriptive.TitleDetail?.TitleElement?.[0]?.TitleText) {
       title = descriptive.TitleDetail.TitleElement[0].TitleText;
     }
 
     // 著者
-    let author = summary.author || "";
+    let author = summary.author || '';
     if (!author && descriptive.Contributor && descriptive.Contributor.length > 0) {
       author = descriptive.Contributor
         .filter((c) => c.PersonName)
         .map((c) => c.PersonName)
-        .join(", ");
+        .join(', ');
     }
 
     // 出版社
-    let publisher = summary.publisher || "";
+    let publisher = summary.publisher || '';
     if (!publisher && publishing.Imprint?.ImprintName) {
       publisher = publishing.Imprint.ImprintName;
     }
 
     // 出版日
-    let publishedDate = summary.pubdate || "";
+    let publishedDate = summary.pubdate || '';
     if (!publishedDate && publishing.PublishingDate?.[0]?.Date) {
       const date = publishing.PublishingDate[0].Date;
       if (date.length === 8) {
@@ -219,16 +219,16 @@ export class BookSearchService {
     // ページ数
     let pageCount: number | undefined;
     if (descriptive.Extent) {
-      const pageExtent = descriptive.Extent.find((e) => e.ExtentType === "11");
+      const pageExtent = descriptive.Extent.find((e) => e.ExtentType === '11');
       if (pageExtent?.ExtentValue) {
         pageCount = parseInt(pageExtent.ExtentValue, 10);
       }
     }
 
     // 説明
-    let description = "";
+    let description = '';
     if (collateral.TextContent) {
-      const descContent = collateral.TextContent.find((c) => c.TextType === "03");
+      const descContent = collateral.TextContent.find((c) => c.TextType === '03');
       if (descContent?.Text) {
         description = descContent.Text;
       }
@@ -238,7 +238,7 @@ export class BookSearchService {
     let coverImageUrl = summary.cover;
     if (!coverImageUrl && collateral.SupportingResource) {
       const coverResource = collateral.SupportingResource.find(
-        (r) => r.ResourceContentType === "01"
+        (r) => r.ResourceContentType === '01'
       );
       if (coverResource?.ResourceVersion?.[0]?.ResourceLink) {
         coverImageUrl = coverResource.ResourceVersion[0].ResourceLink;
@@ -247,14 +247,14 @@ export class BookSearchService {
 
     return {
       isbn: summary.isbn || onix.ProductIdentifier?.IDValue,
-      title: title || "不明なタイトル",
-      author: author || "不明な著者",
+      title: title || '不明なタイトル',
+      author: author || '不明な著者',
       publisher: publisher || undefined,
       publishedDate: publishedDate || undefined,
       pageCount,
       description: description || undefined,
       coverImageUrl: coverImageUrl || undefined,
-      dataSource: "openBD",
+      dataSource: 'openBD',
     };
   }
 
@@ -264,24 +264,24 @@ export class BookSearchService {
     // ISBN取得
     let isbn: string | undefined;
     if (volumeInfo.industryIdentifiers) {
-      const isbn13 = volumeInfo.industryIdentifiers.find((id) => id.type === "ISBN_13");
-      const isbn10 = volumeInfo.industryIdentifiers.find((id) => id.type === "ISBN_10");
+      const isbn13 = volumeInfo.industryIdentifiers.find((id) => id.type === 'ISBN_13');
+      const isbn10 = volumeInfo.industryIdentifiers.find((id) => id.type === 'ISBN_10');
       isbn = isbn13?.identifier || isbn10?.identifier;
     }
 
     // カバー画像URL
-    const coverImageUrl = volumeInfo.imageLinks?.thumbnail?.replace("http://", "https://");
+    const coverImageUrl = volumeInfo.imageLinks?.thumbnail?.replace('http://', 'https://');
 
     return {
       isbn,
       title: volumeInfo.title,
-      author: volumeInfo.authors?.join(", ") || "不明な著者",
+      author: volumeInfo.authors?.join(', ') || '不明な著者',
       publisher: volumeInfo.publisher,
       publishedDate: volumeInfo.publishedDate,
       pageCount: volumeInfo.pageCount,
       description: volumeInfo.description,
       coverImageUrl,
-      dataSource: "googleBooks",
+      dataSource: 'googleBooks',
     };
   }
 }

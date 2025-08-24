@@ -31,14 +31,26 @@ struct CachedAsyncImage<Content: View, Placeholder: View>: View {
                 placeholder()
             }
         }
-        .task {
+        .task(id: url) {
             await loadImage()
+        }
+        .onChange(of: url) { oldValue, newValue in
+            if oldValue != newValue {
+                Task {
+                    await loadImage()
+                }
+            }
         }
     }
     
     private func loadImage() async {
-        guard let url = url else { return }
+        guard let url = url else { 
+            self.image = nil
+            return 
+        }
         
+        // URLが変わった場合は既存の画像をクリア
+        self.image = nil
         isLoading = true
         
         if let cachedImage = await cacheService.loadImage(from: url) {

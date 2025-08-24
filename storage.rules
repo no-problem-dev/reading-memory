@@ -11,27 +11,44 @@ service firebase.storage {
       return isAuthenticated() && request.auth.uid == userId;
     }
     
-    // 画像ファイルかチェック
+    // 画像ファイルかチェック（書き込み時のみ）
     function isImageFile() {
-      return request.resource.contentType.matches('image/.*');
+      return request.resource != null && request.resource.contentType.matches('image/.*');
     }
     
-    // ファイルサイズ制限（5MB）
-    function isValidFileSize() {
-      return request.resource.size < 5 * 1024 * 1024;
+    // ファイルサイズ制限（プロフィール・ブックカバー: 5MB、チャット写真: 10MB）
+    function isValidFileSize(maxSizeMB) {
+      return request.resource == null || request.resource.size <= maxSizeMB * 1024 * 1024;
     }
     
     // ユーザーは自分のフォルダ内のファイルのみアクセス可能
     match /users/{userId}/{allPaths=**} {
       allow read: if isUser(userId);
-      allow write: if isUser(userId) && isImageFile() && isValidFileSize();
-      allow delete: if false; // Cloud Functions経由でのみ削除可能
+      allow delete: if isUser(userId);
+      
+      // プロフィール画像（最大5MB）
+      match /profile/avatar.jpg {
+        allow write: if isUser(userId) && isImageFile() && isValidFileSize(5);
+      }
+      
+      // ブック関連ファイル
+      match /books/{bookId}/{allPaths=**} {
+        // ブックカバー（最大5MB）
+        match /cover.jpg {
+          allow write: if isUser(userId) && isImageFile() && isValidFileSize(5);
+        }
+        
+        // チャット写真（最大10MB）
+        match /chat-photos/{photoId}.jpg {
+          allow write: if isUser(userId) && isImageFile() && isValidFileSize(10);
+        }
+      }
     }
     
-    // 本の画像は認証済みユーザーが読み取り可能
-    match /books/{bookId}/{allPaths=**} {
-      allow read: if isAuthenticated();
-      allow write: if false; // Cloud Functionsからのみ書き込み可能
+    // 全てのアクセスをユーザー分離されたパスに限定
+    // 廃止: 共有の books/{bookId} パスは使用しない
+    match /{allPaths=**} {
+      allow read, write, delete: if false;
     }
   }
 }

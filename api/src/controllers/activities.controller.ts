@@ -219,20 +219,20 @@ export const getActivitySummary = async (
     
     // Calculate start date based on period
     switch (period) {
-      case 'week':
-        startDate = new Date();
-        startDate.setDate(startDate.getDate() - 7);
-        break;
-      case 'month':
-        startDate = new Date();
-        startDate.setMonth(startDate.getMonth() - 1);
-        break;
-      case 'year':
-        startDate = new Date();
-        startDate.setFullYear(startDate.getFullYear() - 1);
-        break;
-      default:
-        throw new ApiError(400, 'INVALID_ARGUMENT', 'Invalid period. Use week, month, or year');
+    case 'week':
+      startDate = new Date();
+      startDate.setDate(startDate.getDate() - 7);
+      break;
+    case 'month':
+      startDate = new Date();
+      startDate.setMonth(startDate.getMonth() - 1);
+      break;
+    case 'year':
+      startDate = new Date();
+      startDate.setFullYear(startDate.getFullYear() - 1);
+      break;
+    default:
+      throw new ApiError(400, 'INVALID_ARGUMENT', 'Invalid period. Use week, month, or year');
     }
     
     const query = db.collection('users')

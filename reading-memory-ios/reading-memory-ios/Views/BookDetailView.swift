@@ -20,94 +20,58 @@ struct BookDetailView: View {
         Group {
             if isLoading {
                 ProgressView()
+                    .tint(MemoryTheme.Colors.primaryBlue)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .background(Color(.systemBackground))
             } else if let book = book {
                 ScrollView {
-                    VStack(alignment: .leading, spacing: 20) {
-                        // 本の基本情報
-                        bookInfoSection(book: book)
+                    VStack(spacing: 0) {
+                        // Hero Section with Book Cover
+                        heroSection(book: book)
                         
-                        Divider()
-                        
-                        // 読書ステータスと評価
-                        statusAndRatingSection(book: book)
-                        
-                        // チャットメモへのボタン
-                        NavigationLink(destination: BookChatView(book: book)) {
-                            HStack {
-                                Image(systemName: "bubble.left.and.bubble.right")
-                                    .font(.title2)
-                                    .foregroundStyle(.blue)
-                                VStack(alignment: .leading) {
-                                    Text("チャットメモ")
-                                        .font(.headline)
-                                        .foregroundStyle(.primary)
-                                    Text("本との対話を記録しよう")
-                                        .font(.caption)
-                                        .foregroundStyle(.secondary)
-                                }
-                                Spacer()
-                                Image(systemName: "chevron.right")
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
+                        VStack(spacing: MemorySpacing.lg) {
+                            // Book Info
+                            bookInfoSection(book: book)
+                                .padding(.horizontal, MemorySpacing.md)
+                            
+                            // Action Buttons
+                            actionButtonsSection(book: book)
+                                .padding(.horizontal, MemorySpacing.md)
+                            
+                            // Status and Rating
+                            MemoryCard(padding: MemorySpacing.md) {
+                                statusAndRatingSection(book: book)
                             }
-                            .padding()
-                            .background(Color(.systemGray6))
-                            .cornerRadius(12)
-                        }
-                        .buttonStyle(PlainButtonStyle())
-                        
-                        // AI要約ボタン
-                        Button {
-                            Task {
-                                await generateSummary()
-                            }
-                        } label: {
-                            HStack {
-                                Image(systemName: "sparkles")
-                                    .font(.title2)
-                                    .foregroundStyle(.purple)
-                                VStack(alignment: .leading) {
-                                    Text("AI要約")
-                                        .font(.headline)
-                                        .foregroundStyle(.primary)
-                                    Text("読書メモから要点をまとめます")
-                                        .font(.caption)
-                                        .foregroundStyle(.secondary)
+                            .padding(.horizontal, MemorySpacing.md)
+                            
+                            // AI Summary if exists
+                            if let aiSummary = book.aiSummary, !aiSummary.isEmpty {
+                                MemoryCard(padding: MemorySpacing.md) {
+                                    aiSummarySection(summary: aiSummary)
                                 }
-                                Spacer()
-                                if isGeneratingSummary {
-                                    ProgressView()
-                                        .scaleEffect(0.8)
-                                } else {
-                                    Image(systemName: "chevron.right")
-                                        .font(.caption)
-                                        .foregroundStyle(.secondary)
-                                }
+                                .padding(.horizontal, MemorySpacing.md)
                             }
-                            .padding()
-                            .background(Color(.systemGray6))
-                            .cornerRadius(12)
+                            
+                            // Notes if exists
+                            if let memo = book.memo, !memo.isEmpty {
+                                MemoryCard(padding: MemorySpacing.md) {
+                                    notesSection(notes: memo)
+                                }
+                                .padding(.horizontal, MemorySpacing.md)
+                            }
                         }
-                        .buttonStyle(PlainButtonStyle())
-                        .disabled(isGeneratingSummary)
-                        
-                        // AI要約があれば表示
-                        if let aiSummary = book.aiSummary, !aiSummary.isEmpty {
-                            Divider()
-                            aiSummarySection(summary: aiSummary)
-                        }
-                        
-                        if let memo = book.memo, !memo.isEmpty {
-                            Divider()
-                            notesSection(notes: memo)
-                        }
+                        .padding(.vertical, MemorySpacing.lg)
                     }
-                    .padding()
                 }
-                .navigationTitle(book.title)
+                .background(Color(.secondarySystemBackground))
                 .navigationBarTitleDisplayMode(.inline)
                 .toolbar {
+                    ToolbarItem(placement: .principal) {
+                        Text(book.title)
+                            .font(.headline)
+                            .lineLimit(1)
+                    }
+                    
                     ToolbarItem(placement: .navigationBarTrailing) {
                         Menu {
                             Button {
@@ -125,6 +89,7 @@ struct BookDetailView: View {
                             }
                         } label: {
                             Image(systemName: "ellipsis.circle")
+                                .foregroundColor(MemoryTheme.Colors.primaryBlue)
                         }
                     }
                 }
@@ -147,8 +112,16 @@ struct BookDetailView: View {
                     SummaryView(summary: aiSummary ?? "")
                 }
             } else {
-                Text("本が見つかりません")
-                    .foregroundColor(.secondary)
+                VStack(spacing: MemorySpacing.md) {
+                    Image(systemName: "book.closed")
+                        .font(.system(size: 60))
+                        .foregroundColor(Color(.tertiaryLabel))
+                    Text("本が見つかりません")
+                        .font(.headline)
+                        .foregroundColor(Color(.secondaryLabel))
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .background(Color(.systemBackground))
             }
         }
         .task {
@@ -157,7 +130,7 @@ struct BookDetailView: View {
     }
     
     private func loadBook() async {
-        guard let userId = authService.currentUser?.uid else { return }
+        guard authService.currentUser?.uid != nil else { return }
         
         do {
             if let fetchedBook = try await bookRepository.getBook(bookId: bookId) {
@@ -171,7 +144,7 @@ struct BookDetailView: View {
     }
     
     private func deleteBook() async {
-        guard let userId = authService.currentUser?.uid else { return }
+        guard authService.currentUser?.uid != nil else { return }
         
         do {
             try await bookRepository.deleteBook(bookId: bookId)
@@ -181,106 +154,322 @@ struct BookDetailView: View {
         }
     }
     
+    // Hero Section with Book Cover
+    private func heroSection(book: Book) -> some View {
+        ZStack(alignment: .bottom) {
+            // Gradient Background
+            LinearGradient(
+                gradient: Gradient(colors: [
+                    MemoryTheme.Colors.primaryBlue.opacity(0.1),
+                    Color(.secondarySystemBackground)
+                ]),
+                startPoint: .top,
+                endPoint: .bottom
+            )
+            .frame(height: 280)
+            
+            // Book Cover
+            BookCoverView(imageURL: book.coverImageUrl, size: .xlarge)
+                .frame(width: 160, height: 240)
+                .cornerRadius(MemoryRadius.medium)
+                .memoryShadow(.medium)
+        }
+    }
+    
+    // Book Info Section
     private func bookInfoSection(book: Book) -> some View {
-        HStack(alignment: .top, spacing: 16) {
-            // 本の表紙
-            if let coverImageUrl = book.coverImageUrl, 
-               let url = URL(string: coverImageUrl) {
-                CachedAsyncImage(url: url) { image in
-                    image
-                        .resizable()
-                        .aspectRatio(contentMode: .fit)
-                } placeholder: {
-                    BookCoverPlaceholder()
+        VStack(spacing: MemorySpacing.xs) {
+            Text(book.title)
+                .font(.title2)
+                .foregroundColor(Color(.label))
+                .multilineTextAlignment(.center)
+            
+            Text(book.author)
+                .font(.callout)
+                .foregroundColor(Color(.secondaryLabel))
+                .multilineTextAlignment(.center)
+        }
+    }
+    
+    // Action Buttons
+    private func actionButtonsSection(book: Book) -> some View {
+        VStack(spacing: MemorySpacing.sm) {
+            // Chat Button
+            NavigationLink(destination: BookChatView(book: book)) {
+                HStack {
+                    ZStack {
+                        Circle()
+                            .fill(
+                                LinearGradient(
+                                    gradient: Gradient(colors: [
+                                        MemoryTheme.Colors.primaryBlueLight.opacity(0.2),
+                                        MemoryTheme.Colors.primaryBlue.opacity(0.1)
+                                    ]),
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                )
+                            )
+                            .frame(width: 48, height: 48)
+                        
+                        Image(systemName: "bubble.left.and.bubble.right")
+                            .font(.system(size: 22))
+                            .foregroundColor(MemoryTheme.Colors.primaryBlue)
+                    }
+                    
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("本とおしゃべりする")
+                            .font(.headline)
+                            .foregroundColor(Color(.label))
+                        Text("読みながら感じたことを記録")
+                            .font(.caption)
+                            .foregroundColor(Color(.secondaryLabel))
+                    }
+                    
+                    Spacer()
+                    
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 14))
+                        .foregroundColor(Color(.tertiaryLabel))
                 }
-                .frame(width: 120, height: 180)
-                .cornerRadius(12)
-            } else {
-                BookCoverPlaceholder()
-                    .frame(width: 120, height: 180)
-                    .cornerRadius(12)
+                .padding(MemorySpacing.md)
+                .background(Color(.tertiarySystemBackground))
+                .cornerRadius(MemoryRadius.large)
+                .memoryShadow(.soft)
             }
+            .buttonStyle(PlainButtonStyle())
             
-            VStack(alignment: .leading, spacing: 8) {
-                Text(book.title)
-                    .font(.title2)
-                    .fontWeight(.bold)
-                    .fixedSize(horizontal: false, vertical: true)
-                
-                Text(book.author)
-                    .font(.headline)
-                    .foregroundColor(.secondary)
-                
-                Spacer()
+            // AI Summary Button
+            Button {
+                Task {
+                    await generateSummary()
+                }
+            } label: {
+                HStack {
+                    ZStack {
+                        Circle()
+                            .fill(
+                                LinearGradient(
+                                    gradient: Gradient(colors: [
+                                        MemoryTheme.Colors.warmCoralLight.opacity(0.2),
+                                        MemoryTheme.Colors.warmCoral.opacity(0.1)
+                                    ]),
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                )
+                            )
+                            .frame(width: 48, height: 48)
+                        
+                        Image(systemName: "sparkles")
+                            .font(.system(size: 22))
+                            .foregroundColor(MemoryTheme.Colors.warmCoral)
+                    }
+                    
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("AI要約を生成")
+                            .font(.headline)
+                            .foregroundColor(Color(.label))
+                        Text("読書メモから要点をまとめます")
+                            .font(.caption)
+                            .foregroundColor(Color(.secondaryLabel))
+                    }
+                    
+                    Spacer()
+                    
+                    if isGeneratingSummary {
+                        ProgressView()
+                            .scaleEffect(0.8)
+                            .tint(MemoryTheme.Colors.warmCoral)
+                    } else {
+                        Image(systemName: "chevron.right")
+                            .font(.system(size: 14))
+                            .foregroundColor(Color(.tertiaryLabel))
+                    }
+                }
+                .padding(MemorySpacing.md)
+                .background(Color(.tertiarySystemBackground))
+                .cornerRadius(MemoryRadius.large)
+                .memoryShadow(.soft)
             }
-            
-            Spacer()
+            .buttonStyle(PlainButtonStyle())
+            .disabled(isGeneratingSummary)
         }
     }
     
     private func statusAndRatingSection(book: Book) -> some View {
-        VStack(alignment: .leading, spacing: 16) {
-            // ステータス
+        VStack(spacing: MemorySpacing.md) {
+            // Status
             HStack {
-                Text("ステータス")
-                    .fontWeight(.medium)
+                HStack(spacing: MemorySpacing.xs) {
+                    Image(systemName: statusIcon(for: book.status))
+                        .font(.system(size: 16))
+                        .foregroundColor(MemoryTheme.Colors.primaryBlue)
+                    Text("ステータス")
+                        .font(.subheadline)
+                        .foregroundColor(Color(.secondaryLabel))
+                }
+                
                 Spacer()
-                StatusBadge(status: book.status)
+                
+                Text(book.status.displayName)
+                    .font(.subheadline)
+                    .fontWeight(.medium)
+                    .foregroundColor(statusColor(for: book.status))
+                    .padding(.horizontal, MemorySpacing.sm)
+                    .padding(.vertical, MemorySpacing.xs)
+                    .background(statusColor(for: book.status).opacity(0.1))
+                    .cornerRadius(MemoryRadius.full)
             }
             
-            // 評価
+            Divider()
+                .foregroundColor(Color(.separator))
+            
+            // Rating
             HStack {
-                Text("評価")
-                    .fontWeight(.medium)
+                HStack(spacing: MemorySpacing.xs) {
+                    Image(systemName: "star.fill")
+                        .font(.system(size: 16))
+                        .foregroundColor(MemoryTheme.Colors.goldenMemory)
+                    Text("評価")
+                        .font(.subheadline)
+                        .foregroundColor(Color(.secondaryLabel))
+                }
+                
                 Spacer()
+                
                 if let rating = book.rating {
-                    RatingView(rating: rating)
+                    HStack(spacing: 2) {
+                        ForEach(0..<5) { index in
+                            Image(systemName: index < Int(rating) ? "star.fill" : (index < Int(rating + 0.5) ? "star.leadinghalf.filled" : "star"))
+                                .font(.system(size: 16))
+                                .foregroundColor(MemoryTheme.Colors.goldenMemory)
+                        }
+                        Text(String(format: "%.1f", rating))
+                            .font(.footnote)
+                            .foregroundColor(Color(.secondaryLabel))
+                            .padding(.leading, 4)
+                    }
                 } else {
                     Text("未評価")
-                        .foregroundColor(.secondary)
+                        .font(.subheadline)
+                        .foregroundColor(Color(.tertiaryLabel))
                 }
             }
             
-            // 読書期間
-            if book.status != .wantToRead {
-                VStack(alignment: .leading, spacing: 8) {
-                    if let startDate = book.startDate {
-                        HStack {
-                            Text("開始日")
-                                .fontWeight(.medium)
-                            Spacer()
-                            Text(startDate.formatted(date: .abbreviated, time: .omitted))
-                                .foregroundColor(.secondary)
+            // Reading Progress
+            if let progress = book.readingProgress, book.status == .reading {
+                Divider()
+                    .foregroundColor(Color(.separator))
+                
+                VStack(spacing: MemorySpacing.xs) {
+                    HStack {
+                        HStack(spacing: MemorySpacing.xs) {
+                            Image(systemName: "book.pages")
+                                .font(.system(size: 16))
+                                .foregroundColor(MemoryTheme.Colors.primaryBlue)
+                            Text("読書進捗")
+                                .font(.subheadline)
+                                .foregroundColor(Color(.secondaryLabel))
                         }
+                        
+                        Spacer()
+                        
+                        Text("\(Int(progress))%")
+                            .font(.subheadline)
+                            .fontWeight(.medium)
+                            .foregroundColor(MemoryTheme.Colors.primaryBlue)
                     }
                     
-                    if book.status == .completed,
-                       let completedDate = book.completedDate {
-                        HStack {
-                            Text("完了日")
-                                .fontWeight(.medium)
-                            Spacer()
-                            Text(completedDate.formatted(date: .abbreviated, time: .omitted))
-                                .foregroundColor(.secondary)
+                    ProgressView(value: progress / 100.0)
+                        .tint(MemoryTheme.Colors.primaryBlue)
+                        .background(MemoryTheme.Colors.inkPale)
+                        .clipShape(Capsule())
+                }
+            }
+            
+            // Reading Period
+            if book.status != .wantToRead {
+                if let startDate = book.startDate {
+                    Divider()
+                        .foregroundColor(Color(.separator))
+                    
+                    HStack {
+                        HStack(spacing: MemorySpacing.xs) {
+                            Image(systemName: "calendar")
+                                .font(.system(size: 16))
+                                .foregroundColor(MemoryTheme.Colors.primaryBlue)
+                            Text("開始日")
+                                .font(.subheadline)
+                                .foregroundColor(Color(.secondaryLabel))
                         }
+                        
+                        Spacer()
+                        
+                        Text(startDate.formatted(date: .abbreviated, time: .omitted))
+                            .font(.subheadline)
+                            .foregroundColor(Color(.label))
+                    }
+                }
+                
+                if book.status == .completed, let completedDate = book.completedDate {
+                    HStack {
+                        HStack(spacing: MemorySpacing.xs) {
+                            Image(systemName: "checkmark.calendar")
+                                .font(.system(size: 16))
+                                .foregroundColor(Color(.systemGreen))
+                            Text("完了日")
+                                .font(.subheadline)
+                                .foregroundColor(Color(.secondaryLabel))
+                        }
+                        
+                        Spacer()
+                        
+                        Text(completedDate.formatted(date: .abbreviated, time: .omitted))
+                            .font(.subheadline)
+                            .foregroundColor(Color(.label))
                     }
                 }
             }
+        }
+    }
+    
+    private func aiSummarySection(summary: String) -> some View {
+        VStack(alignment: .leading, spacing: MemorySpacing.sm) {
+            HStack(spacing: MemorySpacing.xs) {
+                Image(systemName: "sparkles")
+                    .font(.system(size: 16))
+                    .foregroundColor(MemoryTheme.Colors.warmCoral)
+                Text("AI要約")
+                    .font(.headline)
+                    .foregroundColor(Color(.label))
+            }
+            
+            Text(summary)
+                .font(.body)
+                .foregroundColor(Color(.label))
+                .lineSpacing(4)
         }
     }
     
     private func notesSection(notes: String) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text("メモ")
-                .font(.headline)
+        VStack(alignment: .leading, spacing: MemorySpacing.sm) {
+            HStack(spacing: MemorySpacing.xs) {
+                Image(systemName: "note.text")
+                    .font(.system(size: 16))
+                    .foregroundColor(MemoryTheme.Colors.primaryBlue)
+                Text("メモ")
+                    .font(.headline)
+                    .foregroundColor(Color(.label))
+            }
+            
             Text(notes)
                 .font(.body)
-                .foregroundColor(.secondary)
+                .foregroundColor(Color(.secondaryLabel))
+                .lineSpacing(4)
         }
     }
     
     private func generateSummary() async {
-        guard let userId = authService.currentUser?.uid else { return }
+        guard authService.currentUser?.uid != nil else { return }
         
         isGeneratingSummary = true
         
@@ -294,7 +483,6 @@ struct BookDetailView: View {
             showingSummarySheet = true
         } catch {
             print("Error generating summary: \(error)")
-            // エラーメッセージを表示
             aiSummary = "要約の生成に失敗しました。しばらく時間をおいてから再度お試しください。"
             showingSummarySheet = true
         }
@@ -302,30 +490,165 @@ struct BookDetailView: View {
         isGeneratingSummary = false
     }
     
-    private func aiSummarySection(summary: String) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack {
-                Image(systemName: "sparkles")
-                    .foregroundStyle(.purple)
-                Text("AI要約")
-                    .font(.headline)
-                Spacer()
-                Text(book?.summaryGeneratedAt?.formatted(date: .abbreviated, time: .omitted) ?? "")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
-            
-            Text(summary)
-                .font(.body)
-                .foregroundStyle(.primary)
-                .padding()
-                .background(Color(.systemGray6))
-                .cornerRadius(12)
+    private func statusIcon(for status: ReadingStatus) -> String {
+        switch status {
+        case .wantToRead:
+            return "bookmark"
+        case .reading:
+            return "book"
+        case .completed:
+            return "checkmark.circle"
+        case .dnf:
+            return "xmark.circle"
+        }
+    }
+    
+    private func statusColor(for status: ReadingStatus) -> Color {
+        switch status {
+        case .wantToRead:
+            return Color(.systemBlue)
+        case .reading:
+            return MemoryTheme.Colors.primaryBlue
+        case .completed:
+            return Color(.systemGreen)
+        case .dnf:
+            return Color(.secondaryLabel)
         }
     }
 }
 
-// AI要約表示ビュー
+// Simple Edit Book View
+struct SimpleEditBookView: View {
+    let book: Book
+    let onSave: (Book) -> Void
+    
+    @State private var status: ReadingStatus
+    @State private var rating: Double?
+    @State private var memo: String
+    @State private var readingProgress: Double?
+    @Environment(\.dismiss) private var dismiss
+    
+    private let bookRepository = ServiceContainer.shared.getBookRepository()
+    
+    init(book: Book, onSave: @escaping (Book) -> Void) {
+        self.book = book
+        self.onSave = onSave
+        _status = State(initialValue: book.status)
+        _rating = State(initialValue: book.rating)
+        _memo = State(initialValue: book.memo ?? "")
+        _readingProgress = State(initialValue: book.readingProgress)
+    }
+    
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section {
+                    Picker("ステータス", selection: $status) {
+                        ForEach(ReadingStatus.allCases, id: \.self) { status in
+                            Text(status.displayName).tag(status)
+                        }
+                    }
+                    
+                    if status == .reading {
+                        VStack(alignment: .leading) {
+                            Text("読書進捗: \(Int(readingProgress ?? 0))%")
+                                .font(.subheadline)
+                                .foregroundColor(Color(.secondaryLabel))
+                            Slider(value: Binding(
+                                get: { readingProgress ?? 0 },
+                                set: { readingProgress = $0 }
+                            ), in: 0...100, step: 5)
+                            .tint(MemoryTheme.Colors.primaryBlue)
+                        }
+                    }
+                    
+                    if status == .completed || status == .dnf {
+                        VStack(alignment: .leading) {
+                            Text("評価")
+                                .font(.subheadline)
+                                .foregroundColor(Color(.secondaryLabel))
+                            RatingSelector(rating: $rating)
+                        }
+                    }
+                }
+                
+                Section("メモ") {
+                    TextEditor(text: $memo)
+                        .frame(minHeight: 100)
+                }
+            }
+            .navigationTitle("本の編集")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarLeading) {
+                    Button("キャンセル") {
+                        dismiss()
+                    }
+                }
+                
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button("保存") {
+                        Task {
+                            await saveChanges()
+                        }
+                    }
+                    .fontWeight(.semibold)
+                }
+            }
+        }
+    }
+    
+    private func saveChanges() async {
+        let startDate: Date? = status == .reading && book.startDate == nil ? Date() : 
+                               (status == .completed || status == .dnf) && book.startDate == nil ? Date() :
+                               book.startDate
+        
+        let completedDate: Date? = (status == .completed || status == .dnf) && book.completedDate == nil ? Date() :
+                                   status == .reading ? nil :
+                                   book.completedDate
+        
+        let updatedBook = Book(
+            id: book.id,
+            isbn: book.isbn,
+            title: book.title,
+            author: book.author,
+            publisher: book.publisher,
+            publishedDate: book.publishedDate,
+            pageCount: book.pageCount,
+            description: book.description,
+            coverImageUrl: book.coverImageUrl,
+            dataSource: book.dataSource,
+            status: status,
+            rating: rating,
+            readingProgress: readingProgress,
+            currentPage: book.currentPage,
+            addedDate: book.addedDate,
+            startDate: startDate,
+            completedDate: completedDate,
+            lastReadDate: book.lastReadDate,
+            priority: book.priority,
+            plannedReadingDate: book.plannedReadingDate,
+            reminderEnabled: book.reminderEnabled,
+            purchaseLinks: book.purchaseLinks,
+            memo: memo.isEmpty ? nil : memo,
+            tags: book.tags,
+            aiSummary: book.aiSummary,
+            summaryGeneratedAt: book.summaryGeneratedAt,
+            createdAt: book.createdAt,
+            updatedAt: Date()
+        )
+        
+        do {
+            try await bookRepository.updateBook(updatedBook)
+            onSave(updatedBook)
+            dismiss()
+        } catch {
+            print("Error updating book: \(error)")
+        }
+    }
+}
+
+// Summary View
 struct SummaryView: View {
     let summary: String
     @Environment(\.dismiss) private var dismiss
@@ -333,24 +656,27 @@ struct SummaryView: View {
     var body: some View {
         NavigationStack {
             ScrollView {
-                VStack(alignment: .leading, spacing: 16) {
-                    HStack {
-                        Image(systemName: "sparkles")
-                            .foregroundStyle(.purple)
-                        Text("AI要約")
-                            .font(.headline)
-                    }
+                VStack(alignment: .leading, spacing: MemorySpacing.md) {
+                    Image(systemName: "sparkles")
+                        .font(.system(size: 40))
+                        .foregroundColor(MemoryTheme.Colors.warmCoral)
+                        .frame(maxWidth: .infinity)
+                        .padding(.top, MemorySpacing.lg)
+                    
+                    Text("AI要約")
+                        .font(.title2)
+                        .foregroundColor(Color(.label))
+                        .frame(maxWidth: .infinity)
                     
                     Text(summary)
                         .font(.body)
-                        .foregroundStyle(.primary)
-                        .padding()
-                        .background(Color(.systemGray6))
-                        .cornerRadius(12)
+                        .foregroundColor(Color(.label))
+                        .lineSpacing(6)
+                        .padding(.horizontal, MemorySpacing.md)
                 }
-                .padding()
+                .padding(.vertical, MemorySpacing.lg)
             }
-            .navigationTitle("読書メモの要約")
+            .background(Color(.systemBackground))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
@@ -363,372 +689,40 @@ struct SummaryView: View {
     }
 }
 
-struct StatusBadge: View {
-    let status: ReadingStatus
-    
-    var body: some View {
-        Text(status.displayName)
-            .font(.caption)
-            .fontWeight(.medium)
-            .padding(.horizontal, 12)
-            .padding(.vertical, 6)
-            .background(backgroundColor)
-            .foregroundColor(.white)
-            .cornerRadius(20)
-    }
-    
-    var backgroundColor: Color {
-        switch status {
-        case .wantToRead:
-            return .blue
-        case .reading:
-            return .orange
-        case .completed:
-            return .green
-        case .dnf:
-            return .gray
-        }
-    }
-}
 
-struct RatingView: View {
-    let rating: Double
+// Rating Selector
+struct RatingSelector: View {
+    @Binding var rating: Double?
     
     var body: some View {
-        HStack(spacing: 2) {
-            ForEach(0..<5) { index in
-                Image(systemName: starType(for: index))
-                    .foregroundColor(.yellow)
-                    .font(.system(size: 16))
+        HStack(spacing: MemorySpacing.xs) {
+            ForEach(1...5, id: \.self) { value in
+                Button {
+                    if rating == Double(value) {
+                        rating = nil
+                    } else {
+                        rating = Double(value)
+                    }
+                } label: {
+                    Image(systemName: getRatingIcon(for: value))
+                        .font(.system(size: 28))
+                        .foregroundColor(MemoryTheme.Colors.goldenMemory)
+                }
             }
         }
     }
     
-    private func starType(for index: Int) -> String {
-        let fullStars = Int(rating)
-        let hasHalfStar = rating - Double(fullStars) >= 0.5
+    private func getRatingIcon(for value: Int) -> String {
+        guard let rating = rating else {
+            return "star"
+        }
         
-        if index < fullStars {
+        if Double(value) <= rating {
             return "star.fill"
-        } else if index == fullStars && hasHalfStar {
+        } else if Double(value) - 0.5 <= rating {
             return "star.leadinghalf.filled"
         } else {
             return "star"
         }
-    }
-}
-
-struct SimpleEditBookView: View {
-    let book: Book
-    let onUpdate: (Book) -> Void
-    
-    @Environment(\.dismiss) private var dismiss
-    @State private var selectedPhoto: PhotosPickerItem?
-    @State private var selectedImage: UIImage?
-    @State private var memo = ""
-    @State private var status: ReadingStatus = .wantToRead
-    @State private var rating: Double = 0
-    @State private var isLoading = false
-    @State private var errorMessage: String?
-    
-    private let bookRepository = ServiceContainer.shared.getBookRepository()
-    private let authService = AuthService.shared
-    private let activityRepository = ActivityRepository.shared
-    
-    var body: some View {
-        NavigationStack {
-            contentView
-        }
-    }
-    
-    private var contentView: some View {
-        ScrollView {
-            VStack(spacing: 24) {
-                coverImageSection
-                Divider()
-                statusSection
-                ratingSection
-                memoSection
-            }
-            .padding()
-        }
-        .navigationTitle("本を編集")
-        .navigationBarTitleDisplayMode(.inline)
-        .toolbar {
-            ToolbarItem(placement: .navigationBarLeading) {
-                Button("キャンセル") {
-                    dismiss()
-                }
-            }
-            
-            ToolbarItem(placement: .navigationBarTrailing) {
-                Button("保存") {
-                    Task {
-                        await saveChanges()
-                    }
-                }
-                .disabled(isLoading)
-            }
-        }
-        .onAppear {
-            status = book.status
-            rating = book.rating ?? 0
-            memo = book.memo ?? ""
-        }
-        .onChange(of: selectedPhoto) { _, newItem in
-            Task {
-                await loadImage(from: newItem)
-            }
-        }
-        .alert("エラー", isPresented: .constant(errorMessage != nil)) {
-            Button("OK") {
-                errorMessage = nil
-            }
-        } message: {
-            if let errorMessage {
-                Text(errorMessage)
-            }
-        }
-        .disabled(isLoading)
-    }
-    
-    private var coverImageSection: some View {
-        VStack(spacing: 16) {
-            Text("表紙画像")
-                .font(.headline)
-                .frame(maxWidth: .infinity, alignment: .leading)
-            
-            HStack(spacing: 20) {
-                currentCoverView
-                customCoverPicker
-                Spacer()
-            }
-        }
-    }
-    
-    private var currentCoverView: some View {
-        VStack {
-            if let coverImageUrl = book.coverImageUrl {
-                AsyncImage(url: URL(string: coverImageUrl)) { image in
-                    image
-                        .resizable()
-                        .aspectRatio(contentMode: .fit)
-                } placeholder: {
-                    BookCoverPlaceholder()
-                }
-            } else {
-                BookCoverPlaceholder()
-            }
-        }
-        .frame(width: 100, height: 150)
-        .cornerRadius(8)
-    }
-    
-    private var customCoverPicker: some View {
-        PhotosPicker(selection: $selectedPhoto,
-                   matching: .images,
-                   photoLibrary: .shared()) {
-            VStack {
-                if let selectedImage {
-                    Image(uiImage: selectedImage)
-                        .resizable()
-                        .aspectRatio(contentMode: .fit)
-                        .frame(width: 100, height: 150)
-                        .cornerRadius(8)
-                } else {
-                    RoundedRectangle(cornerRadius: 8)
-                        .fill(Color(.systemGray5))
-                        .frame(width: 100, height: 150)
-                        .overlay(
-                            VStack(spacing: 8) {
-                                Image(systemName: "camera.fill")
-                                    .font(.title)
-                                Text("カスタム表紙")
-                                    .font(.caption)
-                            }
-                            .foregroundStyle(.secondary)
-                        )
-                }
-            }
-        }
-    }
-    
-    private var statusSection: some View {
-        VStack(spacing: 12) {
-            Text("読書ステータス")
-                .font(.headline)
-                .frame(maxWidth: .infinity, alignment: .leading)
-            
-            Picker("ステータス", selection: $status) {
-                ForEach(ReadingStatus.allCases, id: \.self) { status in
-                    Text(status.displayName).tag(status)
-                }
-            }
-            .pickerStyle(.segmented)
-        }
-    }
-    
-    private var ratingSection: some View {
-        Group {
-            if status == .completed {
-                VStack(spacing: 12) {
-                    Text("評価")
-                        .font(.headline)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                    
-                    HStack {
-                        ForEach(0..<5) { index in
-                            Image(systemName: index < Int(rating) ? "star.fill" : "star")
-                                .font(.title2)
-                                .foregroundStyle(.yellow)
-                                .onTapGesture {
-                                    rating = Double(index + 1)
-                                }
-                        }
-                        Spacer()
-                        if rating > 0 {
-                            Button("クリア") {
-                                rating = 0
-                            }
-                            .font(.caption)
-                        }
-                    }
-                }
-            }
-        }
-    }
-    
-    private var memoSection: some View {
-        VStack(spacing: 12) {
-            Text("メモ")
-                .font(.headline)
-                .frame(maxWidth: .infinity, alignment: .leading)
-            
-            TextEditor(text: $memo)
-                .frame(minHeight: 100)
-                .padding(8)
-                .background(Color(.systemGray6))
-                .cornerRadius(8)
-        }
-    }
-    
-    @MainActor
-    private func loadImage(from item: PhotosPickerItem?) async {
-        guard let item = item else { return }
-        
-        do {
-            if let data = try await item.loadTransferable(type: Data.self),
-               let image = UIImage(data: data) {
-                // Resize image to reduce file size
-                let resizedImage = image.resized(to: CGSize(width: 600, height: 900))
-                selectedImage = resizedImage
-            }
-        } catch {
-            errorMessage = "画像の読み込みに失敗しました"
-        }
-    }
-    
-    @MainActor
-    private func saveChanges() async {
-        guard let userId = authService.currentUser?.uid else { return }
-        
-        isLoading = true
-        
-        do {
-            // カスタム表紙をアップロード
-            var newCoverUrl = book.coverImageUrl
-            if let selectedImage {
-                let storageService = StorageService.shared
-                newCoverUrl = try await storageService.uploadImage(
-                    selectedImage,
-                    path: .bookCover(userId: userId, bookId: book.id)
-                )
-            }
-            
-            // ステータスに応じて日付を更新
-            var newStartDate = book.startDate
-            var newCompletedDate = book.completedDate
-            if status == .reading && book.status == .wantToRead {
-                newStartDate = Date()
-            } else if status == .completed && book.status != .completed {
-                newCompletedDate = Date()
-            }
-            
-            // 更新されたBookを作成
-            let updatedBook = Book(
-                id: book.id,
-                isbn: book.isbn,
-                title: book.title,
-                author: book.author,
-                publisher: book.publisher,
-                publishedDate: book.publishedDate,
-                pageCount: book.pageCount,
-                description: book.description,
-                coverImageUrl: newCoverUrl,
-                dataSource: book.dataSource,
-                status: status,
-                rating: rating > 0 ? rating : nil,
-                readingProgress: book.readingProgress,
-                currentPage: book.currentPage,
-                addedDate: book.addedDate,
-                startDate: newStartDate,
-                completedDate: newCompletedDate,
-                lastReadDate: book.lastReadDate,
-                priority: book.priority,
-                plannedReadingDate: book.plannedReadingDate,
-                reminderEnabled: book.reminderEnabled,
-                purchaseLinks: book.purchaseLinks,
-                memo: memo.isEmpty ? nil : memo,
-                tags: book.tags,
-                aiSummary: book.aiSummary,
-                summaryGeneratedAt: book.summaryGeneratedAt,
-                createdAt: book.createdAt,
-                updatedAt: Date()
-            )
-            
-            try await bookRepository.updateBook(updatedBook)
-            
-            // ステータスが完了に変更された場合、アクティビティを記録
-            if status == .completed && book.status != .completed {
-                try? await activityRepository.recordBookRead()
-            }
-            
-            onUpdate(updatedBook)
-            dismiss()
-        } catch {
-            errorMessage = "保存に失敗しました: \(error.localizedDescription)"
-        }
-        
-        isLoading = false
-    }
-}
-
-// MARK: - UIImage Extension
-private extension UIImage {
-    func resized(to size: CGSize) -> UIImage {
-        let targetSize = CGSize(
-            width: min(size.width, self.size.width),
-            height: min(size.height, self.size.height)
-        )
-        
-        let widthRatio = targetSize.width / self.size.width
-        let heightRatio = targetSize.height / self.size.height
-        let ratio = min(widthRatio, heightRatio)
-        
-        let newSize = CGSize(
-            width: self.size.width * ratio,
-            height: self.size.height * ratio
-        )
-        
-        let renderer = UIGraphicsImageRenderer(size: newSize)
-        return renderer.image { _ in
-            self.draw(in: CGRect(origin: .zero, size: newSize))
-        }
-    }
-}
-
-#Preview {
-    NavigationStack {
-        BookDetailView(bookId: "test-id")
     }
 }

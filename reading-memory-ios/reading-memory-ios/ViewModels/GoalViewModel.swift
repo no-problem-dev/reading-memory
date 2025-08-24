@@ -6,7 +6,7 @@ class GoalViewModel {
     private let goalRepository = GoalRepository.shared
     private let bookRepository = BookRepository.shared
     private let userProfileRepository = UserProfileRepository.shared
-    private let authService = AuthService.shared
+    @MainActor private let authService = AuthService.shared
     
     var activeGoals: [ReadingGoal] = []
     var allGoals: [ReadingGoal] = []

@@ -5,6 +5,8 @@ struct WantToReadListView: View {
     @State private var showingSortOptions = false
     @State private var editMode: EditMode = .inactive
     @State private var selectedBook: Book?
+    @State private var bookForSettings: Book?
+    @State private var navigationPath = NavigationPath()
     
     @ViewBuilder
     private var mainContent: some View {
@@ -28,18 +30,18 @@ struct WantToReadListView: View {
             // リスト
             List {
                 ForEach(viewModel.books) { book in
-                    WantToReadRowView(book: book)
-                        .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
-                        .listRowBackground(Color.clear)
-                        .swipeActions(edge: .trailing, allowsFullSwipe: true) {
-                            deleteButton(for: book)
-                        }
-                        .swipeActions(edge: .leading, allowsFullSwipe: true) {
-                            startReadingButton(for: book)
-                        }
-                        .onTapGesture {
-                            selectedBook = book
-                        }
+                    NavigationLink(value: book) {
+                        WantToReadRowView(book: book)
+                            .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
+                            .listRowBackground(Color.clear)
+                    }
+                    .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+                        deleteButton(for: book)
+                        settingsButton(for: book)
+                    }
+                    .swipeActions(edge: .leading, allowsFullSwipe: true) {
+                        startReadingButton(for: book)
+                    }
                 }
                 .onMove { source, destination in
                     Task {
@@ -73,11 +75,23 @@ struct WantToReadListView: View {
         .tint(.green)
     }
     
+    private func settingsButton(for book: Book) -> some View {
+        Button {
+            bookForSettings = book
+        } label: {
+            Label("設定", systemImage: "gear")
+        }
+        .tint(.blue)
+    }
+    
     var body: some View {
-        NavigationStack {
+        NavigationStack(path: $navigationPath) {
             mainContent
             .navigationTitle("読みたいリスト")
             .navigationBarTitleDisplayMode(.large)
+            .navigationDestination(for: Book.self) { book in
+                BookDetailView(bookId: book.id)
+                                }
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     if editMode == .active {
@@ -122,7 +136,7 @@ struct WantToReadListView: View {
             .refreshable {
                 await viewModel.loadWantToReadBooks()
             }
-            .sheet(item: $selectedBook) { book in
+            .sheet(item: $bookForSettings) { book in
                 WantToReadDetailView(book: book) { updatedBook in
                     Task {
                         if let updatedBook = updatedBook {
