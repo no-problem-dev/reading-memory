@@ -144,15 +144,15 @@ final class APIClient {
         return try await execute(request, responseType: OnboardingStatus.self)
     }
     
-    func completeOnboarding(displayName: String, favoriteGenres: [String], monthlyGoal: Int, profileImageUrl: String? = nil, bio: String? = nil) async throws -> OnboardingResult {
+    func completeOnboarding(displayName: String, favoriteGenres: [String], monthlyGoal: Int, avatarImageId: String? = nil, bio: String? = nil) async throws -> OnboardingResult {
         var body: [String: Any] = [
             "displayName": displayName,
             "favoriteGenres": favoriteGenres,
             "monthlyGoal": monthlyGoal
         ]
         
-        if let profileImageUrl = profileImageUrl {
-            body["profileImageUrl"] = profileImageUrl
+        if let avatarImageId = avatarImageId {
+            body["avatarImageId"] = avatarImageId
         }
         
         if let bio = bio {
@@ -560,7 +560,7 @@ final class APIClient {
         
         let updateRequest = UpdateUserProfileRequest(
             displayName: profile.displayName,
-            profileImageUrl: profile.profileImageUrl,
+            avatarImageId: profile.avatarImageId,
             bio: profile.bio,
             favoriteGenres: profile.favoriteGenres,
             readingGoal: profile.readingGoal,
@@ -600,7 +600,7 @@ final class APIClient {
         return response.chats.map { $0.toDomain(bookId: bookId) }
     }
     
-    func createChat(bookId: String, message: String, messageType: MessageType) async throws -> BookChat {
+    func createChat(bookId: String, message: String, messageType: MessageType, imageId: String? = nil) async throws -> BookChat {
         let encoder = JSONEncoder()
         let formatter = DateFormatter()
         formatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss.SSSZZZZZ"
@@ -609,10 +609,16 @@ final class APIClient {
         formatter.locale = Locale(identifier: "en_US_POSIX")
         encoder.dateEncodingStrategy = .formatted(formatter)
         
-        let body = try encoder.encode([
+        var bodyDict: [String: Any] = [
             "message": message,
             "messageType": messageType.rawValue
-        ])
+        ]
+        
+        if let imageId = imageId {
+            bodyDict["imageId"] = imageId
+        }
+        
+        let body = try JSONSerialization.data(withJSONObject: bodyDict, options: [])
         
         let request = try await makeRequest(
             method: "POST",
@@ -656,12 +662,14 @@ final class APIClient {
         _ = try await execute(request, responseType: EmptyResponse.self)
     }
     
-    // MARK: - Upload
+    // MARK: - Image API
     
-    func uploadProfileImage(imageData: Data) async throws -> String {
+    /// 画像をアップロード
+    /// - Returns: (imageId, url)
+    func uploadImage(imageData: Data) async throws -> (String, String) {
         var request = try await makeRequest(
             method: "POST",
-            path: "/api/v1/upload/profile-image"
+            path: "/api/v1/images"
         )
         
         let boundary = UUID().uuidString
@@ -669,69 +677,32 @@ final class APIClient {
         
         var body = Data()
         body.append("--\(boundary)\r\n".data(using: .utf8)!)
-        body.append("Content-Disposition: form-data; name=\"image\"; filename=\"profile.jpg\"\r\n".data(using: .utf8)!)
+        body.append("Content-Disposition: form-data; name=\"image\"; filename=\"image.jpg\"\r\n".data(using: .utf8)!)
         body.append("Content-Type: image/jpeg\r\n\r\n".data(using: .utf8)!)
         body.append(imageData)
         body.append("\r\n--\(boundary)--\r\n".data(using: .utf8)!)
         
         request.httpBody = body
         
-        let response = try await execute(request, responseType: UploadResponse.self)
-        return response.url
+        let response = try await execute(request, responseType: ImageUploadResponse.self)
+        return (response.imageId, response.url)
     }
     
-    func uploadBookCover(bookId: String, imageData: Data) async throws -> String {
-        var request = try await makeRequest(
-            method: "POST",
-            path: "/api/v1/upload/books/\(bookId)/cover"
+    /// 画像情報を取得
+    func getImage(id: String) async throws -> ImageEntity {
+        let request = try await makeRequest(
+            method: "GET",
+            path: "/api/v1/images/\(id)"
         )
         
-        let boundary = UUID().uuidString
-        request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
-        
-        var body = Data()
-        body.append("--\(boundary)\r\n".data(using: .utf8)!)
-        body.append("Content-Disposition: form-data; name=\"image\"; filename=\"cover.jpg\"\r\n".data(using: .utf8)!)
-        body.append("Content-Type: image/jpeg\r\n\r\n".data(using: .utf8)!)
-        body.append(imageData)
-        body.append("\r\n--\(boundary)--\r\n".data(using: .utf8)!)
-        
-        request.httpBody = body
-        
-        let response = try await execute(request, responseType: UploadResponse.self)
-        return response.url
+        return try await execute(request, responseType: ImageEntity.self)
     }
     
-    func uploadChatPhoto(bookId: String, imageData: Data) async throws -> String {
-        var request = try await makeRequest(
-            method: "POST",
-            path: "/api/v1/upload/books/\(bookId)/chat-photo"
-        )
-        
-        let boundary = UUID().uuidString
-        request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
-        
-        var body = Data()
-        body.append("--\(boundary)\r\n".data(using: .utf8)!)
-        body.append("Content-Disposition: form-data; name=\"image\"; filename=\"photo.jpg\"\r\n".data(using: .utf8)!)
-        body.append("Content-Type: image/jpeg\r\n\r\n".data(using: .utf8)!)
-        body.append(imageData)
-        body.append("\r\n--\(boundary)--\r\n".data(using: .utf8)!)
-        
-        request.httpBody = body
-        
-        let response = try await execute(request, responseType: UploadResponse.self)
-        return response.url
-    }
-    
-    func deleteImage(url: String) async throws {
-        let encoder = JSONEncoder()
-        let body = try encoder.encode(["url": url])
-        
+    /// 画像を削除
+    func deleteImage(id: String) async throws {
         let request = try await makeRequest(
             method: "DELETE",
-            path: "/api/v1/upload/images",
-            body: body
+            path: "/api/v1/images/\(id)"
         )
         
         _ = try await execute(request, responseType: EmptyResponse.self)
@@ -830,8 +801,9 @@ struct ChatResponse: Decodable {
     let chat: ChatDTO
 }
 
-struct UploadResponse: Decodable {
+struct ImageUploadResponse: Decodable {
     let success: Bool
+    let imageId: String
     let url: String
 }
 
@@ -845,7 +817,7 @@ struct BookCreateRequest: Encodable {
     let publishedDate: Date?
     let pageCount: Int?
     let description: String?
-    let coverImageUrl: String?
+    let coverImageId: String?
     let dataSource: String
     let status: String
     let rating: Double?
@@ -868,7 +840,7 @@ struct BookCreateRequest: Encodable {
         self.publishedDate = book.publishedDate
         self.pageCount = book.pageCount
         self.description = book.description
-        self.coverImageUrl = book.coverImageUrl
+        self.coverImageId = book.coverImageId
         self.dataSource = book.dataSource.rawValue
         self.status = book.status.rawValue
         self.rating = book.rating

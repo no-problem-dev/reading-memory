@@ -75,5 +75,24 @@ service cloud.firestore {
       allow update: if isUser(userId);
       allow delete: if isUser(userId);
     }
+    
+    // imagesコレクション（画像メタデータ）
+    match /images/{imageId} {
+      // 読み取り：アップロードしたユーザーのみ
+      allow read: if isAuthenticated() && 
+        request.auth.uid == resource.data.uploadedBy;
+      
+      // 作成：認証されたユーザー（APIサーバー経由）
+      allow create: if isAuthenticated() && 
+        request.auth.uid == request.resource.data.uploadedBy &&
+        request.resource.data.keys().hasAll(['uploadedBy', 'storagePath', 'url', 'contentType', 'size', 'createdAt', 'updatedAt']);
+      
+      // 更新：不可（イミュータブル）
+      allow update: if false;
+      
+      // 削除：アップロードしたユーザーのみ（APIサーバー経由）
+      allow delete: if isAuthenticated() && 
+        request.auth.uid == resource.data.uploadedBy;
+    }
   }
 }

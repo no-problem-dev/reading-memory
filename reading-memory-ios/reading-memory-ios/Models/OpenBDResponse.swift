@@ -232,7 +232,7 @@ extension OpenBDResponse {
                 publishedDate: parseDate(summary.pubdate),
                 pageCount: extractPageCount(),
                 description: extractDescription(),
-                coverImageUrl: summary.cover,
+                coverImageId: nil,  // OpenBD APIから取得した画像はURLのまま使用
                 dataSource: .openBD
             )
         }
@@ -256,7 +256,7 @@ extension OpenBDResponse {
             publishedDate: parseDate(publishedDate),
             pageCount: extractPageCount(),
             description: extractDescription(),
-            coverImageUrl: coverImageUrl,
+            coverImageId: nil,  // OpenBD APIから取得した画像はURLのまま使用
             dataSource: .openBD
         )
     }

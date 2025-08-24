@@ -1,54 +1,35 @@
 import Foundation
 import UIKit
 
+/// 新しい画像管理システムのラッパーサービス
+/// ImageEntityRepositoryへの移行を簡単にするためのファサード
 final class StorageService {
     static let shared = StorageService()
     
-    private let apiClient = APIClient.shared
+    private let imageRepository = ImageEntityRepository.shared
     
     private init() {}
     
-    enum StoragePath {
-        case profileImage(userId: String)
-        case bookCover(userId: String, bookId: String)
-        case chatPhoto(bookId: String, photoId: String)
-        
-        var path: String {
-            switch self {
-            case .profileImage(let userId):
-                return "users/\(userId)/profile/\(UUID().uuidString).jpg"
-            case .bookCover(let userId, let bookId):
-                return "users/\(userId)/books/\(bookId)/cover.jpg"
-            case .chatPhoto(let bookId, let photoId):
-                return "books/\(bookId)/photos/\(photoId).jpg"
-            }
-        }
+    /// 画像をアップロード（新システム）
+    /// - Returns: 画像ID
+    func uploadImage(_ image: UIImage, compressionQuality: CGFloat = 0.8) async throws -> String {
+        let uploadedImage = try await imageRepository.uploadImage(image, compressionQuality: compressionQuality)
+        return uploadedImage.id
     }
     
-    /// 画像をアップロード
-    func uploadImage(_ image: UIImage, path: StoragePath, compressionQuality: CGFloat = 0.8) async throws -> String {
-        guard let imageData = image.jpegData(compressionQuality: compressionQuality) else {
-            throw AppError.custom("画像の変換に失敗しました")
-        }
-        
-        switch path {
-        case .profileImage:
-            return try await apiClient.uploadProfileImage(imageData: imageData)
-        case .bookCover(_, let bookId):
-            return try await apiClient.uploadBookCover(bookId: bookId, imageData: imageData)
-        case .chatPhoto(let bookId, _):
-            return try await apiClient.uploadChatPhoto(bookId: bookId, imageData: imageData)
-        }
+    /// 画像情報を取得
+    func getImage(id: String) async throws -> ImageEntity {
+        return try await imageRepository.getImage(id: id)
     }
     
-    /// データをアップロード
-    func uploadData(_ data: Data, path: String) async throws -> String {
-        // 現在は画像アップロードのみ対応
-        throw AppError.custom("データアップロードは未実装です")
+    /// 画像URLを取得（便利メソッド）
+    func getImageUrl(id: String) async throws -> String {
+        let image = try await imageRepository.getImage(id: id)
+        return image.url
     }
     
     /// 画像を削除
-    func deleteImage(at url: String) async throws {
-        try await apiClient.deleteImage(url: url)
+    func deleteImage(id: String) async throws {
+        try await imageRepository.deleteImage(id: id)
     }
 }

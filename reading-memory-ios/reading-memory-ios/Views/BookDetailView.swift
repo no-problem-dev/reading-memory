@@ -169,7 +169,7 @@ struct BookDetailView: View {
             .frame(height: 280)
             
             // Book Cover
-            BookCoverView(imageURL: book.coverImageUrl, size: .xlarge)
+            BookCoverView(imageId: book.coverImageId, size: .xlarge)
                 .frame(width: 160, height: 240)
                 .cornerRadius(MemoryRadius.medium)
                 .memoryShadow(.medium)

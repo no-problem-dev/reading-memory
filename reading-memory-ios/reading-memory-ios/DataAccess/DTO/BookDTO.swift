@@ -10,7 +10,7 @@ struct BookDTO: Codable {
     let publishedDate: Date?
     let pageCount: Int?
     let description: String?
-    let coverImageUrl: String?
+    let coverImageId: String?
     let dataSource: String
     
     // 読書ステータス
@@ -52,7 +52,7 @@ struct BookDTO: Codable {
         self.publishedDate = book.publishedDate
         self.pageCount = book.pageCount
         self.description = book.description
-        self.coverImageUrl = book.coverImageUrl
+        self.coverImageId = book.coverImageId
         self.dataSource = book.dataSource.rawValue
         self.status = book.status.rawValue
         self.rating = book.rating
@@ -86,7 +86,7 @@ struct BookDTO: Codable {
             publishedDate: publishedDate,
             pageCount: pageCount,
             description: description,
-            coverImageUrl: coverImageUrl,
+            coverImageId: coverImageId,
             dataSource: BookDataSource(rawValue: dataSource) ?? .manual,
             status: bookStatus,
             rating: rating,

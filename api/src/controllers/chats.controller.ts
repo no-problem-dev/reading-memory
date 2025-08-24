@@ -61,7 +61,7 @@ export const createChat = async (
     const db = getFirestore();
     const userId = req.user!.uid;
     const { bookId } = req.params;
-    const { message, messageType = 'user' } = req.body;
+    const { message, messageType = 'user', imageId } = req.body;
     
     if (!message || message.trim().length === 0) {
       throw new ApiError(400, 'INVALID_ARGUMENT', 'Message cannot be empty');
@@ -73,13 +73,30 @@ export const createChat = async (
       throw new ApiError(404, 'NOT_FOUND', 'Book not found');
     }
     
+    // If imageId is provided, verify it exists and belongs to the user
+    if (imageId) {
+      const imageDoc = await db.collection('images').doc(imageId).get();
+      if (!imageDoc.exists) {
+        throw new ApiError(404, 'NOT_FOUND', 'Image not found');
+      }
+      const imageData = imageDoc.data();
+      if (imageData?.uploadedBy !== userId) {
+        throw new ApiError(403, 'FORBIDDEN', 'You do not have access to this image');
+      }
+    }
+    
     // Create chat data
-    const chatData = {
+    const chatData: any = {
       message: message.trim(),
       messageType,
       createdAt: FieldValue.serverTimestamp(),
       updatedAt: FieldValue.serverTimestamp()
     };
+    
+    // Add imageId if provided
+    if (imageId) {
+      chatData.imageId = imageId;
+    }
     
     const docRef = await db.collection('users').doc(userId).collection('books').doc(bookId).collection('chats').add(chatData);
     const doc = await docRef.get();

@@ -3,7 +3,7 @@ import Foundation
 struct UserProfile: Identifiable, Codable {
     let id: String // Same as userId
     let displayName: String
-    let profileImageUrl: String?
+    let avatarImageId: String?
     let bio: String?
     let favoriteGenres: [String]
     let readingGoal: Int? // Books per year
@@ -19,7 +19,7 @@ struct UserProfile: Identifiable, Codable {
     enum CodingKeys: String, CodingKey {
         case id
         case displayName
-        case profileImageUrl
+        case avatarImageId
         case bio
         case favoriteGenres
         case readingGoal
@@ -35,7 +35,7 @@ struct UserProfile: Identifiable, Codable {
     
     init(id: String,
          displayName: String,
-         profileImageUrl: String? = nil,
+         avatarImageId: String? = nil,
          bio: String? = nil,
          favoriteGenres: [String] = [],
          readingGoal: Int? = nil,
@@ -49,7 +49,7 @@ struct UserProfile: Identifiable, Codable {
          updatedAt: Date = Date()) {
         self.id = id
         self.displayName = displayName
-        self.profileImageUrl = profileImageUrl
+        self.avatarImageId = avatarImageId
         self.bio = bio
         self.favoriteGenres = favoriteGenres
         self.readingGoal = readingGoal

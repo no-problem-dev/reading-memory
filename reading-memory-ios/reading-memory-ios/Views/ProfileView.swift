@@ -156,23 +156,7 @@ struct ProfileView: View {
                         .frame(width: 120, height: 120)
                         .memoryShadow(.medium)
                     
-                    if let imageUrl = profile.profileImageUrl, let url = URL(string: imageUrl) {
-                        CachedAsyncImage(url: url) { image in
-                            image
-                                .resizable()
-                                .aspectRatio(contentMode: .fill)
-                                .frame(width: 110, height: 110)
-                                .clipShape(Circle())
-                        } placeholder: {
-                            Image(systemName: "person.circle.fill")
-                                .font(.system(size: 80))
-                                .foregroundColor(MemoryTheme.Colors.primaryBlue)
-                        }
-                    } else {
-                        Image(systemName: "person.circle.fill")
-                            .font(.system(size: 80))
-                            .foregroundColor(MemoryTheme.Colors.primaryBlue)
-                    }
+                    ProfileImageView(imageId: profile.avatarImageId, size: 110)
                 }
                 
                 VStack(spacing: MemorySpacing.xs) {

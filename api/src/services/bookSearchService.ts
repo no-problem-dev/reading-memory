@@ -139,44 +139,36 @@ export class BookSearchService {
   }
 
   private async searchOpenBD(isbn: string): Promise<BookSearchResult | null> {
-    try {
-      const response = await axios.get<(OpenBDBook | null)[]>(
-        `https://api.openbd.jp/v1/get?isbn=${isbn}`
-      );
+    const response = await axios.get<(OpenBDBook | null)[]>(
+      `https://api.openbd.jp/v1/get?isbn=${isbn}`
+    );
 
-      if (!response.data || response.data.length === 0 || !response.data[0]) {
-        return null;
-      }
-
-      const book = response.data[0];
-      return this.parseOpenBDBook(book);
-    } catch (error) {
-      throw error;
+    if (!response.data || response.data.length === 0 || !response.data[0]) {
+      return null;
     }
+
+    const book = response.data[0];
+    return this.parseOpenBDBook(book);
   }
 
   private async searchGoogleBooks(query: string): Promise<BookSearchResult[]> {
-    try {
-      const response = await axios.get<GoogleBooksResponse>(
-        'https://www.googleapis.com/books/v1/volumes',
-        {
-          params: {
-            q: query,
-            key: this.googleBooksApiKey,
-            maxResults: 20,
-            printType: 'books',
-          },
-        }
-      );
-
-      if (!response.data.items || response.data.items.length === 0) {
-        return [];
+    const response = await axios.get<GoogleBooksResponse>(
+      'https://www.googleapis.com/books/v1/volumes',
+      {
+        params: {
+          q: query,
+          key: this.googleBooksApiKey,
+          maxResults: 20,
+          printType: 'books',
+        },
       }
+    );
 
-      return response.data.items.map((item: any) => this.parseGoogleBook(item));
-    } catch (error) {
-      throw error;
+    if (!response.data.items || response.data.items.length === 0) {
+      return [];
     }
+
+    return response.data.items.map((item: GoogleBookItem) => this.parseGoogleBook(item));
   }
 
   private parseOpenBDBook(book: OpenBDBook): BookSearchResult {

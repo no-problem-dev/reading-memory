@@ -39,13 +39,15 @@ enum BookCoverSize {
 }
 
 struct BookCoverView: View {
-    let imageURL: String?
+    let imageId: String?
     let size: BookCoverSize
+    
+    @State private var imageUrl: URL?
     
     var body: some View {
         ZStack {
-            if let imageURL = imageURL, !imageURL.isEmpty, let url = URL(string: imageURL) {
-                CachedAsyncImage(url: url) { image in
+            if let imageUrl = imageUrl {
+                CachedAsyncImage(url: imageUrl) { image in
                     image
                         .resizable()
                         .aspectRatio(contentMode: .fit)
@@ -54,7 +56,13 @@ struct BookCoverView: View {
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                         .background(Color(.secondarySystemBackground))
                 }
+            } else if imageId != nil {
+                // 画像IDがあるがURLがまだ取得できていない場合
+                ProgressView()
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .background(Color(.secondarySystemBackground))
             } else {
+                // 画像IDがない場合
                 BookCoverPlaceholder()
             }
         }
@@ -62,7 +70,10 @@ struct BookCoverView: View {
         .clipped()
         .cornerRadius(8)
         .shadow(color: .black.opacity(0.1), radius: 2, x: 0, y: 1)
-        .id(imageURL) // URLが変わったときに再描画を強制
+        .id(imageId) // IDが変わったときに再描画を強制
+        .task {
+            imageUrl = await ImageService.shared.getImageUrl(id: imageId)
+        }
     }
 }
 
@@ -86,9 +97,9 @@ struct BookCoverPlaceholder: View {
 
 #Preview {
     HStack(spacing: 20) {
-        BookCoverView(imageURL: nil, size: BookCoverSize.small)
-        BookCoverView(imageURL: nil, size: BookCoverSize.medium)
-        BookCoverView(imageURL: nil, size: BookCoverSize.large)
+        BookCoverView(imageId: nil, size: BookCoverSize.small)
+        BookCoverView(imageId: nil, size: BookCoverSize.medium)
+        BookCoverView(imageId: nil, size: BookCoverSize.large)
     }
     .padding()
 }

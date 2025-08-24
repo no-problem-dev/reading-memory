@@ -197,7 +197,7 @@ struct WantToReadCard: View {
         VStack(alignment: .leading, spacing: MemorySpacing.xs) {
             // Book Cover
             ZStack {
-                BookCoverView(imageURL: book.coverImageUrl, size: .medium)
+                BookCoverView(imageId: book.coverImageId, size: .medium)
                     .frame(width: 120, height: 180)
                     .cornerRadius(MemoryRadius.medium)
                     .memoryShadow(.medium)

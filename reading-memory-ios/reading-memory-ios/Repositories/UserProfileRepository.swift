@@ -27,7 +27,7 @@ final class UserProfileRepository {
         let profile = UserProfile(
             id: user.id,
             displayName: user.displayName.isEmpty ? user.email : user.displayName,
-            profileImageUrl: user.photoURL,
+            avatarImageId: nil,  // 初期プロフィールでは画像なし
             bio: nil,
             favoriteGenres: [],
             readingGoal: nil,

@@ -15,7 +15,7 @@ interface DeleteResult {
 interface UserProfile {
   id: string;
   displayName: string;
-  profileImageUrl?: string;
+  avatarImageId?: string;
   bio?: string;
   favoriteGenres: string[];
   readingGoal?: number;
@@ -88,8 +88,8 @@ export const createProfile = async (
     };
     
     // Optional fields - only add if not undefined
-    if (req.body.profileImageUrl !== undefined) {
-      profile.profileImageUrl = req.body.profileImageUrl;
+    if (req.body.avatarImageId !== undefined) {
+      profile.avatarImageId = req.body.avatarImageId;
     }
     if (req.body.bio !== undefined) {
       profile.bio = req.body.bio;
@@ -135,8 +135,8 @@ export const updateProfile = async (
     if (req.body.displayName !== undefined) {
       updates.displayName = req.body.displayName;
     }
-    if (req.body.profileImageUrl !== undefined) {
-      updates.profileImageUrl = req.body.profileImageUrl;
+    if (req.body.avatarImageId !== undefined) {
+      updates.avatarImageId = req.body.avatarImageId;
     }
     if (req.body.bio !== undefined) {
       updates.bio = req.body.bio;
@@ -224,21 +224,34 @@ export const deleteAccount = async (
       result.errors.push('Failed to delete userProfile');
     }
     
-    // 2. Delete Cloud Storage data
+    // 2. Delete user's images from images collection
     try {
-      const bucket = storage.bucket();
-      const [files] = await bucket.getFiles({
-        prefix: `users/${uid}/`,
-      });
+      const imagesQuery = db.collection('images').where('uploadedBy', '==', uid);
+      const imagesSnapshot = await imagesQuery.get();
       
-      if (files.length > 0) {
-        const deletePromises = files.map((file) => file.delete());
-        await Promise.all(deletePromises);
-        logger.info(`Deleted ${files.length} files from Storage`);
+      if (!imagesSnapshot.empty) {
+        const batch = db.batch();
+        const bucket = storage.bucket();
+        
+        for (const doc of imagesSnapshot.docs) {
+          const imageData = doc.data();
+          // Delete from Storage
+          try {
+            await bucket.file(imageData.storagePath).delete();
+          } catch (error) {
+            logger.warn(`Failed to delete image file: ${imageData.storagePath}`, error);
+          }
+          // Delete from Firestore
+          batch.delete(doc.ref);
+        }
+        
+        await batch.commit();
+        logger.info(`Deleted ${imagesSnapshot.size} images for user ${uid}`);
+        result.deletedCollections.push('images');
       }
     } catch (error) {
-      logger.error('Error deleting Storage files:', error);
-      result.errors.push('Failed to delete some Storage files');
+      logger.error('Error deleting user images:', error);
+      result.errors.push('Failed to delete user images');
     }
     
     // 3. Delete Firebase Auth account (last step)

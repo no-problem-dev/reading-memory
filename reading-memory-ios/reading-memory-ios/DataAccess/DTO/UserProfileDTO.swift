@@ -3,7 +3,7 @@ import Foundation
 struct UserProfileDTO: Codable {
     let id: String
     let displayName: String
-    let profileImageUrl: String?
+    let avatarImageId: String?
     let bio: String?
     let favoriteGenres: [String]
     let readingGoal: Int?
@@ -20,7 +20,7 @@ struct UserProfileDTO: Codable {
         return UserProfile(
             id: id,
             displayName: displayName,
-            profileImageUrl: profileImageUrl,
+            avatarImageId: avatarImageId,
             bio: bio,
             favoriteGenres: favoriteGenres,
             readingGoal: readingGoal,
@@ -38,7 +38,7 @@ struct UserProfileDTO: Codable {
     init(from profile: UserProfile) {
         self.id = profile.id
         self.displayName = profile.displayName
-        self.profileImageUrl = profile.profileImageUrl
+        self.avatarImageId = profile.avatarImageId
         self.bio = profile.bio
         self.favoriteGenres = profile.favoriteGenres
         self.readingGoal = profile.readingGoal
@@ -64,7 +64,7 @@ struct CreateUserProfileRequest: Codable {
 
 struct UpdateUserProfileRequest: Codable {
     let displayName: String?
-    let profileImageUrl: String?
+    let avatarImageId: String?
     let bio: String?
     let favoriteGenres: [String]?
     let readingGoal: Int?

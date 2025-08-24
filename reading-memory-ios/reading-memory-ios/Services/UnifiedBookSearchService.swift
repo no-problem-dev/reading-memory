@@ -96,7 +96,7 @@ final class UnifiedBookSearchService {
         if book.publishedDate != nil { score += 1 }
         if book.pageCount != nil { score += 1 }
         if book.description != nil { score += 2 }  // 説明は重要
-        if book.coverImageUrl != nil { score += 2 }  // 表紙画像も重要
+        if book.coverImageId != nil { score += 2 }  // 表紙画像も重要
         
         return score
     }

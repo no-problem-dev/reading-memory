@@ -133,7 +133,7 @@ struct CurrentReadingCard: View {
             Button(action: onBookTapped) {
                 HStack(alignment: .top, spacing: MemorySpacing.md) {
                     // 本の表紙
-                    BookCoverView(imageURL: book.coverImageUrl, size: .large)
+                    BookCoverView(imageId: book.coverImageId, size: .large)
                         .frame(width: 80, height: 120)
                     
                     // 本の情報
@@ -368,7 +368,7 @@ struct MemoryBookCover: View {
     @State private var isPressed = false
     
     var body: some View {
-        BookCoverView(imageURL: book.coverImageUrl, size: .medium)
+        BookCoverView(imageId: book.coverImageId, size: .medium)
             .frame(width: 85, height: 128)
             .overlay(
                 LinearGradient(

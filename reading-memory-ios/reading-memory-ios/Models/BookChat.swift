@@ -5,7 +5,7 @@ struct BookChat: Identifiable, Equatable {
     let bookId: String
     let message: String
     let messageType: MessageType
-    let imageUrl: String?
+    let imageId: String?
     let chapterOrSection: String?
     let pageNumber: Int?
     let createdAt: Date
@@ -27,7 +27,7 @@ struct BookChat: Identifiable, Equatable {
         bookId: String,
         message: String,
         messageType: MessageType = .user,
-        imageUrl: String? = nil,
+        imageId: String? = nil,
         chapterOrSection: String? = nil,
         pageNumber: Int? = nil,
         createdAt: Date,
@@ -37,7 +37,7 @@ struct BookChat: Identifiable, Equatable {
         self.bookId = bookId
         self.message = message
         self.messageType = messageType
-        self.imageUrl = imageUrl
+        self.imageId = imageId
         self.chapterOrSection = chapterOrSection
         self.pageNumber = pageNumber
         self.createdAt = createdAt
@@ -49,7 +49,7 @@ struct BookChat: Identifiable, Equatable {
         bookId: String,
         message: String,
         messageType: MessageType = .user,
-        imageUrl: String? = nil,
+        imageId: String? = nil,
         chapterOrSection: String? = nil,
         pageNumber: Int? = nil
     ) -> BookChat {
@@ -59,7 +59,7 @@ struct BookChat: Identifiable, Equatable {
             bookId: bookId,
             message: message,
             messageType: messageType,
-            imageUrl: imageUrl,
+            imageId: imageId,
             chapterOrSection: chapterOrSection,
             pageNumber: pageNumber,
             createdAt: now,

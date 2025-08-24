@@ -27,7 +27,7 @@ struct WantToReadDetailView: View {
                 // 本の情報セクション
                 Section {
                     HStack(spacing: 12) {
-                        BookCoverView(imageURL: book.coverImageUrl, size: .custom(width: 60, height: 84))
+                        BookCoverView(imageId: book.coverImageId, size: .custom(width: 60, height: 84))
                         
                         VStack(alignment: .leading, spacing: 4) {
                             Text(book.title)

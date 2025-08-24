@@ -333,22 +333,9 @@ struct ChatBubbleView: View {
             
             VStack(alignment: chat.isAI ? .leading : .trailing, spacing: MemorySpacing.xs) {
                 // 画像がある場合は表示
-                if let imageUrl = chat.imageUrl, let url = URL(string: imageUrl) {
-                    CachedAsyncImage(url: url) { image in
-                        image
-                            .resizable()
-                            .aspectRatio(contentMode: .fit)
-                            .frame(maxWidth: 240, maxHeight: 240)
-                            .cornerRadius(MemoryRadius.medium)
-                    } placeholder: {
-                        RoundedRectangle(cornerRadius: MemoryRadius.medium)
-                            .fill(MemoryTheme.Colors.inkPale)
-                            .frame(width: 240, height: 180)
-                            .overlay(
-                                ProgressView()
-                                    .tint(MemoryTheme.Colors.primaryBlue)
-                            )
-                    }
+                if chat.imageId != nil {
+                    ChatImageView(imageId: chat.imageId)
+                        .frame(maxWidth: 240, maxHeight: 240)
                 }
                 
                 // メッセージがある場合は表示

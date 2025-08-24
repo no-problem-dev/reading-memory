@@ -27,7 +27,7 @@ struct WantToReadRowView: View {
     var body: some View {
         HStack(spacing: 12) {
             // 表紙画像
-            BookCoverView(imageURL: book.coverImageUrl, size: .custom(width: 50, height: 70))
+            BookCoverView(imageId: book.coverImageId, size: .custom(width: 50, height: 70))
             
             // 本の情報
             VStack(alignment: .leading, spacing: 4) {

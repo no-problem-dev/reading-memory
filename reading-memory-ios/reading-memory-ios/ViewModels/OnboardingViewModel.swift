@@ -33,12 +33,9 @@ class OnboardingViewModel {
         
         do {
             // 1. Upload profile image if exists
-            var profileImageUrl: String?
+            var avatarImageId: String?
             if let profileImage = profileImage {
-                profileImageUrl = try await uploadProfileImage(
-                    image: profileImage,
-                    userId: currentUser.id
-                )
+                avatarImageId = try await uploadProfileImage(image: profileImage)
             }
             
             // 2. Complete onboarding through unified API
@@ -47,7 +44,7 @@ class OnboardingViewModel {
                 displayName: displayName.trimmingCharacters(in: .whitespacesAndNewlines),
                 favoriteGenres: Array(selectedGenres),
                 monthlyGoal: monthlyGoal,
-                profileImageUrl: profileImageUrl,
+                avatarImageId: avatarImageId,
                 bio: nil
             )
             
@@ -62,7 +59,7 @@ class OnboardingViewModel {
                     publishedDate: selectedBook.publishedDate,
                     pageCount: selectedBook.pageCount,
                     description: selectedBook.description,
-                    coverImageUrl: selectedBook.coverImageUrl,
+                    coverImageId: selectedBook.coverImageId,
                     dataSource: selectedBook.dataSource,
                     status: .reading,
                     rating: nil,
@@ -97,11 +94,8 @@ class OnboardingViewModel {
         }
     }
     
-    private func uploadProfileImage(image: UIImage, userId: String) async throws -> String {
+    private func uploadProfileImage(image: UIImage) async throws -> String {
         let storageService = StorageService.shared
-        return try await storageService.uploadImage(
-            image,
-            path: .profileImage(userId: userId)
-        )
+        return try await storageService.uploadImage(image)
     }
 }

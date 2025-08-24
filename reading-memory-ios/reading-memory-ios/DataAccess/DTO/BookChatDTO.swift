@@ -4,7 +4,7 @@ struct BookChatDTO: Codable {
     let bookId: String
     let message: String
     let messageType: String
-    let imageUrl: String?
+    let imageId: String?
     let chapterOrSection: String?
     let pageNumber: Int?
     let createdAt: Date
@@ -24,7 +24,7 @@ struct BookChatDTO: Codable {
         self.bookId = bookChat.bookId
         self.message = bookChat.message
         self.messageType = bookChat.messageType.rawValue
-        self.imageUrl = bookChat.imageUrl
+        self.imageId = bookChat.imageId
         self.chapterOrSection = bookChat.chapterOrSection
         self.pageNumber = bookChat.pageNumber
         self.createdAt = bookChat.createdAt
@@ -37,7 +37,7 @@ struct BookChatDTO: Codable {
             bookId: bookId,
             message: message,
             messageType: MessageType(rawValue: messageType) ?? .user,
-            imageUrl: imageUrl,
+            imageId: imageId,
             chapterOrSection: chapterOrSection,
             pageNumber: pageNumber,
             createdAt: createdAt,

@@ -14,7 +14,8 @@ final class BookChatRepository {
         return try await apiClient.createChat(
             bookId: bookId,
             message: chat.message,
-            messageType: chat.messageType
+            messageType: chat.messageType,
+            imageId: chat.imageId
         )
     }
     

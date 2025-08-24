@@ -191,16 +191,16 @@ final class ProfileViewModel: BaseViewModel {
             }
             
             // Upload profile image if selected
-            var profileImageUrl = profile.profileImageUrl
+            var avatarImageId = profile.avatarImageId
             if let selectedPhoto = selectedPhoto {
-                profileImageUrl = try await uploadProfileImage(selectedPhoto: selectedPhoto, userId: profile.id)
+                avatarImageId = try await uploadProfileImage(selectedPhoto: selectedPhoto)
             }
             
             // Update profile
             let updatedProfile = UserProfile(
                 id: profile.id,
                 displayName: editDisplayName.isEmpty ? profile.displayName : editDisplayName,
-                profileImageUrl: profileImageUrl,
+                avatarImageId: avatarImageId,
                 bio: editBio.isEmpty ? nil : editBio,
                 favoriteGenres: editFavoriteGenres,
                 readingGoal: Int(editReadingGoal),
@@ -227,17 +227,14 @@ final class ProfileViewModel: BaseViewModel {
     }
     
     @MainActor
-    private func uploadProfileImage(selectedPhoto: PhotosPickerItem, userId: String) async throws -> String {
+    private func uploadProfileImage(selectedPhoto: PhotosPickerItem) async throws -> String {
         guard let data = try await selectedPhoto.loadTransferable(type: Data.self),
               let image = UIImage(data: data) else {
             throw AppError.imageUploadFailed
         }
         
         let storageService = StorageService.shared
-        return try await storageService.uploadImage(
-            image,
-            path: .profileImage(userId: userId)
-        )
+        return try await storageService.uploadImage(image)
     }
     
     @MainActor

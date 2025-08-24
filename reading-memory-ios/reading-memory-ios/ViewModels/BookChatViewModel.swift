@@ -30,17 +30,17 @@ final class BookChatViewModel: BaseViewModel {
     
     func sendMessage(_ message: String, image: UIImage? = nil) async {
         do {
-            var imageUrl: String? = nil
+            var imageId: String? = nil
             
             // 画像がある場合はアップロード
             if let image = image {
-                imageUrl = try await uploadChatImage(image: image)
+                imageId = try await uploadChatImage(image: image)
             }
             
             let chat = BookChat.new(
                 bookId: book.id,
                 message: message,
-                imageUrl: imageUrl
+                imageId: imageId
             )
             
             let newChat = try await repository.addChat(chat, bookId: book.id)
@@ -60,12 +60,7 @@ final class BookChatViewModel: BaseViewModel {
     
     private func uploadChatImage(image: UIImage) async throws -> String {
         let storageService = StorageService.shared
-        let photoId = UUID().uuidString
-        
-        return try await storageService.uploadImage(
-            image,
-            path: .chatPhoto(bookId: book.id, photoId: photoId)
-        )
+        return try await storageService.uploadImage(image)
     }
     
     func setError(_ message: String) {
@@ -87,7 +82,7 @@ final class BookChatViewModel: BaseViewModel {
                 bookId: book.id,
                 message: aiResponse,
                 messageType: .ai,
-                imageUrl: nil,
+                imageId: nil,
                 createdAt: Date(),
                 updatedAt: Date()
             )

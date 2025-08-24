@@ -12,7 +12,7 @@ struct Book: Identifiable, Equatable, Hashable, Codable {
     let publishedDate: Date?
     let pageCount: Int?
     let description: String?
-    let coverImageUrl: String?
+    let coverImageId: String?
     let dataSource: BookDataSource
     
     // 読書ステータス
@@ -54,7 +54,7 @@ struct Book: Identifiable, Equatable, Hashable, Codable {
         publishedDate: Date? = nil,
         pageCount: Int? = nil,
         description: String? = nil,
-        coverImageUrl: String? = nil,
+        coverImageId: String? = nil,
         dataSource: BookDataSource,
         status: ReadingStatus,
         rating: Double? = nil,
@@ -83,7 +83,7 @@ struct Book: Identifiable, Equatable, Hashable, Codable {
         self.publishedDate = publishedDate
         self.pageCount = pageCount
         self.description = description
-        self.coverImageUrl = coverImageUrl
+        self.coverImageId = coverImageId
         self.dataSource = dataSource
         self.status = status
         self.rating = rating
@@ -114,7 +114,7 @@ struct Book: Identifiable, Equatable, Hashable, Codable {
         publishedDate: Date? = nil,
         pageCount: Int? = nil,
         description: String? = nil,
-        coverImageUrl: String? = nil,
+        coverImageId: String? = nil,
         dataSource: BookDataSource,
         status: ReadingStatus = .wantToRead
     ) -> Book {
@@ -128,7 +128,7 @@ struct Book: Identifiable, Equatable, Hashable, Codable {
             publishedDate: publishedDate,
             pageCount: pageCount,
             description: description,
-            coverImageUrl: coverImageUrl,
+            coverImageId: coverImageId,
             dataSource: dataSource,
             status: status,
             addedDate: now,
@@ -163,7 +163,7 @@ struct Book: Identifiable, Equatable, Hashable, Codable {
             publishedDate: self.publishedDate,
             pageCount: self.pageCount,
             description: self.description,
-            coverImageUrl: self.coverImageUrl,
+            coverImageId: self.coverImageId,
             dataSource: self.dataSource,
             status: status ?? self.status,
             rating: rating ?? self.rating,
@@ -224,53 +224,5 @@ extension Book {
     var formattedRating: String {
         guard let rating = rating else { return "未評価" }
         return String(format: "%.1f", rating)
-    }
-    
-    // 更新用メソッド
-    func updated(
-        status: ReadingStatus? = nil,
-        rating: Double? = nil,
-        readingProgress: Double? = nil,
-        currentPage: Int? = nil,
-        startDate: Date? = nil,
-        completedDate: Date? = nil,
-        lastReadDate: Date? = nil,
-        priority: Int? = nil,
-        plannedReadingDate: Date? = nil,
-        reminderEnabled: Bool? = nil,
-        purchaseLinks: [PurchaseLink]? = nil,
-        memo: String? = nil,
-        tags: [String]? = nil
-    ) -> Book {
-        return Book(
-            id: self.id,
-            isbn: self.isbn,
-            title: self.title,
-            author: self.author,
-            publisher: self.publisher,
-            publishedDate: self.publishedDate,
-            pageCount: self.pageCount,
-            description: self.description,
-            coverImageUrl: self.coverImageUrl,
-            dataSource: self.dataSource,
-            status: status ?? self.status,
-            rating: rating ?? self.rating,
-            readingProgress: readingProgress ?? self.readingProgress,
-            currentPage: currentPage ?? self.currentPage,
-            addedDate: self.addedDate,
-            startDate: startDate ?? self.startDate,
-            completedDate: completedDate ?? self.completedDate,
-            lastReadDate: lastReadDate ?? self.lastReadDate,
-            priority: priority ?? self.priority,
-            plannedReadingDate: plannedReadingDate ?? self.plannedReadingDate,
-            reminderEnabled: reminderEnabled ?? self.reminderEnabled,
-            purchaseLinks: purchaseLinks ?? self.purchaseLinks,
-            memo: memo ?? self.memo,
-            tags: tags ?? self.tags,
-            aiSummary: self.aiSummary,
-            summaryGeneratedAt: self.summaryGeneratedAt,
-            createdAt: self.createdAt,
-            updatedAt: Date()
-        )
     }
 }

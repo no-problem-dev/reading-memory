@@ -62,7 +62,7 @@ final class BookSearchService {
                 publishedDate: publishedDate,
                 pageCount: dto.pageCount,
                 description: dto.description,
-                coverImageUrl: dto.coverImageUrl,
+                coverImageId: nil,  // 検索結果の画像はURLのまま使用
                 dataSource: dataSource,
                 status: .wantToRead,
                 addedDate: Date(),
@@ -79,7 +79,7 @@ final class BookSearchService {
                 publishedDate: publishedDate,
                 pageCount: dto.pageCount,
                 description: dto.description,
-                coverImageUrl: dto.coverImageUrl,
+                coverImageId: nil,  // 検索結果の画像はURLのまま使用
                 dataSource: dataSource
             )
         }

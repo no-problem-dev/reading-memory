@@ -63,7 +63,7 @@ extension GoogleBookItem {
             publishedDate: parseDate(volumeInfo.publishedDate),
             pageCount: volumeInfo.pageCount,
             description: volumeInfo.description,
-            coverImageUrl: volumeInfo.coverImageUrl,
+            coverImageId: nil,  // Google Books APIから取得した画像はURLのまま使用
             dataSource: .googleBooks
         )
     }

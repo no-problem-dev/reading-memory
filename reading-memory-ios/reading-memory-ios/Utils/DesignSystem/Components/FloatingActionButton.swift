@@ -8,7 +8,7 @@ struct FloatingActionButton: View {
     
     var body: some View {
         Button(action: action) {
-            Image(systemName: icon)
+            SwiftUI.Image(systemName: icon)
                 .font(.system(size: 24, weight: .semibold))
                 .foregroundColor(.white)
                 .frame(width: 56, height: 56)
@@ -43,7 +43,7 @@ struct MiniFloatingActionButton: View {
     
     var body: some View {
         Button(action: action) {
-            Image(systemName: icon)
+            SwiftUI.Image(systemName: icon)
                 .font(.system(size: 16, weight: .semibold))
                 .foregroundColor(.white)
                 .frame(width: 40, height: 40)

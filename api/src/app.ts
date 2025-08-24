@@ -14,7 +14,7 @@ import goalsRoutes from './routes/goals.routes';
 import achievementsRoutes from './routes/achievements.routes';
 import streaksRoutes from './routes/streaks.routes';
 import chatsRoutes from './routes/chats.routes';
-import uploadRoutes from './routes/upload.routes';
+import imageRoutes from './routes/image.routes';
 
 export const createApp = (): Application => {
   const app = express();
@@ -58,7 +58,7 @@ export const createApp = (): Application => {
   app.use('/api/v1/goals', goalsRoutes);
   app.use('/api/v1/achievements', achievementsRoutes);
   app.use('/api/v1/streaks', streaksRoutes);
-  app.use('/api/v1/upload', uploadRoutes);
+  app.use('/api/v1/images', imageRoutes);
   
   // 404 handler
   app.use((_req, res) => {
