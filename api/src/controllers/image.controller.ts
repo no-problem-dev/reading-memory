@@ -4,6 +4,7 @@ import { ApiError } from '../middleware/errorHandler';
 import { getFirestore, getStorage } from '../config/firebase';
 import { v4 as uuidv4 } from 'uuid';
 import { logger } from '../utils/logger';
+import { serializeTimestamps } from '../utils/timestamp';
 
 interface ImageMetadata {
   id: string;
@@ -95,6 +96,7 @@ export const uploadImage = async (
     // Generate Firebase Storage URL
     const url = `https://firebasestorage.googleapis.com/v0/b/${bucket.name}/o/${encodeURIComponent(storagePath)}?alt=media`;
     
+    
     // Save metadata to Firestore
     const db = getFirestore();
     const imageData: ImageMetadata = {
@@ -150,7 +152,7 @@ export const getImage = async (
       throw new ApiError(403, 'FORBIDDEN', 'You do not have access to this image');
     }
     
-    res.json({
+    res.json(serializeTimestamps({
       id: imageData.id,
       url: imageData.url,
       contentType: imageData.contentType,
@@ -158,7 +160,7 @@ export const getImage = async (
       metadata: imageData.metadata,
       createdAt: imageData.createdAt,
       updatedAt: imageData.updatedAt
-    });
+    }));
   } catch (error) {
     logger.error('Get image error:', error);
     next(error);

@@ -207,12 +207,9 @@ struct LogoutConfirmationView: View {
 struct DeleteAccountConfirmationView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(AuthViewModel.self) private var authViewModel
-    @State private var confirmationText = ""
     @State private var isDeleting = false
     @State private var showError = false
     @State private var errorMessage = ""
-    
-    private let confirmPhrase = "アカウントを削除"
     
     var body: some View {
         NavigationStack {
@@ -289,26 +286,7 @@ struct DeleteAccountConfirmationView: View {
                         .padding(.horizontal, MemorySpacing.lg)
                     }
                     
-                    // 確認入力
-                    VStack(alignment: .leading, spacing: MemorySpacing.sm) {
-                        Text("確認のため「\(confirmPhrase)」と入力してください")
-                            .font(MemoryTheme.Fonts.caption())
-                            .foregroundColor(MemoryTheme.Colors.inkGray)
-                        
-                        TextField("", text: $confirmationText)
-                            .font(MemoryTheme.Fonts.body())
-                            .padding(MemorySpacing.md)
-                            .background(MemoryTheme.Colors.cardBackground)
-                            .cornerRadius(MemoryRadius.medium)
-                            .overlay(
-                                RoundedRectangle(cornerRadius: MemoryRadius.medium)
-                                    .stroke(
-                                        confirmationText == confirmPhrase ? Color.red : MemoryTheme.Colors.inkPale,
-                                        lineWidth: 1
-                                    )
-                            )
-                    }
-                    .padding(.horizontal, MemorySpacing.lg)
+                    Spacer()
                     
                     // ボタン
                     VStack(spacing: MemorySpacing.md) {
@@ -316,23 +294,29 @@ struct DeleteAccountConfirmationView: View {
                             deleteAccount()
                         } label: {
                             if isDeleting {
-                                ProgressView()
-                                    .tint(.white)
-                                    .frame(maxWidth: .infinity)
-                                    .padding(.vertical, MemorySpacing.md)
-                                    .background(Color.red.opacity(0.6))
-                                    .cornerRadius(MemoryRadius.medium)
+                                HStack(spacing: MemorySpacing.sm) {
+                                    ProgressView()
+                                        .tint(.white)
+                                        .scaleEffect(0.8)
+                                    Text("削除しています...")
+                                        .font(MemoryTheme.Fonts.headline())
+                                        .foregroundColor(.white)
+                                }
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, MemorySpacing.md)
+                                .background(Color.red.opacity(0.6))
+                                .cornerRadius(MemoryRadius.medium)
                             } else {
                                 Text("アカウントを削除する")
                                     .font(MemoryTheme.Fonts.headline())
                                     .foregroundColor(.white)
                                     .frame(maxWidth: .infinity)
                                     .padding(.vertical, MemorySpacing.md)
-                                    .background(confirmationText == confirmPhrase ? Color.red : Color.red.opacity(0.3))
+                                    .background(Color.red)
                                     .cornerRadius(MemoryRadius.medium)
                             }
                         }
-                        .disabled(confirmationText != confirmPhrase || isDeleting)
+                        .disabled(isDeleting)
                         
                         Button {
                             dismiss()
@@ -388,14 +372,11 @@ struct DeleteAccountConfirmationView: View {
         
         Task {
             do {
-                // TODO: Implement actual account deletion
-                // This would typically involve:
-                // 1. Call a Cloud Function to delete all user data
-                // 2. Delete the Firebase Auth account
-                // 3. Sign out
-                
-                // For now, just show an error that it's not implemented
-                throw NSError(domain: "DeleteAccount", code: 0, userInfo: [NSLocalizedDescriptionKey: "アカウント削除機能は現在準備中です"])
+                try await AuthService.shared.deleteAccount()
+                // 削除が成功した場合、UIは自動的にログイン画面に戻る
+                await MainActor.run {
+                    dismiss()
+                }
             } catch {
                 await MainActor.run {
                     errorMessage = error.localizedDescription

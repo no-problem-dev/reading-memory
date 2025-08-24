@@ -18,9 +18,8 @@ service firebase.storage {
     
     // 新しい画像管理システム（APIサーバー経由でのみアクセス）
     match /images/{imageId} {
-      // 基本的にAPIサーバー経由でのみアクセス可能
-      // 一時的に認証ユーザーからの読み取りを許可（移行期間中）
-      allow read: if isAuthenticated();
+      // 一時的にすべてのユーザーに読み取りを許可（デバッグ用）
+      allow read: if true;
       allow write: if false; // APIサーバーのサービスアカウントのみ
       allow delete: if false; // APIサーバーのサービスアカウントのみ
     }

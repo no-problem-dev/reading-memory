@@ -10,7 +10,7 @@ final class ImageEntityRepository {
     private init() {}
     
     /// 画像をアップロード
-    func uploadImage(_ uiImage: UIImage, compressionQuality: CGFloat = 0.8) async throws -> ImageEntity {
+    func uploadImage(_ uiImage: UIImage, compressionQuality: CGFloat = 1.0) async throws -> ImageEntity {
         guard let imageData = uiImage.jpegData(compressionQuality: compressionQuality) else {
             throw AppError.custom("画像の変換に失敗しました")
         }
