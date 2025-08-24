@@ -258,7 +258,7 @@ struct BookShelfGridView: View {
             LazyVGrid(columns: columns, spacing: 20) {
                 ForEach(books) { book in
                     NavigationLink(destination: BookDetailView(bookId: book.id)) {
-                        BookCoverView(book: book)
+                        BookCoverView(imageURL: book.coverImageUrl, size: .medium)
                     }
                     .buttonStyle(PlainButtonStyle())
                 }

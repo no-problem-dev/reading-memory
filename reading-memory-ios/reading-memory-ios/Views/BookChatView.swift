@@ -2,14 +2,15 @@ import SwiftUI
 import PhotosUI
 
 struct BookChatView: View {
-    @State private var viewModel: BookChatViewModel
+    @Bindable private var viewModel: BookChatViewModel
     @State private var messageText = ""
     @State private var selectedPhoto: PhotosPickerItem?
     @State private var selectedImage: UIImage?
     @FocusState private var isInputFocused: Bool
+    @State private var scrollToBottom = false
     
     init(book: Book) {
-        _viewModel = State(wrappedValue: ServiceContainer.shared.makeBookChatViewModel(book: book))
+        viewModel = ServiceContainer.shared.makeBookChatViewModel(book: book)
     }
     
     var body: some View {
@@ -29,11 +30,23 @@ struct BookChatView: View {
                     }
                     .padding()
                 }
-                .onChange(of: viewModel.chats.count) { _, _ in
-                    withAnimation {
-                        if let lastChat = viewModel.chats.last {
-                            proxy.scrollTo(lastChat.id, anchor: .bottom)
+                .refreshable {
+                    await viewModel.loadChats()
+                }
+                .onAppear {
+                    // 初回表示時に最後のメッセージまでスクロール
+                    if let lastChat = viewModel.chats.last {
+                        proxy.scrollTo(lastChat.id, anchor: .bottom)
+                    }
+                }
+                .onChange(of: scrollToBottom) { _, shouldScroll in
+                    if shouldScroll {
+                        withAnimation {
+                            if let lastChat = viewModel.chats.last {
+                                proxy.scrollTo(lastChat.id, anchor: .bottom)
+                            }
                         }
+                        scrollToBottom = false
                     }
                 }
             }
@@ -122,10 +135,6 @@ struct BookChatView: View {
             Task {
                 await viewModel.loadChats()
             }
-            viewModel.startListening()
-        }
-        .onDisappear {
-            viewModel.stopListening()
         }
         .onChange(of: selectedPhoto) { _, newItem in
             Task {
@@ -151,6 +160,9 @@ struct BookChatView: View {
         selectedPhoto = nil
         
         await viewModel.sendMessage(message, image: image)
+        
+        // メッセージ送信後にスクロール
+        scrollToBottom = true
     }
     
     @MainActor

@@ -75,49 +75,6 @@ struct ContentView: View {
     }
 }
 
-struct MainTabView: View {
-    @Environment(AuthViewModel.self) private var authViewModel
-    
-    var body: some View {
-        TabView {
-            BookShelfView()
-                .tabItem {
-                    Image(systemName: "books.vertical")
-                    Text("本棚")
-                }
-            
-            WantToReadListView()
-                .tabItem {
-                    Image(systemName: "bookmark.fill")
-                    Text("読みたい")
-                }
-            
-            GoalDashboardView()
-                .tabItem {
-                    Image(systemName: "target")
-                    Text("目標")
-                }
-            
-            StatisticsView()
-                .tabItem {
-                    Image(systemName: "chart.bar.fill")
-                    Text("統計")
-                }
-            
-            ProfileView()
-                .tabItem {
-                    Image(systemName: "person.circle")
-                    Text("プロフィール")
-                }
-            
-            SettingsView()
-                .tabItem {
-                    Image(systemName: "gear")
-                    Text("設定")
-                }
-        }
-    }
-}
 
 #Preview {
     ContentView()

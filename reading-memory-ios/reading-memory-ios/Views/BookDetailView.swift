@@ -191,12 +191,12 @@ struct BookDetailView: View {
                         .resizable()
                         .aspectRatio(contentMode: .fit)
                 } placeholder: {
-                    BookCoverPlaceholder(title: book.title)
+                    BookCoverPlaceholder()
                 }
                 .frame(width: 120, height: 180)
                 .cornerRadius(12)
             } else {
-                BookCoverPlaceholder(title: book.title)
+                BookCoverPlaceholder()
                     .frame(width: 120, height: 180)
                     .cornerRadius(12)
             }
@@ -514,10 +514,10 @@ struct SimpleEditBookView: View {
                         .resizable()
                         .aspectRatio(contentMode: .fit)
                 } placeholder: {
-                    BookCoverPlaceholder(title: book.title)
+                    BookCoverPlaceholder()
                 }
             } else {
-                BookCoverPlaceholder(title: book.title)
+                BookCoverPlaceholder()
             }
         }
         .frame(width: 100, height: 150)

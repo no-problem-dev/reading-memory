@@ -1,6 +1,6 @@
 import Foundation
 
-struct PurchaseLink: Codable, Identifiable, Equatable {
+struct PurchaseLink: Codable, Identifiable, Equatable, Hashable {
     let id: String
     let title: String // "Amazon", "楽天ブックス"など
     let url: String

@@ -30,26 +30,4 @@ final class BookChatRepository {
         try await apiClient.deleteChat(bookId: bookId, chatId: chatId)
     }
     
-    // Note: リアルタイムリスナーは将来的にWebSocketやSSEで実装予定
-    func listenToChats(bookId: String, completion: @escaping (Result<[BookChat], Error>) -> Void) -> ListenerRegistration? {
-        // 現在はポーリングで実装（将来的にWebSocketに置き換え）
-        Task {
-            do {
-                let chats = try await getChats(bookId: bookId)
-                completion(.success(chats))
-            } catch {
-                completion(.failure(error))
-            }
-        }
-        return DummyListenerRegistration()
-    }
-}
-
-// ダミーリスナー
-class ListenerRegistration {
-    func remove() {}
-}
-
-class DummyListenerRegistration: ListenerRegistration {
-    override func remove() {}
 }

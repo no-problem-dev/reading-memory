@@ -1,8 +1,4 @@
 import Foundation
-// TODO: Remove Firebase dependency
-// import FirebaseFirestore
-// import FirebaseAuth
-// import FirebaseStorage
 import UIKit
 
 @MainActor
@@ -15,20 +11,18 @@ final class BookChatViewModel: BaseViewModel {
     private let authService = AuthService.shared
     private let aiService = AIService.shared
     private let activityRepository = ActivityRepository.shared
-    private var listener: ListenerRegistration?
     
     var isAIEnabled = false // AI機能の有効/無効フラグ
     
     init(book: Book) {
         self.book = book
-        super.init()
     }
     
     func loadChats() async {
         await withLoadingNoThrow { [weak self] in
             guard let self = self else { return }
             
-            self.chats = try await self.repository.getChats(
+            chats = try await repository.getChats(
                 bookId: self.book.id
             )
         }
@@ -50,10 +44,7 @@ final class BookChatViewModel: BaseViewModel {
             )
             
             let newChat = try await repository.addChat(chat, bookId: book.id)
-            // リアルタイム同期がある場合は手動追加しない
-            if listener == nil {
-                chats.append(newChat)
-            }
+            chats.append(newChat)
             
             // アクティビティを記録（メモ作成）
             try? await activityRepository.recordMemoWritten()
@@ -84,14 +75,25 @@ final class BookChatViewModel: BaseViewModel {
     
     private func generateAIResponse(for message: String) async {
         do {
-            // AI応答を生成
-            _ = try await aiService.generateAIResponse(
+            // AI応答を生成（サーバー側で保存される）
+            let aiResponse = try await aiService.generateAIResponse(
                 bookId: book.id,
                 message: message
             )
             
-            // AIのチャットはFirestoreから自動的に同期される
-            // ここでは何もしない（リアルタイムリスナーが更新を処理）
+            // AI応答のチャットオブジェクトを作成
+            let aiChat = BookChat(
+                id: UUID().uuidString, // 一時的なID
+                bookId: book.id,
+                message: aiResponse,
+                messageType: .ai,
+                imageUrl: nil,
+                createdAt: Date(),
+                updatedAt: Date()
+            )
+            
+            // AIのチャットをリストに追加
+            chats.append(aiChat)
         } catch {
             // AI応答のエラーは静かに処理（ユーザーのチャット体験を妨げない）
             print("AI response error: \(error)")
@@ -102,25 +104,6 @@ final class BookChatViewModel: BaseViewModel {
         isAIEnabled.toggle()
     }
     
-    func startListening() {
-        listener = repository.listenToChats(
-            bookId: book.id
-        ) { [weak self] result in
-            DispatchQueue.main.async {
-                switch result {
-                case .success(let chats):
-                    self?.chats = chats
-                case .failure(let error):
-                    self?.handleError(error)
-                }
-            }
-        }
-    }
-    
-    func stopListening() {
-        listener?.remove()
-        listener = nil
-    }
     
     func deleteChat(_ chat: BookChat) async {
         do {
@@ -129,10 +112,7 @@ final class BookChatViewModel: BaseViewModel {
                 bookId: book.id
             )
             
-            // リアルタイム同期がない場合は手動で削除
-            if listener == nil {
-                chats.removeAll { $0.id == chat.id }
-            }
+            chats.removeAll { $0.id == chat.id }
         } catch {
             handleError(error)
         }

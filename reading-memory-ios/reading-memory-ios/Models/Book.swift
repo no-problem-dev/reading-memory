@@ -1,6 +1,6 @@
 import Foundation
 
-struct Book: Identifiable, Equatable {
+struct Book: Identifiable, Equatable, Hashable, Codable {
     // 識別子
     let id: String
     
