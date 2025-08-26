@@ -76,7 +76,7 @@ struct AuthView: View {
                     VStack(spacing: MemorySpacing.sm) {
                         FeatureHighlight(
                             icon: "bubble.left.and.bubble.right.fill",
-                            text: "本とおしゃべりして、感想を記録",
+                            text: "読書メモで感想を記録",
                             color: MemoryTheme.Colors.primaryBlue
                         )
                         

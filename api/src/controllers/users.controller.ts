@@ -254,21 +254,11 @@ export const deleteAccount = async (
       result.errors.push('Failed to delete user images');
     }
     
-    // 3. Delete Firebase Auth account (last step)
-    try {
-      logger.info(`Attempting to delete auth account for user: ${uid}`);
-      await auth.deleteUser(uid);
-      logger.info(`Successfully deleted auth account for user: ${uid}`);
-    } catch (error: any) {
-      logger.error('Error deleting auth account:', {
-        uid,
-        error: error.message || error,
-        code: error.code,
-        stack: error.stack,
-      });
-      result.errors.push('Failed to delete authentication account');
-      // Don't throw error here - return partial success/failure
-    }
+    // 3. Note: Firebase Auth account deletion is now handled client-side
+    // The server-side deletion often fails due to permission restrictions
+    // when using Admin SDK to delete another user's account.
+    // Client-side deletion is more reliable as the user is deleting their own account.
+    logger.info(`Skipping server-side auth deletion for user ${uid}, will be handled client-side`);
     
     result.success = result.errors.length === 0;
     

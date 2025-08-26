@@ -33,7 +33,7 @@ struct BookChatView: View {
                     Spacer()
                     
                     VStack(spacing: 2) {
-                        Text("本とおしゃべり")
+                        Text("読書メモ")
                             .font(MemoryTheme.Fonts.headline())
                             .foregroundColor(MemoryTheme.Colors.inkBlack)
                         Text(viewModel.book.title)
@@ -284,7 +284,7 @@ struct EmptyChatView: View {
                 )
             
             VStack(spacing: MemorySpacing.xs) {
-                Text("本とおしゃべりを始めよう")
+                Text("読書メモを始めよう")
                     .font(MemoryTheme.Fonts.title3())
                     .foregroundColor(MemoryTheme.Colors.inkBlack)
                 

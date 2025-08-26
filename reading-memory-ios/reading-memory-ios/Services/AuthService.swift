@@ -109,11 +109,43 @@ final class AuthService {
     }
     
     func deleteAccount() async throws {
-        let apiClient = APIClient.shared
-        _ = try await apiClient.deleteAccount()
+        guard let firebaseUser = Auth.auth().currentUser else {
+            throw DeleteAccountError.authenticationRequired
+        }
         
-        // Firebase上のユーザーも削除
-        try await Auth.auth().currentUser?.delete()
+        // 最近のログインを確認するため、ユーザー情報をリロード
+        do {
+            try await firebaseUser.reload()
+        } catch {
+            print("DEBUG: Failed to reload user, but continuing: \(error)")
+        }
+        
+        // APIサーバー側でデータを削除
+        let apiClient = APIClient.shared
+        let result = try await apiClient.deleteAccount()
+        
+        // エラーがある場合は、部分的な削除の可能性を警告
+        if !result.errors.isEmpty {
+            print("WARNING: Account deletion had errors: \(result.errors)")
+        }
+        
+        // クライアント側でFirebase Authアカウントを削除
+        // API側でも削除を試みているが、権限の問題で失敗する可能性があるため、
+        // クライアント側でも削除を実行
+        do {
+            try await firebaseUser.delete()
+            print("INFO: Successfully deleted Firebase Auth account from client")
+        } catch {
+            // API側で既に削除されている可能性もあるため、エラーはログに記録するが続行
+            print("ERROR: Failed to delete Firebase Auth account from client: \(error)")
+            // ユーザーが既に削除されている場合は成功として扱う
+            if (error as NSError).code == 17011 { // FIRAuthErrorCodeUserNotFound
+                print("INFO: User already deleted, treating as success")
+            } else {
+                throw error
+            }
+        }
+        
         _currentUser = nil
     }
 }

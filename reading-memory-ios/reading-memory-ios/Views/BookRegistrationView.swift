@@ -27,21 +27,27 @@ struct BookRegistrationView: View {
     @State private var coverImageId: String?
     @State private var selectedStatus: ReadingStatus = .wantToRead
     
+    let isFromHome: Bool
+    
     let prefilledBook: Book?
     let searchResult: BookSearchResult?
     
-    init(prefilledBook: Book? = nil) {
+    init(prefilledBook: Book? = nil, isFromHome: Bool = false) {
         self.prefilledBook = prefilledBook
         self.searchResult = nil
+        self.isFromHome = isFromHome
         if let book = prefilledBook {
             _selectedStatus = State(initialValue: book.status)
+        } else {
+            _selectedStatus = State(initialValue: isFromHome ? .reading : .wantToRead)
         }
     }
     
-    init(searchResult: BookSearchResult) {
+    init(searchResult: BookSearchResult, isFromHome: Bool = false) {
         self.prefilledBook = nil
         self.searchResult = searchResult
-        _selectedStatus = State(initialValue: .wantToRead)
+        self.isFromHome = isFromHome
+        _selectedStatus = State(initialValue: isFromHome ? .reading : .wantToRead)
     }
     
     var body: some View {
@@ -497,5 +503,5 @@ struct BookRegistrationView: View {
 }
 
 #Preview {
-    BookRegistrationView()
+    BookRegistrationView(isFromHome: false)
         }

@@ -184,7 +184,7 @@ struct GoalDashboardView: View {
                 .font(.headline)
                 .foregroundColor(.secondary)
             
-            HStack(spacing: 8) {
+            HStack(spacing: 0) {
                 ForEach(0..<7) { index in
                     let isActive = index < streakViewModel.weeklyActivity.count ? streakViewModel.weeklyActivity[index] : false
                     let dayLabel = getDayLabel(for: index)
@@ -203,6 +203,7 @@ struct GoalDashboardView: View {
                                     .foregroundColor(isActive ? .white : .secondary)
                             )
                     }
+                    .frame(maxWidth: .infinity)
                 }
             }
             .padding()

@@ -104,7 +104,7 @@ struct BookAdditionFlowView: View {
                                         case .barcode:
                     BarcodeScannerView()
                                         case .manual:
-                    BookRegistrationView()
+                    BookRegistrationView(isFromHome: true)
                                         }
             }
         }

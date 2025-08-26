@@ -59,7 +59,7 @@ final class ProfileViewModel: BaseViewModel {
         errorMessage = nil
         
         do {
-            guard let userId = await AuthService.shared.currentUser?.uid else {
+            guard AuthService.shared.currentUser?.uid != nil else {
                 throw AppError.authenticationRequired
             }
             
@@ -68,7 +68,7 @@ final class ProfileViewModel: BaseViewModel {
             
             // If profile doesn't exist, create one
             if userProfile == nil {
-                if let currentUser = await AuthService.shared.currentUser {
+                if let currentUser = AuthService.shared.currentUser {
                     let user = User(
                         id: currentUser.uid,
                         email: currentUser.email ?? "",
@@ -109,9 +109,8 @@ final class ProfileViewModel: BaseViewModel {
     
     @MainActor
     private func loadStatistics() async {
-        do {
-            // キャッシュされたデータを使用
-            let books = cachedBooks
+        // キャッシュされたデータを使用
+        let books = cachedBooks
             
             // Calculate basic statistics
             statistics.totalBooks = books.count
@@ -152,10 +151,6 @@ final class ProfileViewModel: BaseViewModel {
             // Extract favorite genres from user profile
             if let profile = userProfile {
                 statistics.favoriteGenres = profile.favoriteGenres
-            }
-            
-        } catch {
-            print("Error loading statistics: \(error)")
         }
     }
     

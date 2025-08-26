@@ -46,6 +46,7 @@ struct BookSearchView: View {
                     }
                 }
             }
+            .ignoresSafeArea(.keyboard)
             .navigationTitle("本を探す")
             .navigationBarTitleDisplayMode(.large)
             .toolbar {

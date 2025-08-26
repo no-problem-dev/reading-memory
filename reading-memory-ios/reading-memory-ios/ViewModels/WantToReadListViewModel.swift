@@ -10,13 +10,14 @@ class WantToReadListViewModel {
     private(set) var isLoading = false
     private(set) var error: Error?
     
-    var sortOption: SortOption = .priority {
+    var sortOption: SortOption = .smart {
         didSet {
             sortBooks()
         }
     }
     
     enum SortOption: String, CaseIterable {
+        case smart = "おすすめ順"
         case priority = "優先度"
         case addedDate = "追加日"
         case plannedDate = "予定日"
@@ -24,6 +25,8 @@ class WantToReadListViewModel {
         
         var icon: String {
             switch self {
+            case .smart:
+                return "sparkles"
             case .priority:
                 return "star.fill"
             case .addedDate:
@@ -191,18 +194,21 @@ class WantToReadListViewModel {
     
     private func sortBooks() {
         switch sortOption {
+        case .smart:
+            sortBooksBySmart()
         case .priority:
-            // 優先度順（nilは最後に）
+            // 優先度順（高い順、nilは最後に）
             books.sort { book1, book2 in
                 if let p1 = book1.priority, let p2 = book2.priority {
-                    return p1 < p2
+                    if p1 != p2 {
+                        return p1 > p2  // 高い優先度が先
+                    }
                 } else if book1.priority != nil {
                     return true
                 } else if book2.priority != nil {
                     return false
-                } else {
-                    return book1.addedDate > book2.addedDate
                 }
+                return book1.addedDate > book2.addedDate
             }
         case .addedDate:
             // 追加日順（新しい順）
@@ -228,5 +234,71 @@ class WantToReadListViewModel {
             // タイトル順
             books.sort { $0.title < $1.title }
         }
+    }
+    
+    private func sortBooksBySmart() {
+        let now = Date()
+        let calendar = Calendar.current
+        
+        books.sort { lhs, rhs in
+            let lhsScore = calculateSmartScore(for: lhs, now: now, calendar: calendar)
+            let rhsScore = calculateSmartScore(for: rhs, now: now, calendar: calendar)
+            
+            if lhsScore != rhsScore {
+                return lhsScore > rhsScore
+            }
+            
+            // スコアが同じ場合は追加日でソート
+            return lhs.addedDate > rhs.addedDate
+        }
+    }
+    
+    private func calculateSmartScore(for book: Book, now: Date, calendar: Calendar) -> Double {
+        var score: Double = 0
+        
+        // 1. 読書予定日のスコア（最大50ポイント）
+        if let plannedDate = book.plannedReadingDate {
+            let daysUntil = calendar.dateComponents([.day], from: now, to: plannedDate).day ?? 0
+            
+            if daysUntil < 0 {
+                // 期限切れ：最高優先度
+                score += 50
+            } else if daysUntil == 0 {
+                // 今日が期限
+                score += 48
+            } else if daysUntil <= 3 {
+                // 3日以内：非常に高い優先度
+                score += 45 - Double(daysUntil) * 3
+            } else if daysUntil <= 7 {
+                // 1週間以内：高優先度
+                score += 35 - Double(daysUntil) * 2
+            } else if daysUntil <= 30 {
+                // 1ヶ月以内：中優先度
+                score += 25 - Double(daysUntil) * 0.5
+            } else {
+                // それ以降：低優先度
+                score += 15
+            }
+            
+            // リマインダーが有効な場合はボーナス
+            if book.reminderEnabled {
+                score += 5
+            }
+        }
+        
+        // 2. 優先度スコア（最大30ポイント）
+        if let priority = book.priority {
+            // 優先度は1-5、高い方が優先
+            score += Double(6 - priority) * 6
+        }
+        
+        // 3. 追加からの経過日数（最大20ポイント）
+        // 長期間放置されている本にもチャンスを与える
+        let daysSinceAdded = calendar.dateComponents([.day], from: book.addedDate, to: now).day ?? 0
+        if daysSinceAdded > 0 {
+            score += min(Double(daysSinceAdded) * 0.2, 20)
+        }
+        
+        return score
     }
 }

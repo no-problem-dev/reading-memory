@@ -185,6 +185,133 @@ struct Book: Identifiable, Equatable, Hashable, Codable {
             updatedAt: Date()
         )
     }
+    
+    // 値を明示的に設定・クリアできる更新メソッド
+    enum UpdateValue<T> {
+        case set(T)
+        case clear
+        case keep
+    }
+    
+    func updatedWithClear(
+        status: ReadingStatus? = nil,
+        rating: UpdateValue<Double> = .keep,
+        readingProgress: UpdateValue<Double> = .keep,
+        currentPage: UpdateValue<Int> = .keep,
+        startDate: UpdateValue<Date> = .keep,
+        completedDate: UpdateValue<Date> = .keep,
+        priority: UpdateValue<Int> = .keep,
+        plannedReadingDate: UpdateValue<Date> = .keep,
+        reminderEnabled: Bool? = nil,
+        purchaseLinks: UpdateValue<[PurchaseLink]> = .keep,
+        memo: UpdateValue<String> = .keep,
+        tags: UpdateValue<[String]> = .keep,
+        aiSummary: UpdateValue<String> = .keep,
+        summaryGeneratedAt: UpdateValue<Date> = .keep
+    ) -> Book {
+        return Book(
+            id: self.id,
+            isbn: self.isbn,
+            title: self.title,
+            author: self.author,
+            publisher: self.publisher,
+            publishedDate: self.publishedDate,
+            pageCount: self.pageCount,
+            description: self.description,
+            coverImageId: self.coverImageId,
+            dataSource: self.dataSource,
+            status: status ?? self.status,
+            rating: {
+                switch rating {
+                case .set(let value): return value
+                case .clear: return nil
+                case .keep: return self.rating
+                }
+            }(),
+            readingProgress: {
+                switch readingProgress {
+                case .set(let value): return value
+                case .clear: return nil
+                case .keep: return self.readingProgress
+                }
+            }(),
+            currentPage: {
+                switch currentPage {
+                case .set(let value): return value
+                case .clear: return nil
+                case .keep: return self.currentPage
+                }
+            }(),
+            addedDate: self.addedDate,
+            startDate: {
+                switch startDate {
+                case .set(let value): return value
+                case .clear: return nil
+                case .keep: return self.startDate
+                }
+            }(),
+            completedDate: {
+                switch completedDate {
+                case .set(let value): return value
+                case .clear: return nil
+                case .keep: return self.completedDate
+                }
+            }(),
+            lastReadDate: Date(),
+            priority: {
+                switch priority {
+                case .set(let value): return value
+                case .clear: return nil
+                case .keep: return self.priority
+                }
+            }(),
+            plannedReadingDate: {
+                switch plannedReadingDate {
+                case .set(let value): return value
+                case .clear: return nil
+                case .keep: return self.plannedReadingDate
+                }
+            }(),
+            reminderEnabled: reminderEnabled ?? self.reminderEnabled,
+            purchaseLinks: {
+                switch purchaseLinks {
+                case .set(let value): return value
+                case .clear: return nil
+                case .keep: return self.purchaseLinks
+                }
+            }(),
+            memo: {
+                switch memo {
+                case .set(let value): return value
+                case .clear: return nil
+                case .keep: return self.memo
+                }
+            }(),
+            tags: {
+                switch tags {
+                case .set(let value): return value
+                case .clear: return []
+                case .keep: return self.tags
+                }
+            }(),
+            aiSummary: {
+                switch aiSummary {
+                case .set(let value): return value
+                case .clear: return nil
+                case .keep: return self.aiSummary
+                }
+            }(),
+            summaryGeneratedAt: {
+                switch summaryGeneratedAt {
+                case .set(let value): return value
+                case .clear: return nil
+                case .keep: return self.summaryGeneratedAt
+                }
+            }(),
+            createdAt: self.createdAt,
+            updatedAt: Date()
+        )
+    }
 }
 
 // MARK: - Computed Properties

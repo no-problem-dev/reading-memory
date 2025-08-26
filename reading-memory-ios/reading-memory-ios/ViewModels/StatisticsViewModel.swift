@@ -86,7 +86,7 @@ final class StatisticsViewModel: BaseViewModel {
         errorMessage = nil
         
         do {
-            guard let userId = await AuthService.shared.currentUser?.uid else {
+            guard AuthService.shared.currentUser?.uid != nil else {
                 throw AppError.authenticationRequired
             }
             
@@ -110,7 +110,7 @@ final class StatisticsViewModel: BaseViewModel {
         isLoading = true
         
         do {
-            guard let userId = await AuthService.shared.currentUser?.uid else {
+            guard let userId = AuthService.shared.currentUser?.uid else {
                 throw AppError.authenticationRequired
             }
             

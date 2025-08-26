@@ -6,37 +6,20 @@ struct RecordsHubView: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                // Background
-                MemoryTheme.Colors.secondaryBackground
-                    .ignoresSafeArea()
+                // Background gradient
+                LinearGradient(
+                    gradient: Gradient(colors: [
+                        MemoryTheme.Colors.background,
+                        MemoryTheme.Colors.secondaryBackground
+                    ]),
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+                .ignoresSafeArea()
                 
                 VStack(spacing: 0) {
-                    // Header with gradient
-                    VStack(spacing: MemorySpacing.md) {
-                        // Title with icon
-                        HStack(spacing: MemorySpacing.sm) {
-                            Image(systemName: "chart.line.uptrend.xyaxis.circle.fill")
-                                .font(.system(size: 28))
-                                .foregroundStyle(
-                                    LinearGradient(
-                                        gradient: Gradient(colors: [
-                                            MemoryTheme.Colors.goldenMemoryLight,
-                                            MemoryTheme.Colors.goldenMemory
-                                        ]),
-                                        startPoint: .topLeading,
-                                        endPoint: .bottomTrailing
-                                    )
-                                )
-                            
-                            Text("読書の記録")
-                                .font(MemoryTheme.Fonts.hero())
-                                .foregroundColor(MemoryTheme.Colors.inkBlack)
-                        }
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .padding(.horizontal, MemorySpacing.lg)
-                        .padding(.top, MemorySpacing.md)
-                        
-                        // Custom Segment Control
+                    // Custom Segment Control
+                    VStack(spacing: 0) {
                         HStack(spacing: 0) {
                             ForEach(0..<3) { index in
                                 Button {
@@ -44,43 +27,37 @@ struct RecordsHubView: View {
                                         selectedSegment = index
                                     }
                                 } label: {
-                                    VStack(spacing: MemorySpacing.xs) {
+                                    VStack(spacing: 0) {
                                         HStack(spacing: MemorySpacing.xs) {
                                             Image(systemName: segmentIcon(for: index))
-                                                .font(.system(size: 16))
+                                                .font(.system(size: 18, weight: selectedSegment == index ? .semibold : .regular))
                                             Text(segmentTitle(for: index))
-                                                .font(MemoryTheme.Fonts.subheadline())
+                                                .font(selectedSegment == index ? MemoryTheme.Fonts.headline() : MemoryTheme.Fonts.body())
                                         }
                                         .foregroundColor(selectedSegment == index ? MemoryTheme.Colors.primaryBlue : MemoryTheme.Colors.inkGray)
                                         .frame(maxWidth: .infinity)
-                                        .padding(.vertical, MemorySpacing.sm)
-                                        
-                                        // Indicator line
-                                        Rectangle()
-                                            .fill(MemoryTheme.Colors.primaryBlue)
-                                            .frame(height: 3)
-                                            .opacity(selectedSegment == index ? 1 : 0)
+                                        .padding(.vertical, MemorySpacing.md)
                                     }
                                 }
                                 .buttonStyle(PlainButtonStyle())
                             }
                         }
-                        .background(MemoryTheme.Colors.background)
-                        .cornerRadius(MemoryRadius.medium)
-                        .padding(.horizontal, MemorySpacing.md)
-                        .memoryShadow(.soft)
+                        
+                        // Indicator line
+                        GeometryReader { geometry in
+                            HStack(spacing: 0) {
+                                Rectangle()
+                                    .fill(MemoryTheme.Colors.primaryBlue)
+                                    .frame(width: geometry.size.width / 3, height: 3)
+                                    .offset(x: CGFloat(selectedSegment) * (geometry.size.width / 3))
+                                    .animation(MemoryTheme.Animation.spring, value: selectedSegment)
+                            }
+                        }
+                        .frame(height: 3)
+                        .background(MemoryTheme.Colors.inkPale.opacity(0.5))
                     }
-                    .padding(.bottom, MemorySpacing.md)
-                    .background(
-                        LinearGradient(
-                            gradient: Gradient(colors: [
-                                MemoryTheme.Colors.background,
-                                MemoryTheme.Colors.secondaryBackground
-                            ]),
-                            startPoint: .top,
-                            endPoint: .bottom
-                        )
-                    )
+                    .background(MemoryTheme.Colors.cardBackground)
+                    .memoryShadow(.soft)
                     
                     // Content
                     TabView(selection: $selectedSegment) {

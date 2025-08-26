@@ -16,7 +16,7 @@ struct ChatExperienceStep: View {
                     .foregroundStyle(.blue.gradient)
                 
                 VStack(spacing: 8) {
-                    Text("本とおしゃべりしてみましょう")
+                    Text("読書メモを書いてみましょう")
                         .font(.title2)
                         .fontWeight(.bold)
                     

@@ -15,7 +15,7 @@ enum ReadingStatus: String, Codable, CaseIterable {
         case .completed:
             return "読了"
         case .dnf:
-            return "DNF"
+            return "途中で読むのをやめた"
         }
     }
     

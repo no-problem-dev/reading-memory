@@ -123,7 +123,22 @@ struct SettingsView: View {
             // 削除成功 - サインアウト処理
             await authViewModel.signOut()
         } catch {
-            deleteError = error.localizedDescription
+            // Firebase Authのエラーコードを確認
+            let nsError = error as NSError
+            if nsError.domain == "FIRAuthErrorDomain" {
+                switch nsError.code {
+                case 17014: // FIRAuthErrorCodeRequiresRecentLogin
+                    deleteError = "セキュリティ上の理由により、再度ログインが必要です。一度サインアウトして、もう一度ログインしてから退会処理を行ってください。"
+                case 17008: // FIRAuthErrorCodeNetworkError
+                    deleteError = "ネットワークエラーが発生しました。インターネット接続を確認してください。"
+                default:
+                    deleteError = "退会処理中にエラーが発生しました: \(error.localizedDescription)"
+                }
+            } else if let accountError = error as? DeleteAccountError {
+                self.deleteError = accountError.errorDescription ?? "退会処理中にエラーが発生しました。"
+            } else {
+                deleteError = "退会処理中にエラーが発生しました: \(error.localizedDescription)"
+            }
         }
         
         isDeleting = false

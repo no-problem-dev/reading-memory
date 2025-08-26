@@ -1,8 +1,16 @@
 import SwiftUI
 
+struct BadgeSelection: Identifiable {
+    let id = UUID()
+    let badge: Badge
+    let achievement: Achievement?
+    let isUnlocked: Bool
+}
+
 struct AchievementGalleryView: View {
     @State private var viewModel = AchievementViewModel()
     @State private var selectedCategory: Badge.BadgeCategory? = nil
+    @State private var selectedBadge: BadgeSelection? = nil
     @Environment(\.dismiss) private var dismiss
     
     var body: some View {
@@ -31,6 +39,13 @@ struct AchievementGalleryView: View {
             }
             .task {
                 await viewModel.loadAchievements()
+            }
+            .sheet(item: $selectedBadge) { selection in
+                BadgeDetailView(
+                    badge: selection.badge,
+                    achievement: selection.achievement,
+                    isUnlocked: selection.isUnlocked
+                )
             }
         }
     }
@@ -141,11 +156,21 @@ struct AchievementGalleryView: View {
             GridItem(.flexible())
         ], spacing: 20) {
             ForEach(filteredBadges) { badge in
+                let achievement = viewModel.getAchievement(for: badge)
+                let isUnlocked = viewModel.isUnlocked(badge: badge)
+                
                 BadgeItem(
                     badge: badge,
-                    achievement: viewModel.getAchievement(for: badge),
-                    isUnlocked: viewModel.isUnlocked(badge: badge)
+                    achievement: achievement,
+                    isUnlocked: isUnlocked
                 )
+                .onTapGesture {
+                    selectedBadge = BadgeSelection(
+                        badge: badge,
+                        achievement: achievement,
+                        isUnlocked: isUnlocked
+                    )
+                }
             }
         }
     }

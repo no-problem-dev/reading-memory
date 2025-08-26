@@ -13,85 +13,109 @@ struct StatisticsView: View {
     }
     
     var body: some View {
-        NavigationStack {
-            ScrollView {
-                if viewModel.isLoading {
-                    ProgressView()
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
-                        .padding(.top, 100)
-                } else {
-                    VStack(spacing: 24) {
-                        // Period Selector
-                        Picker("期間", selection: $selectedPeriod) {
-                            ForEach(StatisticsPeriod.allCases, id: \.self) { period in
-                                Text(period.rawValue).tag(period)
-                            }
-                        }
-                        .pickerStyle(.segmented)
-                        .padding(.horizontal)
-                        
-                        // Summary Cards
-                        summaryCardsSection
-                        
-                        // Reading Trend Chart
-                        readingTrendChart
-                        
-                        // Genre Distribution
-                        genreDistributionChart
-                        
-                        // Rating Distribution
-                        ratingDistributionChart
-                        
-                        // Monthly Reading Stats
-                        if selectedPeriod != .week {
-                            monthlyStatsSection
-                        }
-                        
-                        // Reading Pace
-                        readingPaceSection
+        ScrollView {
+            if viewModel.isLoading {
+                ProgressView()
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .padding(.top, 100)
+            } else {
+                VStack(spacing: MemorySpacing.lg) {
+                    // Period Selector - Enhanced Design
+                    periodSelectorView
+                        .padding(.top, MemorySpacing.md)
+                    
+                    // Summary Cards
+                    summaryCardsSection
+                    
+                    // Reading Trend Chart
+                    readingTrendChart
+                    
+                    // Genre Distribution
+                    genreDistributionChart
+                    
+                    // Rating Distribution
+                    ratingDistributionChart
+                    
+                    // Monthly Reading Stats
+                    if selectedPeriod != .week {
+                        monthlyStatsSection
                     }
-                    .padding(.bottom)
+                    
+                    // Reading Pace
+                    readingPaceSection
                 }
+                .padding(.bottom, MemorySpacing.xl)
             }
-            .navigationTitle("読書統計")
-            .navigationBarTitleDisplayMode(.large)
-            .task {
-                // 初回のみデータを読み込む
-                if !viewModel.hasLoadedInitialData {
-                    await viewModel.loadStatistics(for: selectedPeriod)
-                }
-            }
-            .onChange(of: selectedPeriod) { _, newValue in
-                Task {
-                    await viewModel.loadStatistics(for: newValue)
-                }
-            }
-            .refreshable {
-                // プルリフレッシュ時は強制的に再取得
-                viewModel.forceRefresh()
+        }
+        .task {
+            // 初回のみデータを読み込む
+            if !viewModel.hasLoadedInitialData {
                 await viewModel.loadStatistics(for: selectedPeriod)
             }
-            .alert("エラー", isPresented: .constant(viewModel.errorMessage != nil)) {
-                Button("OK") {
-                    viewModel.errorMessage = nil
-                }
-            } message: {
-                if let errorMessage = viewModel.errorMessage {
-                    Text(errorMessage)
-                }
+        }
+        .onChange(of: selectedPeriod) { _, newValue in
+            Task {
+                await viewModel.loadStatistics(for: newValue)
+            }
+        }
+        .refreshable {
+            // プルリフレッシュ時は強制的に再取得
+            viewModel.forceRefresh()
+            await viewModel.loadStatistics(for: selectedPeriod)
+        }
+        .alert("エラー", isPresented: .constant(viewModel.errorMessage != nil)) {
+            Button("OK") {
+                viewModel.errorMessage = nil
+            }
+        } message: {
+            if let errorMessage = viewModel.errorMessage {
+                Text(errorMessage)
             }
         }
     }
     
+    
+    private var periodSelectorView: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: MemorySpacing.sm) {
+                ForEach(StatisticsPeriod.allCases, id: \.self) { period in
+                    PeriodButton(
+                        title: period.rawValue,
+                        icon: periodIcon(for: period),
+                        isSelected: selectedPeriod == period
+                    ) {
+                        withAnimation(MemoryTheme.Animation.fast) {
+                            selectedPeriod = period
+                        }
+                    }
+                }
+            }
+            .padding(.horizontal, MemorySpacing.md)
+        }
+    }
+    
+    private func periodIcon(for period: StatisticsPeriod) -> String {
+        switch period {
+        case .week:
+            return "calendar.day.timeline.left"
+        case .month:
+            return "calendar"
+        case .year:
+            return "calendar.badge.clock"
+        case .all:
+            return "clock.arrow.circlepath"
+        }
+    }
+    
     private var summaryCardsSection: some View {
-        VStack(spacing: 16) {
-            HStack(spacing: 16) {
+        VStack(spacing: MemorySpacing.md) {
+            HStack(spacing: MemorySpacing.md) {
                 SummaryCard(
                     title: "読了数",
                     value: "\(viewModel.periodStats.completedBooks)",
                     trend: viewModel.periodStats.completedTrend,
                     icon: "checkmark.circle.fill",
-                    color: .green
+                    color: MemoryTheme.Colors.success
                 )
                 
                 SummaryCard(
@@ -99,17 +123,17 @@ struct StatisticsView: View {
                     value: "\(viewModel.periodStats.totalReadingDays)日",
                     trend: viewModel.periodStats.readingDaysTrend,
                     icon: "clock.fill",
-                    color: .blue
+                    color: MemoryTheme.Colors.primaryBlue
                 )
             }
             
-            HStack(spacing: 16) {
+            HStack(spacing: MemorySpacing.md) {
                 SummaryCard(
                     title: "メモ数",
                     value: "\(viewModel.periodStats.totalMemos)",
                     trend: viewModel.periodStats.memosTrend,
                     icon: "bubble.left.fill",
-                    color: .purple
+                    color: MemoryTheme.Colors.warmCoral
                 )
                 
                 SummaryCard(
@@ -117,11 +141,11 @@ struct StatisticsView: View {
                     value: String(format: "%.1f", viewModel.periodStats.averageRating),
                     trend: viewModel.periodStats.ratingTrend,
                     icon: "star.fill",
-                    color: .yellow
+                    color: MemoryTheme.Colors.goldenMemory
                 )
             }
         }
-        .padding(.horizontal)
+        .padding(.horizontal, MemorySpacing.md)
     }
     
     private var readingTrendChart: some View {
@@ -148,9 +172,10 @@ struct StatisticsView: View {
             .padding(.horizontal)
         }
         .padding()
-        .background(Color(.systemGray6))
-        .cornerRadius(12)
-        .padding(.horizontal)
+        .background(MemoryTheme.Colors.cardBackground)
+        .cornerRadius(MemoryRadius.large)
+        .memoryShadow(.soft)
+        .padding(.horizontal, MemorySpacing.md)
     }
     
     private var genreDistributionChart: some View {
@@ -191,9 +216,10 @@ struct StatisticsView: View {
             }
         }
         .padding()
-        .background(Color(.systemGray6))
-        .cornerRadius(12)
-        .padding(.horizontal)
+        .background(MemoryTheme.Colors.cardBackground)
+        .cornerRadius(MemoryRadius.large)
+        .memoryShadow(.soft)
+        .padding(.horizontal, MemorySpacing.md)
     }
     
     private var ratingDistributionChart: some View {
@@ -227,9 +253,10 @@ struct StatisticsView: View {
             }
         }
         .padding()
-        .background(Color(.systemGray6))
-        .cornerRadius(12)
-        .padding(.horizontal)
+        .background(MemoryTheme.Colors.cardBackground)
+        .cornerRadius(MemoryRadius.large)
+        .memoryShadow(.soft)
+        .padding(.horizontal, MemorySpacing.md)
     }
     
     private var monthlyStatsSection: some View {
@@ -256,8 +283,9 @@ struct StatisticsView: View {
                         }
                         .frame(width: 80)
                         .padding()
-                        .background(Color(.systemGray6))
-                        .cornerRadius(12)
+                        .background(MemoryTheme.Colors.cardBackground)
+                        .cornerRadius(MemoryRadius.medium)
+                        .memoryShadow(.soft)
                     }
                 }
                 .padding(.horizontal)
@@ -304,9 +332,10 @@ struct StatisticsView: View {
             }
         }
         .padding()
-        .background(Color(.systemGray6))
-        .cornerRadius(12)
-        .padding(.horizontal)
+        .background(MemoryTheme.Colors.cardBackground)
+        .cornerRadius(MemoryRadius.large)
+        .memoryShadow(.soft)
+        .padding(.horizontal, MemorySpacing.md)
     }
     
     private func genreColor(for genre: String) -> Color {
@@ -352,8 +381,68 @@ struct SummaryCard: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding()
-        .background(Color(.systemGray6))
-        .cornerRadius(12)
+        .background(MemoryTheme.Colors.cardBackground)
+        .cornerRadius(MemoryRadius.medium)
+        .memoryShadow(.soft)
+    }
+}
+
+// Period Button Component
+struct PeriodButton: View {
+    let title: String
+    let icon: String
+    let isSelected: Bool
+    let action: () -> Void
+    
+    var body: some View {
+        Button(action: action) {
+            VStack(spacing: MemorySpacing.xs) {
+                ZStack {
+                    Circle()
+                        .fill(
+                            isSelected 
+                                ? LinearGradient(
+                                    gradient: Gradient(colors: [
+                                        MemoryTheme.Colors.primaryBlue,
+                                        MemoryTheme.Colors.primaryBlueDark
+                                    ]),
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                  )
+                                : LinearGradient(
+                                    gradient: Gradient(colors: [
+                                        MemoryTheme.Colors.inkPale.opacity(0.5),
+                                        MemoryTheme.Colors.inkPale.opacity(0.3)
+                                    ]),
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                  )
+                        )
+                        .frame(width: 50, height: 50)
+                    
+                    Image(systemName: icon)
+                        .font(.system(size: 20))
+                        .foregroundColor(
+                            isSelected 
+                                ? MemoryTheme.Colors.inkWhite
+                                : MemoryTheme.Colors.inkGray
+                        )
+                }
+                
+                Text(title)
+                    .font(MemoryTheme.Fonts.caption())
+                    .foregroundColor(
+                        isSelected 
+                            ? MemoryTheme.Colors.inkBlack
+                            : MemoryTheme.Colors.inkGray
+                    )
+                    .fontWeight(isSelected ? .medium : .regular)
+            }
+            .padding(.vertical, MemorySpacing.xs)
+        }
+        .buttonStyle(PlainButtonStyle())
+        .scaleEffect(isSelected ? 1.05 : 1.0)
+        .animation(MemoryTheme.Animation.fast, value: isSelected)
     }
 }
 

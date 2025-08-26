@@ -37,7 +37,7 @@ class StreakViewModel: BaseViewModel {
     
     @MainActor
     private func fetchStreakData() async {
-        guard let userId = userId else { return }
+        guard userId != nil else { return }
         
         isLoading = true
         errorMessage = nil
@@ -77,7 +77,7 @@ class StreakViewModel: BaseViewModel {
     }
     
     func recordActivity(type: ReadingStreak.StreakType, date: Date = Date()) async {
-        guard let userId = userId else { return }
+        guard userId != nil else { return }
         
         do {
             try await streakRepository.recordActivity(
@@ -94,7 +94,7 @@ class StreakViewModel: BaseViewModel {
     }
     
     func recordBookActivity() async {
-        guard let userId = userId else { return }
+        guard userId != nil else { return }
         
         do {
             // 本の読書アクティビティを記録

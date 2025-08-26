@@ -31,7 +31,7 @@ struct OnboardingView: View {
             
             VStack(spacing: 0) {
                 // Progress indicator
-                MemoryProgressBar(currentStep: currentStep, totalSteps: 5)
+                MemoryProgressBar(currentStep: currentStep, totalSteps: 4)
                     .padding(.horizontal, MemorySpacing.lg)
                     .padding(.top, MemorySpacing.lg)
                     .padding(.bottom, MemorySpacing.md)
@@ -59,12 +59,6 @@ struct OnboardingView: View {
                         isShowingBookSearch: $isShowingBookSearch
                     )
                     .tag(3)
-                    
-                    ChatExperienceStep(
-                        book: viewModel.firstBook,
-                        firstMessage: $firstChatMessage
-                    )
-                    .tag(4)
                 }
                 .tabViewStyle(.page(indexDisplayMode: .never))
                 .animation(MemoryTheme.Animation.normal, value: currentStep)
@@ -91,7 +85,7 @@ struct OnboardingView: View {
                     
                     Button(action: handleNext) {
                         Group {
-                            if currentStep == 4 {
+                            if currentStep == 3 {
                                 HStack(spacing: MemorySpacing.xs) {
                                     Text("読書を始める")
                                         .font(MemoryTheme.Fonts.headline())
@@ -174,7 +168,7 @@ struct OnboardingView: View {
     }
     
     private func handleNext() {
-        if currentStep < 4 {
+        if currentStep < 3 {
             withAnimation {
                 currentStep += 1
             }
@@ -256,8 +250,8 @@ struct WelcomeStep: View {
             VStack(spacing: MemorySpacing.md) {
                 MemoryFeatureRow(
                     icon: "bubble.left.and.bubble.right.fill",
-                    title: "本とおしゃべり",
-                    description: "チャット形式で気づきを記録",
+                    title: "読書メモ",
+                    description: "読みながら気づきを記録",
                     color: MemoryTheme.Colors.primaryBlue
                 )
                 

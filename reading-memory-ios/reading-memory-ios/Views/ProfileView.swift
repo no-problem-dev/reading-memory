@@ -37,12 +37,6 @@ struct ProfileView: View {
                                 statisticsSection
                                     .padding(.horizontal, MemorySpacing.md)
                                 
-                                // Reading Goal Progress
-                                if let goal = profile.readingGoal, goal > 0 {
-                                    readingGoalProgress(goal: goal)
-                                        .padding(.horizontal, MemorySpacing.md)
-                                }
-                                
                                 // Favorite Genres
                                 if !profile.favoriteGenres.isEmpty {
                                     favoriteGenresSection(genres: profile.favoriteGenres)
@@ -232,55 +226,6 @@ struct ProfileView: View {
         }
     }
     
-    private func readingGoalProgress(goal: Int) -> some View {
-        MemoryCard(padding: MemorySpacing.md) {
-            VStack(alignment: .leading, spacing: MemorySpacing.sm) {
-                HStack {
-                    HStack(spacing: MemorySpacing.xs) {
-                        Image(systemName: "target")
-                            .font(.system(size: 18))
-                            .foregroundColor(MemoryTheme.Colors.primaryBlue)
-                        Text("年間読書目標")
-                            .font(.headline)
-                            .foregroundColor(Color(.label))
-                    }
-                    
-                    Spacer()
-                    
-                    Button {
-                        showingGoalSetting = true
-                    } label: {
-                        Text("設定")
-                            .font(.caption)
-                            .foregroundColor(MemoryTheme.Colors.primaryBlue)
-                            .padding(.horizontal, MemorySpacing.sm)
-                            .padding(.vertical, MemorySpacing.xs)
-                            .background(MemoryTheme.Colors.primaryBlue.opacity(0.1))
-                            .cornerRadius(MemoryRadius.full)
-                    }
-                }
-                
-                HStack {
-                    Text("\(viewModel.statistics.booksThisYear) / \(goal) 冊")
-                        .font(.callout)
-                        .fontWeight(.medium)
-                        .foregroundColor(Color(.label))
-                    
-                    Spacer()
-                    
-                    Text("\(Int(Double(viewModel.statistics.booksThisYear) / Double(goal) * 100))%")
-                        .font(.subheadline)
-                        .foregroundColor(MemoryTheme.Colors.primaryBlue)
-                }
-                
-                ProgressView(value: Double(viewModel.statistics.booksThisYear), total: Double(goal))
-                    .tint(MemoryTheme.Colors.primaryBlue)
-                    .background(MemoryTheme.Colors.inkPale)
-                    .clipShape(Capsule())
-            }
-        }
-    }
-    
     private func favoriteGenresSection(genres: [String]) -> some View {
         MemoryCard(padding: MemorySpacing.md) {
             VStack(alignment: .leading, spacing: MemorySpacing.sm) {
@@ -385,62 +330,6 @@ struct MemoryStatCard: View {
 }
 
 // Simple FlowLayout for genres
-struct FlowLayout: Layout {
-    var spacing: CGFloat = 8
-    
-    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
-        let result = FlowResult(
-            in: proposal.replacingUnspecifiedDimensions().width,
-            subviews: subviews,
-            spacing: spacing
-        )
-        return result.size
-    }
-    
-    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
-        let result = FlowResult(
-            in: bounds.width,
-            subviews: subviews,
-            spacing: spacing
-        )
-        for (index, frame) in result.frames.enumerated() {
-            subviews[index].place(
-                at: CGPoint(x: bounds.minX + frame.minX, y: bounds.minY + frame.minY),
-                proposal: ProposedViewSize(frame.size)
-            )
-        }
-    }
-    
-    struct FlowResult {
-        var size: CGSize = .zero
-        var frames: [CGRect] = []
-        
-        init(in maxWidth: CGFloat, subviews: Subviews, spacing: CGFloat) {
-            var currentX: CGFloat = 0
-            var currentY: CGFloat = 0
-            var lineHeight: CGFloat = 0
-            var maxX: CGFloat = 0
-            
-            for subview in subviews {
-                let viewSize = subview.sizeThatFits(.unspecified)
-                
-                if currentX + viewSize.width > maxWidth, currentX > 0 {
-                    currentY += lineHeight + spacing
-                    currentX = 0
-                    lineHeight = 0
-                }
-                
-                frames.append(CGRect(origin: CGPoint(x: currentX, y: currentY), size: viewSize))
-                
-                currentX += viewSize.width + spacing
-                maxX = max(maxX, currentX)
-                lineHeight = max(lineHeight, viewSize.height)
-            }
-            
-            size = CGSize(width: maxX - spacing, height: currentY + lineHeight)
-        }
-    }
-}
 
 #Preview {
     ProfileView()

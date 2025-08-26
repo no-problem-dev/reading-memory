@@ -193,7 +193,7 @@ struct CurrentReadingCard: View {
                 HStack(spacing: MemorySpacing.xs) {
                     Image(systemName: "bubble.left.and.bubble.right.fill")
                         .font(.system(size: 16))
-                    Text("本とおしゃべりする")
+                    Text("読書メモを書く")
                         .font(MemoryTheme.Fonts.subheadline())
                         .fontWeight(.medium)
                 }

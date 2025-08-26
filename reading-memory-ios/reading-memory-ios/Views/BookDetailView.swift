@@ -11,6 +11,8 @@ struct BookDetailView: View {
     @State private var showingSummarySheet = false
     @State private var aiSummary: String?
     @State private var isGeneratingSummary = false
+    @State private var isUpdatingStatus = false
+    @State private var showStatusChangeAnimation = false
     @Environment(\.dismiss) private var dismiss
     
     private let bookRepository = ServiceContainer.shared.getBookRepository()
@@ -94,7 +96,7 @@ struct BookDetailView: View {
                     }
                 }
                 .sheet(isPresented: $showingEditSheet) {
-                    SimpleEditBookView(book: book) { updatedBook in
+                    EditBookView(book: book) { updatedBook in
                         self.book = updatedBook
                     }
                 }
@@ -217,7 +219,7 @@ struct BookDetailView: View {
                     }
                     
                     VStack(alignment: .leading, spacing: 2) {
-                        Text("本とおしゃべりする")
+                        Text("読書メモを書く")
                             .font(.headline)
                             .foregroundColor(Color(.label))
                         Text("読みながら感じたことを記録")
@@ -310,14 +312,45 @@ struct BookDetailView: View {
                 
                 Spacer()
                 
-                Text(book.status.displayName)
-                    .font(.subheadline)
-                    .fontWeight(.medium)
-                    .foregroundColor(statusColor(for: book.status))
+                // Status Menu
+                Menu {
+                    ForEach(ReadingStatus.allCases, id: \.self) { status in
+                        Button {
+                            Task {
+                                await updateStatus(to: status)
+                            }
+                        } label: {
+                            Label(status.displayName, systemImage: status.icon)
+                        }
+                    }
+                } label: {
+                    HStack(spacing: MemorySpacing.xs) {
+                        if isUpdatingStatus {
+                            ProgressView()
+                                .scaleEffect(0.8)
+                                .frame(width: 16, height: 16)
+                        } else {
+                            Text(book.status.displayName)
+                                .font(.subheadline)
+                                .fontWeight(.medium)
+                                .foregroundColor(statusColor(for: book.status))
+                        }
+                        Image(systemName: "chevron.down")
+                            .font(.caption)
+                            .foregroundColor(statusColor(for: book.status))
+                    }
                     .padding(.horizontal, MemorySpacing.sm)
                     .padding(.vertical, MemorySpacing.xs)
                     .background(statusColor(for: book.status).opacity(0.1))
                     .cornerRadius(MemoryRadius.full)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: MemoryRadius.full)
+                            .stroke(statusColor(for: book.status).opacity(0.3), lineWidth: 1)
+                    )
+                }
+                .disabled(isUpdatingStatus)
+                .scaleEffect(showStatusChangeAnimation ? 1.1 : 1.0)
+                .animation(MemoryTheme.Animation.fast, value: showStatusChangeAnimation)
             }
             
             Divider()
@@ -490,6 +523,108 @@ struct BookDetailView: View {
         isGeneratingSummary = false
     }
     
+    private func updateStatus(to newStatus: ReadingStatus) async {
+        guard let currentBook = book, authService.currentUser?.uid != nil else { return }
+        guard newStatus != currentBook.status else { return }
+        
+        isUpdatingStatus = true
+        
+        // Determine date updates based on status change
+        let oldStatus = currentBook.status
+        var startDate = currentBook.startDate
+        var completedDate = currentBook.completedDate
+        
+        // Handle transitions
+        if oldStatus == .wantToRead && newStatus != .wantToRead {
+            // Starting to read
+            if startDate == nil {
+                startDate = Date()
+            }
+        }
+        
+        if oldStatus != .wantToRead && newStatus == .wantToRead {
+            // Moving back to want to read - clear dates
+            startDate = nil
+            completedDate = nil
+        }
+        
+        if oldStatus != .completed && newStatus == .completed {
+            // Completing the book
+            if startDate == nil {
+                startDate = Date()
+            }
+            completedDate = Date()
+        }
+        
+        if oldStatus != .dnf && newStatus == .dnf {
+            // Marking as DNF
+            if startDate == nil {
+                startDate = Date()
+            }
+            completedDate = Date()
+        }
+        
+        if (oldStatus == .completed || oldStatus == .dnf) && (newStatus == .reading || newStatus == .wantToRead) {
+            // Uncompleting the book
+            completedDate = nil
+        }
+        
+        let updatedBook = Book(
+            id: currentBook.id,
+            isbn: currentBook.isbn,
+            title: currentBook.title,
+            author: currentBook.author,
+            publisher: currentBook.publisher,
+            publishedDate: currentBook.publishedDate,
+            pageCount: currentBook.pageCount,
+            description: currentBook.description,
+            coverImageId: currentBook.coverImageId,
+            dataSource: currentBook.dataSource,
+            status: newStatus,
+            rating: currentBook.rating,
+            readingProgress: newStatus == .reading ? currentBook.readingProgress : nil,
+            currentPage: newStatus == .reading ? currentBook.currentPage : nil,
+            addedDate: currentBook.addedDate,
+            startDate: startDate,
+            completedDate: completedDate,
+            lastReadDate: Date(),
+            priority: newStatus == .wantToRead ? (currentBook.priority ?? 3) : nil,
+            plannedReadingDate: newStatus == .wantToRead ? currentBook.plannedReadingDate : nil,
+            reminderEnabled: newStatus == .wantToRead ? currentBook.reminderEnabled : false,
+            purchaseLinks: currentBook.purchaseLinks,
+            memo: currentBook.memo,
+            tags: currentBook.tags,
+            aiSummary: currentBook.aiSummary,
+            summaryGeneratedAt: currentBook.summaryGeneratedAt,
+            createdAt: currentBook.createdAt,
+            updatedAt: Date()
+        )
+        
+        do {
+            try await bookRepository.updateBook(updatedBook)
+            
+            // Update local state with animation
+            await MainActor.run {
+                withAnimation(MemoryTheme.Animation.fast) {
+                    self.book = updatedBook
+                    showStatusChangeAnimation = true
+                }
+                
+                // Reset animation after a short delay
+                Task {
+                    try await Task.sleep(nanoseconds: 200_000_000) // 0.2 seconds
+                    await MainActor.run {
+                        showStatusChangeAnimation = false
+                    }
+                }
+            }
+        } catch {
+            print("Error updating book status: \(error)")
+        }
+        
+        isUpdatingStatus = false
+    }
+    
     private func statusIcon(for status: ReadingStatus) -> String {
         switch status {
         case .wantToRead:
@@ -517,136 +652,6 @@ struct BookDetailView: View {
     }
 }
 
-// Simple Edit Book View
-struct SimpleEditBookView: View {
-    let book: Book
-    let onSave: (Book) -> Void
-    
-    @State private var status: ReadingStatus
-    @State private var rating: Double?
-    @State private var memo: String
-    @State private var readingProgress: Double?
-    @Environment(\.dismiss) private var dismiss
-    
-    private let bookRepository = ServiceContainer.shared.getBookRepository()
-    
-    init(book: Book, onSave: @escaping (Book) -> Void) {
-        self.book = book
-        self.onSave = onSave
-        _status = State(initialValue: book.status)
-        _rating = State(initialValue: book.rating)
-        _memo = State(initialValue: book.memo ?? "")
-        _readingProgress = State(initialValue: book.readingProgress)
-    }
-    
-    var body: some View {
-        NavigationStack {
-            Form {
-                Section {
-                    Picker("ステータス", selection: $status) {
-                        ForEach(ReadingStatus.allCases, id: \.self) { status in
-                            Text(status.displayName).tag(status)
-                        }
-                    }
-                    
-                    if status == .reading {
-                        VStack(alignment: .leading) {
-                            Text("読書進捗: \(Int(readingProgress ?? 0))%")
-                                .font(.subheadline)
-                                .foregroundColor(Color(.secondaryLabel))
-                            Slider(value: Binding(
-                                get: { readingProgress ?? 0 },
-                                set: { readingProgress = $0 }
-                            ), in: 0...100, step: 5)
-                            .tint(MemoryTheme.Colors.primaryBlue)
-                        }
-                    }
-                    
-                    if status == .completed || status == .dnf {
-                        VStack(alignment: .leading) {
-                            Text("評価")
-                                .font(.subheadline)
-                                .foregroundColor(Color(.secondaryLabel))
-                            RatingSelector(rating: $rating)
-                        }
-                    }
-                }
-                
-                Section("メモ") {
-                    TextEditor(text: $memo)
-                        .frame(minHeight: 100)
-                }
-            }
-            .navigationTitle("本の編集")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarLeading) {
-                    Button("キャンセル") {
-                        dismiss()
-                    }
-                }
-                
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("保存") {
-                        Task {
-                            await saveChanges()
-                        }
-                    }
-                    .fontWeight(.semibold)
-                }
-            }
-        }
-    }
-    
-    private func saveChanges() async {
-        let startDate: Date? = status == .reading && book.startDate == nil ? Date() : 
-                               (status == .completed || status == .dnf) && book.startDate == nil ? Date() :
-                               book.startDate
-        
-        let completedDate: Date? = (status == .completed || status == .dnf) && book.completedDate == nil ? Date() :
-                                   status == .reading ? nil :
-                                   book.completedDate
-        
-        let updatedBook = Book(
-            id: book.id,
-            isbn: book.isbn,
-            title: book.title,
-            author: book.author,
-            publisher: book.publisher,
-            publishedDate: book.publishedDate,
-            pageCount: book.pageCount,
-            description: book.description,
-            coverImageId: book.coverImageId,
-            dataSource: book.dataSource,
-            status: status,
-            rating: rating,
-            readingProgress: readingProgress,
-            currentPage: book.currentPage,
-            addedDate: book.addedDate,
-            startDate: startDate,
-            completedDate: completedDate,
-            lastReadDate: book.lastReadDate,
-            priority: book.priority,
-            plannedReadingDate: book.plannedReadingDate,
-            reminderEnabled: book.reminderEnabled,
-            purchaseLinks: book.purchaseLinks,
-            memo: memo.isEmpty ? nil : memo,
-            tags: book.tags,
-            aiSummary: book.aiSummary,
-            summaryGeneratedAt: book.summaryGeneratedAt,
-            createdAt: book.createdAt,
-            updatedAt: Date()
-        )
-        
-        do {
-            try await bookRepository.updateBook(updatedBook)
-            onSave(updatedBook)
-            dismiss()
-        } catch {
-            print("Error updating book: \(error)")
-        }
-    }
-}
 
 // Summary View
 struct SummaryView: View {
