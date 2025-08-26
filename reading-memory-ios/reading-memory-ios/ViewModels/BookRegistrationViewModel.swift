@@ -7,7 +7,37 @@ final class BookRegistrationViewModel: BaseViewModel {
     private let authService = AuthService.shared
     private let activityRepository = ActivityRepository.shared
     
+    private(set) var monthlyBookCount = 0
+    private(set) var canAddBook = true
+    var showPaywall = false
+    
+    override init() {
+        super.init()
+        Task {
+            await checkBookQuota()
+        }
+    }
+    
+    func checkBookQuota() async {
+        guard let userId = authService.currentUser?.uid else { return }
+        
+        // 今月の本登録数を取得
+        let startOfMonth = Calendar.current.dateInterval(of: .month, for: Date())?.start ?? Date()
+        monthlyBookCount = await bookRepository.getBookCount(userId: userId, since: startOfMonth)
+        
+        // プレミアムチェック
+        canAddBook = FeatureGate.canAddBook(currentMonthlyCount: monthlyBookCount)
+    }
+    
     func registerBook(_ book: Book) async -> Bool {
+        // まず制限チェック
+        await checkBookQuota()
+        
+        guard canAddBook else {
+            showPaywall = true
+            return false
+        }
+        
         var result = false
         await withLoadingNoThrow { [weak self] in
             guard let self = self else {
@@ -29,12 +59,23 @@ final class BookRegistrationViewModel: BaseViewModel {
                 try? await self.activityRepository.recordBookRead()
             }
             
+            // 登録後にカウントを更新
+            await self.checkBookQuota()
+            
             result = true
         }
         return result
     }
     
     func registerBookFromSearchResult(_ searchResult: BookSearchResult) async -> Bool {
+        // まず制限チェック
+        await checkBookQuota()
+        
+        guard canAddBook else {
+            showPaywall = true
+            return false
+        }
+        
         var result = false
         await withLoadingNoThrow { [weak self] in
             guard let self = self else {
@@ -55,6 +96,9 @@ final class BookRegistrationViewModel: BaseViewModel {
             if createdBook.status == .wantToRead {
                 try? await self.activityRepository.recordBookRead()
             }
+            
+            // 登録後にカウントを更新
+            await self.checkBookQuota()
             
             result = true
         }

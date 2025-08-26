@@ -3,6 +3,7 @@ import SwiftUI
 struct BookAdditionFlowView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var selectedOption: AdditionOption? = nil
+    @State private var showPaywall = false
     
     enum AdditionOption: String, CaseIterable, Identifiable {
         case search = "search"
@@ -101,14 +102,17 @@ struct BookAdditionFlowView: View {
                 switch option {
                 case .search:
                     BookSearchView()
-                                        case .barcode:
+                case .barcode:
                     BarcodeScannerView()
-                                        case .manual:
+                case .manual:
                     BookRegistrationView(isFromHome: true)
-                                        }
+                }
+            }
+            .sheet(isPresented: $showPaywall) {
+                PaywallView()
             }
         }
-            }
+    }
     
     // MARK: - Components
     
@@ -159,6 +163,12 @@ struct BookAdditionFlowView: View {
     
     private func optionCard(for option: AdditionOption) -> some View {
         Button {
+            if option == .barcode {
+                guard FeatureGate.canScanBarcode else {
+                    showPaywall = true
+                    return
+                }
+            }
             selectedOption = option
         } label: {
             HStack(spacing: MemorySpacing.md) {

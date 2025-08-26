@@ -13,6 +13,7 @@ struct BookDetailView: View {
     @State private var isGeneratingSummary = false
     @State private var isUpdatingStatus = false
     @State private var showStatusChangeAnimation = false
+    @State private var showPaywall = false
     @Environment(\.dismiss) private var dismiss
     
     private let bookRepository = ServiceContainer.shared.getBookRepository()
@@ -112,6 +113,9 @@ struct BookDetailView: View {
                 }
                 .sheet(isPresented: $showingSummarySheet) {
                     SummaryView(summary: aiSummary ?? "")
+                }
+                .sheet(isPresented: $showPaywall) {
+                    PaywallView()
                 }
             } else {
                 VStack(spacing: MemorySpacing.md) {
@@ -503,6 +507,12 @@ struct BookDetailView: View {
     
     private func generateSummary() async {
         guard authService.currentUser?.uid != nil else { return }
+        
+        // プレミアムチェック
+        guard FeatureGate.canUseAI else {
+            showPaywall = true
+            return
+        }
         
         isGeneratingSummary = true
         

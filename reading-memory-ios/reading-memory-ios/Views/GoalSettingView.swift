@@ -10,6 +10,7 @@ struct GoalSettingView: View {
     @State private var showMonthlyGoalSection = false
     @State private var showDeleteConfirmation = false
     @State private var goalToDelete: ReadingGoal?
+    @State private var showPaywall = false
     
     var body: some View {
         NavigationStack {
@@ -70,6 +71,9 @@ struct GoalSettingView: View {
             } message: {
                 Text("この目標を削除してもよろしいですか？")
             }
+            .sheet(isPresented: $showPaywall) {
+                PaywallView()
+            }
         }
     }
     
@@ -98,6 +102,10 @@ struct GoalSettingView: View {
                 
                 if viewModel.yearlyGoal == nil {
                     Button(showYearlyGoalSection ? "キャンセル" : "設定") {
+                        guard FeatureGate.canSetYearlyGoals else {
+                            showPaywall = true
+                            return
+                        }
                         withAnimation {
                             showYearlyGoalSection.toggle()
                         }

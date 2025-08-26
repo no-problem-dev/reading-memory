@@ -4,6 +4,7 @@ import Charts
 struct StatisticsView: View {
     @State private var viewModel = StatisticsViewModel()
     @State private var selectedPeriod: StatisticsPeriod = .month
+    @State private var showPaywall = false
     
     enum StatisticsPeriod: String, CaseIterable {
         case week = "週間"
@@ -24,25 +25,31 @@ struct StatisticsView: View {
                     periodSelectorView
                         .padding(.top, MemorySpacing.md)
                     
-                    // Summary Cards
+                    // Summary Cards - Always visible
                     summaryCardsSection
                     
-                    // Reading Trend Chart
-                    readingTrendChart
-                    
-                    // Genre Distribution
-                    genreDistributionChart
-                    
-                    // Rating Distribution
-                    ratingDistributionChart
-                    
-                    // Monthly Reading Stats
-                    if selectedPeriod != .week {
-                        monthlyStatsSection
+                    if FeatureGate.canViewFullStatistics {
+                        // Premium content
+                        // Reading Trend Chart
+                        readingTrendChart
+                        
+                        // Genre Distribution
+                        genreDistributionChart
+                        
+                        // Rating Distribution
+                        ratingDistributionChart
+                        
+                        // Monthly Reading Stats
+                        if selectedPeriod != .week {
+                            monthlyStatsSection
+                        }
+                        
+                        // Reading Pace
+                        readingPaceSection
+                    } else {
+                        // Free user limitation
+                        premiumFeaturePrompt
                     }
-                    
-                    // Reading Pace
-                    readingPaceSection
                 }
                 .padding(.bottom, MemorySpacing.xl)
             }
@@ -71,6 +78,9 @@ struct StatisticsView: View {
             if let errorMessage = viewModel.errorMessage {
                 Text(errorMessage)
             }
+        }
+        .sheet(isPresented: $showPaywall) {
+            PaywallView()
         }
     }
     
@@ -342,6 +352,65 @@ struct StatisticsView: View {
         let colors: [Color] = [.blue, .green, .orange, .purple, .pink, .yellow, .indigo, .red]
         let index = abs(genre.hashValue) % colors.count
         return colors[index]
+    }
+    
+    private var premiumFeaturePrompt: some View {
+        VStack(spacing: MemorySpacing.lg) {
+            MemoryCard(padding: MemorySpacing.lg) {
+                VStack(spacing: MemorySpacing.md) {
+                    Image(systemName: "chart.line.uptrend.xyaxis")
+                        .font(.system(size: 48))
+                        .foregroundStyle(
+                            LinearGradient(
+                                gradient: Gradient(colors: [
+                                    MemoryTheme.Colors.primaryBlue,
+                                    MemoryTheme.Colors.primaryBlueDark
+                                ]),
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                        )
+                    
+                    Text("詳細な統計機能")
+                        .font(MemoryTheme.Fonts.title3())
+                        .fontWeight(.semibold)
+                        .foregroundColor(MemoryTheme.Colors.inkBlack)
+                    
+                    Text("プレミアムプランでは、読書傾向グラフ、\nジャンル分析、評価分布など\nより詳しい統計情報をご覧いただけます")
+                        .font(MemoryTheme.Fonts.body())
+                        .foregroundColor(MemoryTheme.Colors.inkGray)
+                        .multilineTextAlignment(.center)
+                        .lineSpacing(4)
+                    
+                    Button {
+                        showPaywall = true
+                    } label: {
+                        Label("プレミアムプランを見る", systemImage: "sparkles")
+                            .font(MemoryTheme.Fonts.headline())
+                            .foregroundColor(.white)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, MemorySpacing.md)
+                            .background(
+                                LinearGradient(
+                                    gradient: Gradient(colors: [
+                                        MemoryTheme.Colors.primaryBlue,
+                                        MemoryTheme.Colors.primaryBlueDark
+                                    ]),
+                                    startPoint: .leading,
+                                    endPoint: .trailing
+                                )
+                            )
+                            .cornerRadius(MemoryRadius.medium)
+                            .memoryShadow(.medium)
+                    }
+                    .buttonStyle(PlainButtonStyle())
+                }
+            }
+            .padding(.horizontal, MemorySpacing.md)
+            .padding(.top, MemorySpacing.lg)
+            
+            Spacer(minLength: 100)
+        }
     }
 }
 

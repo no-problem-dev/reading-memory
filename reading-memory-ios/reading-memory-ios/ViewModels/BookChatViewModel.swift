@@ -13,6 +13,7 @@ final class BookChatViewModel: BaseViewModel {
     private let activityRepository = ActivityRepository.shared
     
     var isAIEnabled = false // AI機能の有効/無効フラグ
+    var showPaywall = false
     
     init(book: Book) {
         self.book = book
@@ -96,6 +97,11 @@ final class BookChatViewModel: BaseViewModel {
     }
     
     func toggleAI() {
+        // プレミアムチェック
+        guard FeatureGate.canUseAI else {
+            showPaywall = true
+            return
+        }
         isAIEnabled.toggle()
     }
     

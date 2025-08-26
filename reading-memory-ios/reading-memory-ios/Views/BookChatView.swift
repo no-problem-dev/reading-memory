@@ -279,6 +279,9 @@ struct BookChatView: View {
                 await loadImage(from: newItem)
             }
         }
+        .sheet(isPresented: $viewModel.showPaywall) {
+            PaywallView()
+        }
         .alert("エラー", isPresented: $viewModel.showError) {
             Button("OK") {
                 viewModel.clearError()
@@ -308,6 +311,13 @@ struct BookChatView: View {
     @MainActor
     private func loadImage(from item: PhotosPickerItem?) async {
         guard let item = item else { return }
+        
+        // プレミアムチェック
+        guard FeatureGate.canAttachPhotos else {
+            selectedPhoto = nil
+            viewModel.showPaywall = true
+            return
+        }
         
         do {
             if let data = try await item.loadTransferable(type: Data.self),

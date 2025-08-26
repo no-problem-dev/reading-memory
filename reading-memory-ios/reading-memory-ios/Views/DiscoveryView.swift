@@ -5,6 +5,7 @@ struct DiscoveryView: View {
     @State private var showSearch = false
     @State private var showBarcodeScanner = false
     @State private var navigationPath = NavigationPath()
+    @State private var showPaywall = false
     
     var body: some View {
         NavigationStack(path: $navigationPath) {
@@ -60,6 +61,10 @@ struct DiscoveryView: View {
                                     Spacer()
                                     
                                     Button {
+                                        guard FeatureGate.canScanBarcode else {
+                                            showPaywall = true
+                                            return
+                                        }
                                         showBarcodeScanner = true
                                     } label: {
                                         Image(systemName: "barcode.viewfinder")
@@ -115,9 +120,12 @@ struct DiscoveryView: View {
                             }
             .sheet(isPresented: $showBarcodeScanner) {
                 BarcodeScannerView()
-                                }
-        }
             }
+            .sheet(isPresented: $showPaywall) {
+                PaywallView()
+            }
+        }
+    }
 }
 
 // 読みたいリストのセクション

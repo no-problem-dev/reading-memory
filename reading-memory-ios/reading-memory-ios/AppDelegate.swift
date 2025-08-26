@@ -11,6 +11,9 @@ class AppDelegate: NSObject, UIApplicationDelegate {
         // Firebase初期化
         FirebaseApp.configure()
         
+        // RevenueCat初期化
+        SubscriptionStore.shared.initialize()
+        
         // 初回起動チェック
         checkFirstLaunchAndSignOut()
         

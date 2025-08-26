@@ -8,6 +8,7 @@ struct BookShelfView: View {
     @State private var showingAddBookOptions = false
     @State private var showingBarcodeScanner = false
     @State private var showingBookSearch = false
+    @State private var showPaywall = false
     
     enum SortOption: String, CaseIterable {
         case dateAdded = "追加日"
@@ -82,6 +83,10 @@ struct BookShelfView: View {
             }
             .confirmationDialog("本を検索", isPresented: $showingAddBookOptions) {
                 Button("バーコードでスキャン", action: {
+                    guard FeatureGate.canScanBarcode else {
+                        showPaywall = true
+                        return
+                    }
                     showingBarcodeScanner = true
                 })
                 Button("タイトルで検索", action: {
@@ -177,6 +182,7 @@ struct EmptyBookShelfView: View {
     @State private var showingAddBookOptions = false
     @State private var showingBarcodeScanner = false
     @State private var showingBookSearch = false
+    @State private var showPaywall = false
     
     var body: some View {
         VStack(spacing: 24) {
@@ -231,6 +237,10 @@ struct EmptyBookShelfView: View {
         }
         .confirmationDialog("本を検索", isPresented: $showingAddBookOptions) {
             Button("バーコードでスキャン", action: {
+                guard FeatureGate.canScanBarcode else {
+                    showPaywall = true
+                    return
+                }
                 showingBarcodeScanner = true
             })
             Button("タイトルで検索", action: {
@@ -242,6 +252,9 @@ struct EmptyBookShelfView: View {
             Button("キャンセル", role: .cancel) { }
         } message: {
             Text("どの方法で本を検索しますか？")
+        }
+        .sheet(isPresented: $showPaywall) {
+            PaywallView()
         }
     }
 }
