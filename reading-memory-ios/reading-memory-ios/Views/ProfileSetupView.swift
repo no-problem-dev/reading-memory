@@ -81,6 +81,7 @@ struct ProfileSetupView: View {
                             .foregroundColor(.primary)
                         
                         TextField("あなたの名前を入力してください", text: $displayName)
+                            .memoryTextFieldStyle()
                             .textFieldStyle(.roundedBorder)
                             .textContentType(.name)
                             .submitLabel(.done)
@@ -132,6 +133,7 @@ struct ProfileSetupView: View {
                 }
             }
         }
+        .keyboardAware()
     }
     
     private var isValidInput: Bool {

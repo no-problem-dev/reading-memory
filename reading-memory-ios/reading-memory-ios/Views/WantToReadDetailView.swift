@@ -162,6 +162,7 @@ struct WantToReadDetailView: View {
                 }
             }
         }
+        .keyboardAware()
         .sheet(isPresented: $showingAddLink) {
             AddPurchaseLinkView { link in
                 purchaseLinks.append(link)
@@ -219,13 +220,16 @@ struct AddPurchaseLinkView: View {
                     
                     if selectedPreset == "カスタム" {
                         TextField("ストア名", text: $title)
+                            .memoryTextFieldStyle()
                     }
                     
                     TextField("URL", text: $url)
+                        .memoryTextFieldStyle()
                         .keyboardType(.URL)
                         .autocapitalization(.none)
                     
                     TextField("価格（オプション）", text: $price)
+                        .memoryTextFieldStyle()
                         .keyboardType(.numberPad)
                 }
             }
@@ -252,6 +256,7 @@ struct AddPurchaseLinkView: View {
                 }
             }
         }
+        .keyboardAware()
     }
 }
 
@@ -278,10 +283,13 @@ struct EditPurchaseLinkView: View {
             Form {
                 Section {
                     TextField("ストア名", text: $title)
+                        .memoryTextFieldStyle()
                     TextField("URL", text: $url)
+                        .memoryTextFieldStyle()
                         .keyboardType(.URL)
                         .autocapitalization(.none)
                     TextField("価格（オプション）", text: $price)
+                        .memoryTextFieldStyle()
                         .keyboardType(.numberPad)
                 }
             }
@@ -310,5 +318,6 @@ struct EditPurchaseLinkView: View {
                 }
             }
         }
+        .keyboardAware()
     }
 }

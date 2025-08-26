@@ -69,6 +69,7 @@ struct ProfileSetupStep: View {
                     .font(.headline)
                 
                 TextField("あなたの名前", text: $displayName)
+                    .memoryTextFieldStyle()
                     .textFieldStyle(.roundedBorder)
                     .textContentType(.name)
                     .submitLabel(.done)
@@ -82,6 +83,7 @@ struct ProfileSetupStep: View {
             Spacer()
         }
         .padding()
+        .keyboardAware()
     }
     
     @MainActor

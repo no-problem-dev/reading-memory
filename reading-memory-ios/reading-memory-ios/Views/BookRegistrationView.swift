@@ -217,7 +217,8 @@ struct BookRegistrationView: View {
                 Text(viewModel.errorMessage ?? "不明なエラーが発生しました")
             }
         }
-                .onAppear {
+        .keyboardAware()
+        .onAppear {
             if let book = prefilledBook {
                 title = book.title
                 author = book.author
@@ -415,18 +416,7 @@ struct BookRegistrationView: View {
                     .foregroundColor(MemoryTheme.Colors.inkGray)
             }
             
-            TextEditor(text: $description)
-                .font(MemoryTheme.Fonts.body())
-                .foregroundColor(MemoryTheme.Colors.inkBlack)
-                .scrollContentBackground(.hidden)
-                .padding(MemorySpacing.sm)
-                .frame(minHeight: 120)
-                .background(MemoryTheme.Colors.inkPale.opacity(0.5))
-                .cornerRadius(MemoryRadius.medium)
-                .overlay(
-                    RoundedRectangle(cornerRadius: MemoryRadius.medium)
-                        .stroke(MemoryTheme.Colors.inkPale, lineWidth: 1)
-                )
+            MemoryTextEditor(placeholder: "本の概要や感想を入力", text: $description, minHeight: 120)
         }
     }
     

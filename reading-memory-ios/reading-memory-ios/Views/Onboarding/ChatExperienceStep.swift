@@ -109,6 +109,7 @@ struct ChatExperienceStep: View {
             
             Spacer()
         }
+        .keyboardAware()
         .onAppear {
             isTextFieldFocused = true
         }

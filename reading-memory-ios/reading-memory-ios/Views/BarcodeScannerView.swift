@@ -141,6 +141,7 @@ struct BarcodeScannerView: View {
                 }
             }
         }
+        .keyboardAware()
         .onChange(of: scannedISBN) { oldValue, newValue in
             if let isbn = newValue {
                 searchBook(isbn: isbn)
@@ -447,6 +448,7 @@ struct ManualISBNEntryView: View {
                             .foregroundColor(MemoryTheme.Colors.inkGray)
                         
                         TextField("978-4-123456-78-9", text: $isbn)
+                            .memoryTextFieldStyle()
                             .font(MemoryTheme.Fonts.title3())
                             .keyboardType(.numberPad)
                             .multilineTextAlignment(.center)
@@ -485,6 +487,7 @@ struct ManualISBNEntryView: View {
                 }
             }
         }
+        .keyboardAware()
     }
 }
 

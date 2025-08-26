@@ -41,7 +41,8 @@ struct MemoryTextField: View {
                 
                 TextField(isRequired ? "" : placeholder, text: $text)
                     .font(MemoryTheme.Fonts.body())
-                    .foregroundColor(textColor)
+                    .foregroundStyle(textColor)
+                    .tint(MemoryTheme.Colors.primaryBlue)
                     .keyboardType(keyboardType)
                     .focused($isFocused)
             }
@@ -51,7 +52,7 @@ struct MemoryTextField: View {
             .cornerRadius(MemoryRadius.medium)
             .overlay(
                 RoundedRectangle(cornerRadius: MemoryRadius.medium)
-                    .stroke(borderColor, lineWidth: isFocused ? 2 : 1)
+                    .stroke(isFocused ? MemoryTheme.Colors.primaryBlue : MemoryTheme.Colors.inkPale.opacity(0.5), lineWidth: isFocused ? 2 : 1)
             )
             .animation(MemoryTheme.Animation.fast, value: isFocused)
         }
@@ -62,11 +63,7 @@ struct MemoryTextField: View {
     }
     
     private var backgroundColor: Color {
-        colorScheme == .dark ? MemoryTheme.Colors.inkBlack : MemoryTheme.Colors.inkWhite
-    }
-    
-    private var borderColor: Color {
-        isFocused ? MemoryTheme.Colors.primaryBlue : Color.clear
+        colorScheme == .dark ? MemoryTheme.Colors.cardBackground.opacity(0.8) : MemoryTheme.Colors.cardBackground
     }
 }
 
@@ -90,7 +87,8 @@ struct MemoryTextEditor: View {
             
             TextEditor(text: $text)
                 .font(MemoryTheme.Fonts.body())
-                .foregroundColor(textColor)
+                .foregroundStyle(textColor)
+                .tint(MemoryTheme.Colors.primaryBlue)
                 .scrollContentBackground(.hidden)
                 .background(Color.clear)
                 .padding(.horizontal, MemorySpacing.xs)
@@ -102,7 +100,7 @@ struct MemoryTextEditor: View {
         .cornerRadius(MemoryRadius.medium)
         .overlay(
             RoundedRectangle(cornerRadius: MemoryRadius.medium)
-                .stroke(borderColor, lineWidth: isFocused ? 2 : 1)
+                .stroke(isFocused ? MemoryTheme.Colors.primaryBlue : MemoryTheme.Colors.inkPale.opacity(0.5), lineWidth: isFocused ? 2 : 1)
         )
         .animation(MemoryTheme.Animation.fast, value: isFocused)
     }
@@ -112,10 +110,6 @@ struct MemoryTextEditor: View {
     }
     
     private var backgroundColor: Color {
-        colorScheme == .dark ? MemoryTheme.Colors.inkBlack : MemoryTheme.Colors.inkWhite
-    }
-    
-    private var borderColor: Color {
-        isFocused ? MemoryTheme.Colors.primaryBlue : Color.clear
+        colorScheme == .dark ? MemoryTheme.Colors.cardBackground.opacity(0.8) : MemoryTheme.Colors.cardBackground
     }
 }

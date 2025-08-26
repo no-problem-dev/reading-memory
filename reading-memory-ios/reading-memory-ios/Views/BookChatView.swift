@@ -16,66 +16,85 @@ struct BookChatView: View {
     
     var body: some View {
         ZStack {
-            // Background
-            MemoryTheme.Colors.secondaryBackground
-                .ignoresSafeArea()
+            // Modern gradient background
+            LinearGradient(
+                gradient: Gradient(colors: [
+                    MemoryTheme.Colors.background,
+                    MemoryTheme.Colors.secondaryBackground.opacity(0.8)
+                ]),
+                startPoint: .top,
+                endPoint: .bottom
+            )
+            .ignoresSafeArea()
             
             VStack(spacing: 0) {
-                // Custom Navigation Bar
-                HStack {
-                    Button(action: { dismiss() }) {
-                        Image(systemName: "xmark")
-                            .font(.system(size: 20))
-                            .foregroundColor(MemoryTheme.Colors.inkGray)
-                            .frame(width: 44, height: 44)
-                    }
-                    
-                    Spacer()
-                    
-                    VStack(spacing: 2) {
-                        Text("読書メモ")
-                            .font(MemoryTheme.Fonts.headline())
-                            .foregroundColor(MemoryTheme.Colors.inkBlack)
-                        Text(viewModel.book.title)
-                            .font(MemoryTheme.Fonts.caption())
-                            .foregroundColor(MemoryTheme.Colors.inkGray)
-                            .lineLimit(1)
-                    }
-                    
-                    Spacer()
-                    
-                    // AI Toggle
-                    Button {
-                        withAnimation(MemoryTheme.Animation.fast) {
-                            viewModel.toggleAI()
-                        }
-                    } label: {
-                        HStack(spacing: 4) {
-                            Image(systemName: viewModel.isAIEnabled ? "sparkles" : "sparkle")
-                                .font(.system(size: 16))
-                                .symbolEffect(.bounce, value: viewModel.isAIEnabled)
-                            Text("AI")
+                // Enhanced Navigation Bar
+                VStack(spacing: 0) {
+                    HStack {
+                        // Placeholder for balance
+                        Color.clear
+                            .frame(width: 28, height: 28)
+                        
+                        Spacer()
+                        
+                        VStack(spacing: 4) {
+                            Text("読書メモ")
+                                .font(MemoryTheme.Fonts.headline())
+                                .foregroundColor(MemoryTheme.Colors.inkBlack)
+                            Text(viewModel.book.title)
                                 .font(MemoryTheme.Fonts.caption())
+                                .foregroundColor(MemoryTheme.Colors.inkGray)
+                                .lineLimit(1)
                         }
-                        .foregroundColor(viewModel.isAIEnabled ? MemoryTheme.Colors.primaryBlue : MemoryTheme.Colors.inkGray)
-                        .padding(.horizontal, MemorySpacing.sm)
-                        .padding(.vertical, MemorySpacing.xs)
-                        .background(
-                            viewModel.isAIEnabled 
-                                ? MemoryTheme.Colors.primaryBlue.opacity(0.1)
-                                : MemoryTheme.Colors.inkPale
-                        )
-                        .cornerRadius(MemoryRadius.full)
+                        
+                        Spacer()
+                        
+                        Button(action: { dismiss() }) {
+                            Image(systemName: "xmark.circle.fill")
+                                .font(.system(size: 28))
+                                .symbolRenderingMode(.hierarchical)
+                                .foregroundColor(MemoryTheme.Colors.inkGray)
+                        }
                     }
-                    .padding(.trailing, MemorySpacing.xs)
+                    .padding(.horizontal, MemorySpacing.md)
+                    .padding(.top, MemorySpacing.sm)
+                    .padding(.bottom, MemorySpacing.xs)
+                    
+                    // Enhanced AI Toggle Section
+                    HStack {
+                        Text("AI アシスタント")
+                            .font(MemoryTheme.Fonts.subheadline())
+                            .foregroundColor(MemoryTheme.Colors.inkGray)
+                        
+                        Spacer()
+                        
+                        Toggle("", isOn: Binding(
+                            get: { viewModel.isAIEnabled },
+                            set: { _ in viewModel.toggleAI() }
+                        ))
+                        .toggleStyle(SwitchToggleStyle(tint: MemoryTheme.Colors.primaryBlue))
+                        .labelsHidden()
+                        
+                        if viewModel.isAIEnabled {
+                            HStack(spacing: 4) {
+                                Image(systemName: "sparkles")
+                                    .font(.system(size: 14))
+                                    .symbolEffect(.variableColor, options: .repeating, value: viewModel.isAIEnabled)
+                                Text("オン")
+                                    .font(MemoryTheme.Fonts.caption())
+                            }
+                            .foregroundColor(MemoryTheme.Colors.primaryBlue)
+                            .transition(.scale.combined(with: .opacity))
+                        }
+                    }
+                    .padding(.horizontal, MemorySpacing.md)
+                    .padding(.bottom, MemorySpacing.sm)
+                    .animation(MemoryTheme.Animation.fast, value: viewModel.isAIEnabled)
                 }
-                .padding(.horizontal, MemorySpacing.sm)
-                .padding(.top, 8)
-                .padding(.bottom, MemorySpacing.xs)
-                .background(MemoryTheme.Colors.background)
-                
-                Divider()
-                    .foregroundColor(MemoryTheme.Colors.inkPale)
+                .background(
+                    MemoryTheme.Colors.cardBackground
+                        .shadow(color: MemoryTheme.Colors.inkBlack.opacity(0.05), radius: 2, x: 0, y: 2)
+                )
                 
                 // メッセージリスト
                 ScrollViewReader { proxy in
@@ -83,7 +102,7 @@ struct BookChatView: View {
                         LazyVStack(spacing: MemorySpacing.md) {
                             // Welcome message if no chats
                             if viewModel.chats.isEmpty {
-                                EmptyChatView()
+                                EmptyChatView(isAIEnabled: viewModel.isAIEnabled)
                                     .padding(.top, MemorySpacing.xxl)
                             }
                             
@@ -102,6 +121,10 @@ struct BookChatView: View {
                     .refreshable {
                         await viewModel.loadChats()
                     }
+                    .contentShape(Rectangle())
+                    .onTapGesture {
+                        isInputFocused = false
+                    }
                     .onAppear {
                         if let lastChat = viewModel.chats.last {
                             proxy.scrollTo(lastChat.id, anchor: .bottom)
@@ -119,97 +142,130 @@ struct BookChatView: View {
                     }
                 }
                 
-                // 入力エリア
-                VStack(spacing: MemorySpacing.xs) {
+                // Enhanced input area with modern design
+                VStack(spacing: 0) {
                     // 選択された画像のプレビュー
                     if let selectedImage {
                         HStack {
-                            Image(uiImage: selectedImage)
-                                .resizable()
-                                .aspectRatio(contentMode: .fit)
-                                .frame(height: 100)
-                                .cornerRadius(MemoryRadius.medium)
-                                .overlay(
-                                    Button {
-                                        withAnimation(MemoryTheme.Animation.fast) {
-                                            self.selectedImage = nil
-                                            self.selectedPhoto = nil
-                                        }
-                                    } label: {
-                                        Image(systemName: "xmark.circle.fill")
-                                            .font(.title2)
-                                            .foregroundStyle(.white, MemoryTheme.Colors.inkBlack.opacity(0.6))
+                            ZStack(alignment: .topTrailing) {
+                                Image(uiImage: selectedImage)
+                                    .resizable()
+                                    .aspectRatio(contentMode: .fit)
+                                    .frame(height: 100)
+                                    .cornerRadius(MemoryRadius.medium)
+                                    .memoryShadow(.soft)
+                                
+                                Button {
+                                    withAnimation(MemoryTheme.Animation.fast) {
+                                        self.selectedImage = nil
+                                        self.selectedPhoto = nil
                                     }
-                                    .padding(4),
-                                    alignment: .topTrailing
-                                )
+                                } label: {
+                                    Image(systemName: "xmark.circle.fill")
+                                        .font(.title2)
+                                        .symbolRenderingMode(.palette)
+                                        .foregroundStyle(.white, MemoryTheme.Colors.inkBlack.opacity(0.8))
+                                        .background(
+                                            Circle()
+                                                .fill(.ultraThinMaterial)
+                                        )
+                                }
+                                .padding(8)
+                            }
                             Spacer()
                         }
                         .padding(.horizontal, MemorySpacing.md)
-                        .transition(.scale.combined(with: .opacity))
+                        .padding(.bottom, MemorySpacing.sm)
+                        .transition(.move(edge: .bottom).combined(with: .opacity))
                     }
                     
                     HStack(spacing: MemorySpacing.sm) {
-                        // カメラボタン
+                        // Enhanced camera button
                         PhotosPicker(selection: $selectedPhoto,
                                     matching: .images,
                                     photoLibrary: .shared()) {
-                            Image(systemName: "camera.fill")
-                                .font(.system(size: 22))
-                                .foregroundColor(MemoryTheme.Colors.primaryBlue)
-                                .frame(width: 44, height: 44)
+                            ZStack {
+                                Circle()
+                                    .fill(MemoryTheme.Colors.primaryBlue.opacity(0.1))
+                                    .frame(width: 40, height: 40)
+                                
+                                Image(systemName: "camera.fill")
+                                    .font(.system(size: 20))
+                                    .foregroundColor(MemoryTheme.Colors.primaryBlue)
+                            }
                         }
+                        .hoverEffect(.highlight)
                         
-                        // テキストフィールド
-                        HStack {
+                        // Modern text field with translucent background
+                        HStack(spacing: MemorySpacing.xs) {
                             TextField("気づいたことを書いてみよう...", text: $messageText, axis: .vertical)
                                 .font(MemoryTheme.Fonts.body())
-                                .foregroundColor(MemoryTheme.Colors.inkBlack)
+                                .foregroundStyle(MemoryTheme.Colors.inkBlack)
+                                .tint(MemoryTheme.Colors.primaryBlue)
                                 .textFieldStyle(.plain)
                                 .lineLimit(1...5)
                                 .focused($isInputFocused)
                         }
                         .padding(.horizontal, MemorySpacing.md)
                         .padding(.vertical, MemorySpacing.sm)
-                        .background(MemoryTheme.Colors.inkWhite)
-                        .cornerRadius(MemoryRadius.full)
+                        .background(
+                            RoundedRectangle(cornerRadius: MemoryRadius.full)
+                                .fill(.regularMaterial)
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: MemoryRadius.full)
+                                        .strokeBorder(
+                                            isInputFocused ? MemoryTheme.Colors.primaryBlue.opacity(0.3) : Color.clear,
+                                            lineWidth: 1
+                                        )
+                                )
+                        )
+                        .animation(MemoryTheme.Animation.fast, value: isInputFocused)
                         
-                        // 送信ボタン
+                        // Modern send button
                         Button {
                             Task {
                                 await sendMessage()
                             }
                         } label: {
-                            Image(systemName: "arrow.up.circle.fill")
-                                .font(.system(size: 32))
-                                .foregroundStyle(
-                                    canSend
-                                        ? LinearGradient(
-                                            gradient: Gradient(colors: [
-                                                MemoryTheme.Colors.primaryBlueLight,
-                                                MemoryTheme.Colors.primaryBlue
-                                            ]),
-                                            startPoint: .topLeading,
-                                            endPoint: .bottomTrailing
-                                        )
-                                        : LinearGradient(
-                                            gradient: Gradient(colors: [
-                                                MemoryTheme.Colors.inkLightGray,
-                                                MemoryTheme.Colors.inkLightGray
-                                            ]),
-                                            startPoint: .topLeading,
-                                            endPoint: .bottomTrailing
-                                        )
-                                )
+                            ZStack {
+                                Circle()
+                                    .fill(
+                                        canSend
+                                            ? LinearGradient(
+                                                gradient: Gradient(colors: [
+                                                    MemoryTheme.Colors.primaryBlueLight,
+                                                    MemoryTheme.Colors.primaryBlue
+                                                ]),
+                                                startPoint: .topLeading,
+                                                endPoint: .bottomTrailing
+                                            )
+                                            : LinearGradient(
+                                                gradient: Gradient(colors: [
+                                                    MemoryTheme.Colors.inkPale,
+                                                    MemoryTheme.Colors.inkPale
+                                                ]),
+                                                startPoint: .topLeading,
+                                                endPoint: .bottomTrailing
+                                            )
+                                    )
+                                    .frame(width: 36, height: 36)
+                                
+                                Image(systemName: "arrow.up")
+                                    .font(.system(size: 18, weight: .semibold))
+                                    .foregroundColor(canSend ? .white : MemoryTheme.Colors.inkGray)
+                            }
                         }
                         .disabled(!canSend || viewModel.isLoading)
                         .scaleEffect(canSend ? 1.0 : 0.9)
                         .animation(MemoryTheme.Animation.fast, value: canSend)
+                        .hoverEffect(.lift)
                     }
                     .padding(.horizontal, MemorySpacing.md)
-                    .padding(.vertical, MemorySpacing.sm)
+                    .padding(.vertical, MemorySpacing.md)
                 }
-                .background(MemoryTheme.Colors.background)
+                .background(
+                    .ultraThinMaterial
+                )
             }
         }
         .navigationBarHidden(true)
@@ -265,40 +321,79 @@ struct BookChatView: View {
     }
 }
 
-// Empty Chat View
+// Enhanced Empty Chat View
 struct EmptyChatView: View {
+    let isAIEnabled: Bool
     
     var body: some View {
-        VStack(spacing: MemorySpacing.lg) {
-            Image(systemName: "bubble.left.and.bubble.right")
-                .font(.system(size: 50))
-                .foregroundStyle(
-                    LinearGradient(
-                        gradient: Gradient(colors: [
-                            MemoryTheme.Colors.primaryBlueLight,
-                            MemoryTheme.Colors.primaryBlue
-                        ]),
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
+        VStack(spacing: MemorySpacing.xl) {
+            ZStack {
+                Circle()
+                    .fill(
+                        LinearGradient(
+                            gradient: Gradient(colors: [
+                                MemoryTheme.Colors.primaryBlue.opacity(0.1),
+                                MemoryTheme.Colors.primaryBlueLight.opacity(0.05)
+                            ]),
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
                     )
-                )
+                    .frame(width: 100, height: 100)
+                    .memoryShadow(.soft)
+                
+                Image(systemName: "bubble.left.and.bubble.right.fill")
+                    .font(.system(size: 50))
+                    .symbolRenderingMode(.hierarchical)
+                    .foregroundStyle(
+                        LinearGradient(
+                            gradient: Gradient(colors: [
+                                MemoryTheme.Colors.primaryBlueLight,
+                                MemoryTheme.Colors.primaryBlue
+                            ]),
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
+            }
             
-            VStack(spacing: MemorySpacing.xs) {
+            VStack(spacing: MemorySpacing.sm) {
                 Text("読書メモを始めよう")
                     .font(MemoryTheme.Fonts.title3())
+                    .fontWeight(.semibold)
                     .foregroundColor(MemoryTheme.Colors.inkBlack)
                 
                 Text("読みながら感じたことを\n自由に書いてみてください")
-                    .font(MemoryTheme.Fonts.callout())
+                    .font(MemoryTheme.Fonts.body())
                     .foregroundColor(MemoryTheme.Colors.inkGray)
                     .multilineTextAlignment(.center)
+                    .lineSpacing(4)
+                
+                if isAIEnabled {
+                    HStack(spacing: MemorySpacing.xs) {
+                        Image(systemName: "sparkles")
+                            .font(.system(size: 14))
+                            .symbolEffect(.variableColor, options: .repeating)
+                        Text("AIアシスタントがあなたの考えを深めます")
+                            .font(MemoryTheme.Fonts.caption())
+                    }
+                    .foregroundColor(MemoryTheme.Colors.primaryBlue)
+                    .padding(.horizontal, MemorySpacing.md)
+                    .padding(.vertical, MemorySpacing.sm)
+                    .background(
+                        Capsule()
+                            .fill(MemoryTheme.Colors.primaryBlue.opacity(0.1))
+                    )
+                    .transition(.scale.combined(with: .opacity))
+                }
             }
         }
-        .padding(MemorySpacing.xl)
+        .padding(MemorySpacing.xxl)
+        .animation(MemoryTheme.Animation.normal, value: isAIEnabled)
     }
 }
 
-// チャットバブル
+// Enhanced Chat Bubble
 struct ChatBubbleView: View {
     let chat: BookChat
     let onDelete: () -> Void
@@ -306,29 +401,40 @@ struct ChatBubbleView: View {
     @State private var isPressed = false
     
     var body: some View {
-        HStack(alignment: .bottom, spacing: MemorySpacing.xs) {
+        HStack(alignment: .bottom, spacing: MemorySpacing.sm) {
             if !chat.isAI {
-                Spacer(minLength: 60)
+                Spacer(minLength: 50)
             } else {
-                // AI Avatar
+                // Enhanced AI Avatar
                 ZStack {
                     Circle()
                         .fill(
                             LinearGradient(
                                 gradient: Gradient(colors: [
-                                    MemoryTheme.Colors.primaryBlueLight.opacity(0.2),
-                                    MemoryTheme.Colors.primaryBlue.opacity(0.1)
+                                    MemoryTheme.Colors.primaryBlue.opacity(0.15),
+                                    MemoryTheme.Colors.primaryBlueLight.opacity(0.1)
                                 ]),
                                 startPoint: .topLeading,
                                 endPoint: .bottomTrailing
                             )
                         )
-                        .frame(width: 32, height: 32)
+                        .frame(width: 36, height: 36)
                     
                     Image(systemName: "sparkles")
-                        .font(.system(size: 16))
-                        .foregroundColor(MemoryTheme.Colors.primaryBlue)
+                        .font(.system(size: 18, weight: .medium))
+                        .symbolEffect(.variableColor.iterative, options: .repeating, value: chat.isAI)
+                        .foregroundStyle(
+                            LinearGradient(
+                                gradient: Gradient(colors: [
+                                    MemoryTheme.Colors.primaryBlueLight,
+                                    MemoryTheme.Colors.primaryBlue
+                                ]),
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                        )
                 }
+                .memoryShadow(.soft)
             }
             
             VStack(alignment: chat.isAI ? .leading : .trailing, spacing: MemorySpacing.xs) {
@@ -336,38 +442,58 @@ struct ChatBubbleView: View {
                 if chat.imageId != nil {
                     ChatImageView(imageId: chat.imageId)
                         .frame(maxWidth: 240, maxHeight: 240)
+                        .cornerRadius(MemoryRadius.medium)
+                        .memoryShadow(.soft)
                 }
                 
-                // メッセージがある場合は表示
+                // Enhanced message bubble
                 if !chat.message.isEmpty {
                     Text(chat.message)
                         .font(MemoryTheme.Fonts.callout())
                         .foregroundColor(chat.isAI ? MemoryTheme.Colors.inkBlack : .white)
                         .padding(.horizontal, MemorySpacing.md)
-                        .padding(.vertical, MemorySpacing.sm)
+                        .padding(.vertical, MemorySpacing.sm + 2)
                         .background(
-                            chat.isAI
-                                ? AnyView(MemoryTheme.Colors.cardBackground)
-                                : AnyView(
-                                    LinearGradient(
-                                        gradient: Gradient(colors: [
-                                            MemoryTheme.Colors.primaryBlueLight,
-                                            MemoryTheme.Colors.primaryBlue
-                                        ]),
-                                        startPoint: .topLeading,
-                                        endPoint: .bottomTrailing
-                                    )
-                                )
+                            Group {
+                                if chat.isAI {
+                                    RoundedRectangle(cornerRadius: MemoryRadius.medium)
+                                        .fill(MemoryTheme.Colors.cardBackground)
+                                        .overlay(
+                                            RoundedRectangle(cornerRadius: MemoryRadius.medium)
+                                                .strokeBorder(MemoryTheme.Colors.inkPale.opacity(0.5), lineWidth: 1)
+                                        )
+                                } else {
+                                    RoundedRectangle(cornerRadius: MemoryRadius.medium)
+                                        .fill(
+                                            LinearGradient(
+                                                gradient: Gradient(colors: [
+                                                    MemoryTheme.Colors.primaryBlue,
+                                                    MemoryTheme.Colors.primaryBlueDark
+                                                ]),
+                                                startPoint: .topLeading,
+                                                endPoint: .bottomTrailing
+                                            )
+                                        )
+                                        .memoryShadow(.soft)
+                                }
+                            }
                         )
-                        .cornerRadius(MemoryRadius.medium)
                         .cornerRadius(4, corners: chat.isAI ? [.topLeft] : [.topRight])
                 }
                 
-                Text(formatDate(chat.createdAt))
-                    .font(MemoryTheme.Fonts.caption())
-                    .foregroundColor(MemoryTheme.Colors.inkLightGray)
+                HStack(spacing: MemorySpacing.xs) {
+                    Text(formatDate(chat.createdAt))
+                        .font(MemoryTheme.Fonts.caption())
+                        .foregroundColor(MemoryTheme.Colors.inkGray.opacity(0.8))
+                    
+                    if chat.isAI {
+                        Text("AI")
+                            .font(MemoryTheme.Fonts.caption().weight(.medium))
+                            .foregroundColor(MemoryTheme.Colors.primaryBlue.opacity(0.7))
+                    }
+                }
             }
-            .scaleEffect(isPressed ? 0.95 : 1.0)
+            .scaleEffect(isPressed ? 0.96 : 1.0)
             .contextMenu {
                 Button(role: .destructive) {
                     showDeleteConfirmation = true
@@ -392,7 +518,7 @@ struct ChatBubbleView: View {
             }, perform: {})
             
             if chat.isAI {
-                Spacer(minLength: 60)
+                Spacer(minLength: 50)
             }
         }
     }

@@ -35,6 +35,7 @@ struct OnboardingBookSearchView: View {
                 }
             }
         }
+        .keyboardAware()
     }
     
     private var searchBar: some View {
@@ -43,6 +44,7 @@ struct OnboardingBookSearchView: View {
                 .foregroundColor(.secondary)
             
             TextField("タイトル、著者、ISBNで検索", text: $searchText)
+                .memoryTextFieldStyle()
                 .textFieldStyle(RoundedBorderTextFieldStyle())
                 .onSubmit {
                     Task {

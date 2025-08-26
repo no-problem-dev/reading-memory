@@ -122,6 +122,7 @@ struct EditBookView: View {
                 Text(errorMessage ?? "保存中にエラーが発生しました")
             }
         }
+        .keyboardAware()
     }
     
     // MARK: - Components
@@ -321,6 +322,7 @@ struct EditBookView: View {
                     // Add tag field
                     HStack {
                         TextField("新しいタグを追加", text: $newTag)
+                            .memoryTextFieldStyle()
                             .textFieldStyle(RoundedBorderTextFieldStyle())
                             .onSubmit {
                                 addTag()
@@ -361,6 +363,7 @@ struct EditBookView: View {
                             
                             HStack {
                                 TextField("ページ数", text: $currentPage)
+                                    .memoryTextFieldStyle()
                                     .keyboardType(.numberPad)
                                     .textFieldStyle(RoundedBorderTextFieldStyle())
                                     .frame(width: 100)
@@ -541,9 +544,7 @@ struct EditBookView: View {
                     )
                     
                     TextEditor(text: $description)
-                        .font(MemoryTheme.Fonts.body())
-                        .foregroundColor(MemoryTheme.Colors.inkBlack)
-                        .scrollContentBackground(.hidden)
+                        .memoryTextEditorStyle()
                         .padding(MemorySpacing.sm)
                         .background(MemoryTheme.Colors.inkPale.opacity(0.3))
                         .cornerRadius(MemoryRadius.medium)
@@ -562,9 +563,7 @@ struct EditBookView: View {
                     )
                     
                     TextEditor(text: $notes)
-                        .font(MemoryTheme.Fonts.body())
-                        .foregroundColor(MemoryTheme.Colors.inkBlack)
-                        .scrollContentBackground(.hidden)
+                        .memoryTextEditorStyle()
                         .padding(MemorySpacing.sm)
                         .background(MemoryTheme.Colors.inkPale.opacity(0.3))
                         .cornerRadius(MemoryRadius.medium)

@@ -47,9 +47,11 @@ struct ProfileEditView: View {
                 // Basic Information
                 Section("基本情報") {
                     TextField("表示名", text: $viewModel.editDisplayName)
+                        .memoryTextFieldStyle()
                         .textContentType(.name)
                     
                     TextField("自己紹介", text: $viewModel.editBio, axis: .vertical)
+                        .memoryTextFieldStyle()
                         .lineLimit(3...6)
                 }
                 
@@ -57,6 +59,7 @@ struct ProfileEditView: View {
                 Section("読書目標") {
                     HStack {
                         TextField("年間読書目標", text: $viewModel.editReadingGoal)
+                            .memoryTextFieldStyle()
                             .keyboardType(.numberPad)
                         Text("冊")
                     }
@@ -92,6 +95,7 @@ struct ProfileEditView: View {
                     
                     HStack {
                         TextField("ジャンルを追加", text: $newGenre)
+                            .memoryTextFieldStyle()
                             .textFieldStyle(.roundedBorder)
                             .focused($isTextFieldFocused)
                             .onSubmit {
@@ -161,6 +165,7 @@ struct ProfileEditView: View {
                 }
             }
         }
+        .keyboardAware()
     }
     
     private func addGenre() {

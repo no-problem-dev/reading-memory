@@ -36,7 +36,7 @@ struct RecordsHubView: View {
                                         }
                                         .foregroundColor(selectedSegment == index ? MemoryTheme.Colors.primaryBlue : MemoryTheme.Colors.inkGray)
                                         .frame(maxWidth: .infinity)
-                                        .padding(.vertical, MemorySpacing.md)
+                                        .padding(.vertical, MemorySpacing.sm)
                                     }
                                 }
                                 .buttonStyle(PlainButtonStyle())
@@ -110,7 +110,7 @@ struct RecordsHubView: View {
         case 1:
             return "目標"
         case 2:
-            return "アチーブメント"
+            return "達成"
         default:
             return ""
         }

@@ -6,58 +6,24 @@ struct BookSearchView: View {
     @State private var searchText = ""
     @State private var selectedSearchResult: BookSearchResult?
     @State private var showingRegistration = false
-    @State private var searchFocused = false
+    @FocusState private var isSearchFieldFocused: Bool
     
     var body: some View {
         NavigationStack {
-            ZStack {
-                // Background gradient
-                LinearGradient(
-                    gradient: Gradient(colors: [
-                        Color(.systemBackground),
-                        Color(.secondarySystemBackground)
-                    ]),
-                    startPoint: .top,
-                    endPoint: .bottom
-                )
-                .ignoresSafeArea()
-                
-                VStack(spacing: 0) {
-                    // Search bar
-                    searchBar
-                        .padding(.horizontal, MemorySpacing.md)
-                        .padding(.vertical, MemorySpacing.sm)
-                        .background(
-                            Color(.tertiarySystemBackground)
-                                .shadow(color: Color(.label).opacity(0.05), radius: 8, x: 0, y: 2)
-                        )
-                    
-                    // Content
-                    Group {
-                        if viewModel.isLoading {
-                            loadingView
-                        } else if searchText.isEmpty {
-                            emptyStateView
-                        } else if viewModel.searchResults.isEmpty {
-                            noResultsView
-                        } else {
-                            searchResultsList
-                        }
-                    }
-                }
+            VStack(spacing: 0) {
+                // Content
+                contentView
+                    .background(backgroundGradient)
             }
-            .ignoresSafeArea(.keyboard)
             .navigationTitle("本を探す")
             .navigationBarTitleDisplayMode(.large)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
-                    Button {
+                    Button("キャンセル") {
                         dismiss()
-                    } label: {
-                        Text("キャンセル")
-                            .font(.subheadline)
-                            .foregroundColor(Color(.secondaryLabel))
                     }
+                    .font(.subheadline)
+                    .foregroundColor(Color(.secondaryLabel))
                 }
             }
             .sheet(isPresented: $showingRegistration) {
@@ -66,29 +32,73 @@ struct BookSearchView: View {
                 }
             }
         }
+        .keyboardAware()
+        .onTapGesture {
+            isSearchFieldFocused = false
+        }
     }
     
     // MARK: - Components
+    
+    private var backgroundGradient: some View {
+        LinearGradient(
+            gradient: Gradient(colors: [
+                Color(.systemBackground),
+                Color(.secondarySystemBackground)
+            ]),
+            startPoint: .top,
+            endPoint: .bottom
+        )
+        .ignoresSafeArea()
+    }
+    
+    private var contentView: some View {
+        VStack(spacing: 0) {
+            // Search bar container
+            searchBarContainer
+            
+            // Main content
+            if viewModel.isLoading {
+                loadingView
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else if searchText.isEmpty {
+                emptyStateView
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else if viewModel.searchResults.isEmpty {
+                noResultsView
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else {
+                searchResultsList
+            }
+        }
+    }
+    
+    private var searchBarContainer: some View {
+        VStack(spacing: 0) {
+            searchBar
+                .padding(.horizontal, MemorySpacing.md)
+                .padding(.vertical, MemorySpacing.sm)
+        }
+        .background(Color(.tertiarySystemBackground))
+        .shadow(color: Color(.label).opacity(0.05), radius: 8, x: 0, y: 2)
+    }
     
     private var searchBar: some View {
         HStack(spacing: MemorySpacing.sm) {
             // Search icon
             Image(systemName: "magnifyingglass")
                 .font(.system(size: 18))
-                .foregroundColor(searchFocused ? MemoryTheme.Colors.primaryBlue : Color(.secondaryLabel))
-                .animation(.easeInOut(duration: 0.2), value: searchFocused)
+                .foregroundColor(isSearchFieldFocused ? MemoryTheme.Colors.primaryBlue : Color(.secondaryLabel))
+                .animation(.easeInOut(duration: 0.2), value: isSearchFieldFocused)
             
             // Text field
             TextField("タイトル、著者、ISBN", text: $searchText)
-                .font(.body)
-                .foregroundColor(Color(.label))
+                .memoryTextFieldStyle()
+                .focused($isSearchFieldFocused)
                 .onSubmit {
                     Task {
                         await viewModel.searchBooks(query: searchText)
                     }
-                }
-                .onChange(of: searchText) { _, _ in
-                    searchFocused = true
                 }
             
             // Clear button
@@ -97,7 +107,7 @@ struct BookSearchView: View {
                     withAnimation(.easeInOut(duration: 0.2)) {
                         searchText = ""
                         viewModel.searchResults = []
-                        searchFocused = false
+                        isSearchFieldFocused = false
                     }
                 } label: {
                     Image(systemName: "xmark.circle.fill")
@@ -110,6 +120,7 @@ struct BookSearchView: View {
             if !searchText.isEmpty {
                 Button {
                     Task {
+                        isSearchFieldFocused = false
                         await viewModel.searchBooks(query: searchText)
                     }
                 } label: {
@@ -139,10 +150,10 @@ struct BookSearchView: View {
                 .fill(MemoryTheme.Colors.inkPale.opacity(0.3))
                 .overlay(
                     RoundedRectangle(cornerRadius: MemoryRadius.large)
-                        .stroke(searchFocused ? MemoryTheme.Colors.primaryBlue : Color.clear, lineWidth: 2)
+                        .stroke(isSearchFieldFocused ? MemoryTheme.Colors.primaryBlue : Color.clear, lineWidth: 2)
                 )
         )
-        .animation(.easeInOut(duration: 0.2), value: searchFocused)
+        .animation(.easeInOut(duration: 0.2), value: isSearchFieldFocused)
     }
     
     private var loadingView: some View {
@@ -155,133 +166,96 @@ struct BookSearchView: View {
                 .font(.body)
                 .foregroundColor(Color(.secondaryLabel))
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
     
     private var emptyStateView: some View {
-        VStack(spacing: MemorySpacing.xl) {
+        VStack {
             Spacer()
             
-            // Icon with gradient background
-            ZStack {
-                Circle()
-                    .fill(
-                        LinearGradient(
-                            gradient: Gradient(colors: [
-                                MemoryTheme.Colors.primaryBlueLight.opacity(0.2),
-                                MemoryTheme.Colors.primaryBlue.opacity(0.1)
-                            ]),
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
+            VStack(spacing: MemorySpacing.xl) {
+                // Icon with gradient background
+                ZStack {
+                    Circle()
+                        .fill(
+                            LinearGradient(
+                                gradient: Gradient(colors: [
+                                    MemoryTheme.Colors.primaryBlueLight.opacity(0.2),
+                                    MemoryTheme.Colors.primaryBlue.opacity(0.1)
+                                ]),
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
                         )
-                    )
-                    .frame(width: 100, height: 100)
+                        .frame(width: 100, height: 100)
+                    
+                    Image(systemName: "books.vertical")
+                        .font(.system(size: 50))
+                        .foregroundStyle(
+                            LinearGradient(
+                                gradient: Gradient(colors: [
+                                    MemoryTheme.Colors.primaryBlue,
+                                    MemoryTheme.Colors.primaryBlueDark
+                                ]),
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                        )
+                }
                 
-                Image(systemName: "books.vertical")
-                    .font(.system(size: 50))
-                    .foregroundStyle(
-                        LinearGradient(
-                            gradient: Gradient(colors: [
-                                MemoryTheme.Colors.primaryBlue,
-                                MemoryTheme.Colors.primaryBlueDark
-                            ]),
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        )
-                    )
+                VStack(spacing: MemorySpacing.sm) {
+                    Text("本を検索してみましょう")
+                        .font(.title3)
+                        .foregroundColor(Color(.label))
+                    
+                    Text("タイトル、著者名、ISBNで\n検索できます")
+                        .font(.subheadline)
+                        .foregroundColor(Color(.secondaryLabel))
+                        .multilineTextAlignment(.center)
+                }
             }
             
-            VStack(spacing: MemorySpacing.sm) {
-                Text("本を検索してみましょう")
-                    .font(.title3)
-                    .foregroundColor(Color(.label))
-                
-                Text("タイトル、著者名、ISBNで\n検索できます")
-                    .font(.subheadline)
-                    .foregroundColor(Color(.secondaryLabel))
-                    .multilineTextAlignment(.center)
-            }
-            
-            Spacer()
             Spacer()
         }
         .padding(MemorySpacing.xl)
     }
     
     private var noResultsView: some View {
-        VStack(spacing: MemorySpacing.xl) {
+        VStack {
             Spacer()
             
-            // Icon with gradient background
-            ZStack {
-                Circle()
-                    .fill(
-                        LinearGradient(
-                            gradient: Gradient(colors: [
-                                MemoryTheme.Colors.warmCoralLight.opacity(0.2),
-                                MemoryTheme.Colors.warmCoral.opacity(0.1)
-                            ]),
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
+            VStack(spacing: MemorySpacing.xl) {
+                // Icon with gradient background
+                ZStack {
+                    Circle()
+                        .fill(
+                            LinearGradient(
+                                gradient: Gradient(colors: [
+                                    MemoryTheme.Colors.warmCoralLight.opacity(0.2),
+                                    MemoryTheme.Colors.warmCoral.opacity(0.1)
+                                ]),
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
                         )
-                    )
-                    .frame(width: 100, height: 100)
+                        .frame(width: 100, height: 100)
+                    
+                    Image(systemName: "magnifyingglass")
+                        .font(.system(size: 50))
+                        .foregroundColor(MemoryTheme.Colors.warmCoral)
+                }
                 
-                Image(systemName: "magnifyingglass")
-                    .font(.system(size: 50))
-                    .foregroundColor(MemoryTheme.Colors.warmCoral)
-            }
-            
-            VStack(spacing: MemorySpacing.sm) {
-                Text("検索結果が見つかりませんでした")
-                    .font(.title3)
-                    .foregroundColor(Color(.label))
-                
-                Text("別のキーワードで\n検索してみてください")
-                    .font(.subheadline)
-                    .foregroundColor(Color(.secondaryLabel))
-                    .multilineTextAlignment(.center)
-            }
-            
-            // Manual registration option
-            VStack(spacing: MemorySpacing.md) {
-                Text("見つからない場合は")
-                    .font(.caption)
-                    .foregroundColor(Color(.secondaryLabel))
-                
-                Button {
-                    guard let userId = AuthService.shared.currentUser?.uid else { return }
-                    selectedSearchResult = BookSearchResult(
-                        title: "",
-                        author: "",
-                        dataSource: .manual
-                    )
-                    showingRegistration = true
-                } label: {
-                    HStack(spacing: MemorySpacing.xs) {
-                        Image(systemName: "plus.circle.fill")
-                        Text("手動で登録")
-                    }
-                    .font(.headline)
-                    .foregroundColor(.white)
-                    .padding(.horizontal, MemorySpacing.lg)
-                    .padding(.vertical, MemorySpacing.md)
-                    .background(
-                        LinearGradient(
-                            gradient: Gradient(colors: [
-                                MemoryTheme.Colors.warmCoral,
-                                MemoryTheme.Colors.warmCoralDark
-                            ]),
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        )
-                    )
-                    .cornerRadius(MemoryRadius.full)
-                    .memoryShadow(.medium)
+                VStack(spacing: MemorySpacing.sm) {
+                    Text("検索結果が見つかりませんでした")
+                        .font(.title3)
+                        .foregroundColor(Color(.label))
+                    
+                    Text("別のキーワードで\n検索してみてください")
+                        .font(.subheadline)
+                        .foregroundColor(Color(.secondaryLabel))
+                        .multilineTextAlignment(.center)
                 }
             }
             
-            Spacer()
             Spacer()
         }
         .padding(MemorySpacing.xl)
@@ -369,8 +343,12 @@ struct BookSearchResultRow: View {
                 
                 Spacer()
                 
-                // Add button
-                if !isRegistered {
+                // Add/Check button
+                if isRegistered {
+                    Image(systemName: "checkmark.circle.fill")
+                        .font(.system(size: 28))
+                        .foregroundColor(MemoryTheme.Colors.success)
+                } else {
                     Image(systemName: "plus.circle.fill")
                         .font(.system(size: 28))
                         .foregroundStyle(
@@ -391,7 +369,6 @@ struct BookSearchResultRow: View {
             .memoryShadow(.soft)
         }
         .buttonStyle(PlainButtonStyle())
-        .disabled(isRegistered)
         .task {
             let viewModel = BookSearchViewModel()
             isRegistered = await viewModel.isBookAlreadyRegistered(searchResult)
