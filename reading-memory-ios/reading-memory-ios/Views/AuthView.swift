@@ -144,6 +144,30 @@ struct AuthView: View {
                     .frame(height: 56)
                     .cornerRadius(MemoryRadius.large)
                     .padding(.horizontal, MemorySpacing.lg)
+                    
+                    // Legal Links
+                    VStack(spacing: MemorySpacing.xs) {
+                        Text("サインインすることで、以下に同意したものとみなされます")
+                            .font(.caption)
+                            .foregroundColor(Color(.tertiaryLabel))
+                            .multilineTextAlignment(.center)
+                        
+                        HStack(spacing: MemorySpacing.xs) {
+                            Link("利用規約", destination: URL(string: "https://taniguchi-kyoichi.com/products/dokusho-memory/terms")!)
+                                .font(.caption)
+                                .foregroundColor(MemoryTheme.Colors.primaryBlue)
+                            
+                            Text("・")
+                                .font(.caption)
+                                .foregroundColor(Color(.tertiaryLabel))
+                            
+                            Link("プライバシーポリシー", destination: URL(string: "https://taniguchi-kyoichi.com/products/dokusho-memory/privacy")!)
+                                .font(.caption)
+                                .foregroundColor(MemoryTheme.Colors.primaryBlue)
+                        }
+                    }
+                    .padding(.top, MemorySpacing.md)
+                    .padding(.horizontal, MemorySpacing.lg)
                 }
                 .padding(.bottom, 50)
             }

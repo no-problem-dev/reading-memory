@@ -150,8 +150,8 @@ struct PaywallView: View {
             Text("・いつでもApp Storeから解約できます")
             
             HStack(spacing: 16) {
-                Link("利用規約", destination: URL(string: "https://readingmemory.com/terms")!)
-                Link("プライバシーポリシー", destination: URL(string: "https://readingmemory.com/privacy")!)
+                Link("利用規約", destination: URL(string: "https://taniguchi-kyoichi.com/products/dokusho-memory/terms")!)
+                Link("プライバシーポリシー", destination: URL(string: "https://taniguchi-kyoichi.com/products/dokusho-memory/privacy")!)
             }
             .font(.footnote)
             .foregroundColor(.blue)
