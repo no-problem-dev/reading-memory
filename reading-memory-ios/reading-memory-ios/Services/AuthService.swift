@@ -109,43 +109,24 @@ final class AuthService {
     }
     
     func deleteAccount() async throws {
-        guard let firebaseUser = Auth.auth().currentUser else {
+        guard Auth.auth().currentUser != nil else {
             throw DeleteAccountError.authenticationRequired
         }
         
-        // 最近のログインを確認するため、ユーザー情報をリロード
-        do {
-            try await firebaseUser.reload()
-        } catch {
-            print("DEBUG: Failed to reload user, but continuing: \(error)")
-        }
-        
-        // APIサーバー側でデータを削除
+        // APIサーバー側でFirebase Auth削除とデータ削除を実行
+        // サーバー側でAuth削除が成功すると、authStateListenerが自動的にcurrentUserをnilに設定
         let apiClient = APIClient.shared
         let result = try await apiClient.deleteAccount()
         
-        // エラーがある場合は、部分的な削除の可能性を警告
-        if !result.errors.isEmpty {
-            print("WARNING: Account deletion had errors: \(result.errors)")
+        // API側でAuth削除が成功した場合
+        if result.deletedCollections.contains("auth") {
+            print("INFO: Account deletion successful, auth state will be updated automatically")
+            // バックグラウンドでデータ削除が続行される
+            _currentUser = nil
+        } else {
+            // Auth削除が失敗した場合はエラーとして扱う
+            print("ERROR: Failed to delete auth account: \(result.errors)")
+            throw DeleteAccountError.serverError
         }
-        
-        // クライアント側でFirebase Authアカウントを削除
-        // API側でも削除を試みているが、権限の問題で失敗する可能性があるため、
-        // クライアント側でも削除を実行
-        do {
-            try await firebaseUser.delete()
-            print("INFO: Successfully deleted Firebase Auth account from client")
-        } catch {
-            // API側で既に削除されている可能性もあるため、エラーはログに記録するが続行
-            print("ERROR: Failed to delete Firebase Auth account from client: \(error)")
-            // ユーザーが既に削除されている場合は成功として扱う
-            if (error as NSError).code == 17011 { // FIRAuthErrorCodeUserNotFound
-                print("INFO: User already deleted, treating as success")
-            } else {
-                throw error
-            }
-        }
-        
-        _currentUser = nil
     }
 }

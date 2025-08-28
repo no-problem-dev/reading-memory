@@ -186,93 +186,124 @@ export const deleteAccount = async (
     
     logger.info(`Starting account deletion for user: ${uid}`);
     
-    // 1. Delete Firestore data
-    const userCollections = [
-      'userBooks',
-      'goals',
-      'activities',
-      'achievements',
-      'streaks',
-    ];
-    
-    for (const collectionName of userCollections) {
-      try {
-        await deleteCollection(db, `users/${uid}/${collectionName}`, 500);
-        result.deletedCollections.push(collectionName);
-      } catch (error) {
-        logger.error(`Error deleting ${collectionName}:`, error);
-        result.errors.push(`Failed to delete ${collectionName}`);
-      }
-    }
-    
-    // Delete user document itself
+    // 1. First delete Firebase Auth account (requires recent authentication)
     try {
-      await db.doc(`users/${uid}`).delete();
-      result.deletedCollections.push('users');
-    } catch (error) {
-      logger.error('Error deleting user document:', error);
-      result.errors.push('Failed to delete user document');
-    }
-    
-    // Delete profile document
-    try {
-      await db.doc(`userProfiles/${uid}`).delete();
-      result.deletedCollections.push('userProfiles');
-    } catch (error) {
-      logger.error('Error deleting userProfile:', error);
-      result.errors.push('Failed to delete userProfile');
-    }
-    
-    // 2. Delete user's images from images collection
-    try {
-      const imagesQuery = db.collection('images').where('uploadedBy', '==', uid);
-      const imagesSnapshot = await imagesQuery.get();
+      await admin.auth().deleteUser(uid);
+      logger.info(`Successfully deleted Firebase Auth account for user ${uid}`);
+      result.deletedCollections.push('auth');
       
-      if (!imagesSnapshot.empty) {
-        const batch = db.batch();
-        const bucket = storage.bucket();
-        
-        for (const doc of imagesSnapshot.docs) {
-          const imageData = doc.data();
-          // Delete from Storage
-          try {
-            await bucket.file(imageData.storagePath).delete();
-          } catch (error) {
-            logger.warn(`Failed to delete image file: ${imageData.storagePath}`, error);
-          }
-          // Delete from Firestore
-          batch.delete(doc.ref);
-        }
-        
-        await batch.commit();
-        logger.info(`Deleted ${imagesSnapshot.size} images for user ${uid}`);
-        result.deletedCollections.push('images');
-      }
+      // Send early success response for better UX
+      // The remaining cleanup will continue in the background
+      res.json(result);
+      
+      // Continue with cleanup in the background
+      cleanupUserData(uid, db, storage).catch(error => {
+        logger.error(`Background cleanup failed for user ${uid}:`, error);
+      });
+      
+      return;
     } catch (error) {
-      logger.error('Error deleting user images:', error);
-      result.errors.push('Failed to delete user images');
+      logger.error('Error deleting Firebase Auth account:', error);
+      result.errors.push('Failed to delete Firebase Auth account');
+      // If Auth deletion fails, we should not continue with data deletion
+      res.status(500).json(result);
+      return;
     }
-    
-    // 3. Note: Firebase Auth account deletion is now handled client-side
-    // The server-side deletion often fails due to permission restrictions
-    // when using Admin SDK to delete another user's account.
-    // Client-side deletion is more reliable as the user is deleting their own account.
-    logger.info(`Skipping server-side auth deletion for user ${uid}, will be handled client-side`);
-    
-    result.success = result.errors.length === 0;
-    
-    // Log the final result
-    logger.info(`Account deletion completed for user ${uid}`, {
-      success: result.success,
-      deletedCollections: result.deletedCollections,
-      errors: result.errors,
-    });
-    
-    res.json(result);
   } catch (error) {
     next(error);
   }
 };
+
+// Background cleanup function
+async function cleanupUserData(
+  uid: string,
+  db: admin.firestore.Firestore,
+  storage: admin.storage.Storage
+): Promise<void> {
+  const result: DeleteResult = {
+    success: false,
+    deletedCollections: [],
+    errors: [],
+  };
+  
+  logger.info(`Starting background cleanup for user: ${uid}`);
+  
+  // Delete Firestore data
+  const userCollections = [
+    'userBooks',
+    'goals',
+    'activities',
+    'achievements',
+    'streaks',
+  ];
+  
+  for (const collectionName of userCollections) {
+    try {
+      await deleteCollection(db, `users/${uid}/${collectionName}`, 500);
+      result.deletedCollections.push(collectionName);
+    } catch (error) {
+      logger.error(`Error deleting ${collectionName}:`, error);
+      result.errors.push(`Failed to delete ${collectionName}`);
+    }
+  }
+  
+  // Delete user document itself
+  try {
+    await db.doc(`users/${uid}`).delete();
+    result.deletedCollections.push('users');
+  } catch (error) {
+    logger.error('Error deleting user document:', error);
+    result.errors.push('Failed to delete user document');
+  }
+  
+  // Delete profile document
+  try {
+    await db.doc(`userProfiles/${uid}`).delete();
+    result.deletedCollections.push('userProfiles');
+  } catch (error) {
+    logger.error('Error deleting userProfile:', error);
+    result.errors.push('Failed to delete userProfile');
+  }
+  
+  // Delete user's images from images collection
+  try {
+    const imagesQuery = db.collection('images').where('uploadedBy', '==', uid);
+    const imagesSnapshot = await imagesQuery.get();
+    
+    if (!imagesSnapshot.empty) {
+      const batch = db.batch();
+      const bucket = storage.bucket();
+      
+      for (const doc of imagesSnapshot.docs) {
+        const imageData = doc.data();
+        // Delete from Storage
+        try {
+          await bucket.file(imageData.storagePath).delete();
+        } catch (error) {
+          logger.warn(`Failed to delete image file: ${imageData.storagePath}`, error);
+        }
+        // Delete from Firestore
+        batch.delete(doc.ref);
+      }
+      
+      await batch.commit();
+      logger.info(`Deleted ${imagesSnapshot.size} images for user ${uid}`);
+      result.deletedCollections.push('images');
+    }
+  } catch (error) {
+    logger.error('Error deleting user images:', error);
+    result.errors.push('Failed to delete user images');
+  }
+  
+  result.success = result.errors.length === 0;
+  
+  // Log the final result
+  logger.info(`Background cleanup completed for user ${uid}`, {
+    success: result.success,
+    deletedCollections: result.deletedCollections,
+    errors: result.errors,
+  });
+}
 
 // Helper function to recursively delete collections
 async function deleteCollection(

@@ -84,7 +84,7 @@ struct SettingsView: View {
                     showingDeleteAccountConfirmation = true
                 }
             } message: {
-                Text("本当にアカウントを削除しますか？\n\nこの操作は取り消すことができません。すべての読書記録、メモ、設定が完全に削除されます。")
+                Text("本当に退会しますか？\n\nこの操作は取り消すことができません。すべての読書記録、メモ、設定が完全に削除されます。")
             }
             .alert("最終確認", isPresented: $showingDeleteAccountConfirmation) {
                 Button("キャンセル", role: .cancel) {}
@@ -94,7 +94,7 @@ struct SettingsView: View {
                     }
                 }
             } message: {
-                Text("本当にアカウントを削除してよろしいですか？\n\nこの操作を実行すると、二度と元に戻すことはできません。")
+                Text("本当に退会してよろしいですか？\n\nこの操作を実行すると、二度と元に戻すことはできません。")
             }
             .alert("エラー", isPresented: .constant(deleteError != nil)) {
                 Button("OK") {
@@ -120,8 +120,9 @@ struct SettingsView: View {
         
         do {
             try await AuthService.shared.deleteAccount()
-            // 削除成功 - サインアウト処理
-            await authViewModel.signOut()
+            // 削除成功 - AuthViewModelがauthStateListenerで自動的にcurrentUserをnilに設定し、
+            // ContentViewがログイン画面に遷移する
+            isDeleting = false
         } catch {
             // Firebase Authのエラーコードを確認
             let nsError = error as NSError
@@ -139,8 +140,7 @@ struct SettingsView: View {
             } else {
                 deleteError = "退会処理中にエラーが発生しました: \(error.localizedDescription)"
             }
+            isDeleting = false
         }
-        
-        isDeleting = false
     }
 }
