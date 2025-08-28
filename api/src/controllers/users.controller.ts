@@ -230,11 +230,11 @@ async function cleanupUserData(
   
   // Delete Firestore data
   const userCollections = [
-    'userBooks',
-    'goals',
-    'activities',
-    'achievements',
-    'streaks',
+    'books',      // ユーザーの本
+    'goals',      // 読書目標
+    'activities', // 読書活動記録
+    'achievements', // アチーブメント
+    'streaks',    // 読書ストリーク
   ];
   
   for (const collectionName of userCollections) {
@@ -337,8 +337,8 @@ async function deleteQueryBatch(
     const deletePromises: Promise<void>[] = [];
     
     snapshot.docs.forEach((doc) => {
-      // Handle subcollections for userBooks
-      if (doc.ref.path.includes('/userBooks/')) {
+      // Handle subcollections for books
+      if (doc.ref.path.includes('/books/')) {
         deletePromises.push(
           deleteCollection(db, `${doc.ref.path}/chats`, 500).catch((error) => {
             logger.error(`Error deleting chats for ${doc.ref.path}:`, error);

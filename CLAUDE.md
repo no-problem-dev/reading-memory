@@ -154,8 +154,8 @@ chore: ビルド設定など
 - `users/{userId}` - ユーザー基本情報
 - `userProfiles/{userId}` - プロフィール情報
 - `books/{bookId}` - 本のマスターデータ（共有本のみ）
-- `users/{userId}/userBooks/{userBookId}` - ユーザーごとの本
-- `users/{userId}/userBooks/{userBookId}/chats/{chatId}` - チャットメモ
+- `users/{userId}/books/{bookId}` - ユーザーごとの本
+- `users/{userId}/books/{bookId}/chats/{chatId}` - チャットメモ
 - `users/{userId}/goals/{goalId}` - 読書目標
 - `users/{userId}/activities/{activityId}` - 読書活動記録
 - `users/{userId}/achievements/{achievementId}` - 獲得アチーブメント

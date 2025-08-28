@@ -12,7 +12,6 @@ enum Constants {
         static let users = "users"
         static let userProfiles = "userProfiles"
         static let books = "books"
-        static let userBooks = "userBooks"
         static let chats = "chats"
     }
     

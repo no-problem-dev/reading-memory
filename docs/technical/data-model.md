@@ -51,11 +51,11 @@ interface Book {
 }
 ```
 
-### users/{userId}/userBooks/{userBookId}
+### users/{userId}/books/{bookId}
 ユーザーごとの本の記録
 
 ```typescript
-interface UserBook {
+interface Book {
   id: string
   userId: string
   bookId?: string              // 公開本の場合のみ（booksコレクションへの参照）
@@ -110,13 +110,13 @@ interface PurchaseLink {
 }
 ```
 
-### users/{userId}/userBooks/{userBookId}/chats/{chatId}
+### users/{userId}/books/{bookId}/chats/{chatId}
 本に対するチャットメモ（サブコレクション）
 
 ```typescript
 interface BookChat {
   id: string
-  userBookId: string
+  bookId: string
   userId: string
   message: string
   imageUrl?: string           // 添付画像
@@ -151,7 +151,7 @@ interface ReadingGoal {
 interface ReadingActivity {
   id: string
   userId: string
-  userBookId: string
+  bookId: string
   activityType: 'started' | 'completed' | 'progress' | 'memo'
   date: Date
   details?: {
@@ -200,7 +200,7 @@ interface ReadingStreak {
 ```
 /users/{userId}/
   ├── profile.jpg              // プロフィール画像
-  └── books/{userBookId}/
+  └── books/{bookId}/
       ├── cover.jpg            // カスタム表紙
       └── photos/{photoId}.jpg // チャット添付写真
 ```
@@ -209,7 +209,7 @@ interface ReadingStreak {
 
 ### 1. 正規化 vs 非正規化
 - **正規化**: 本のマスターデータ（books）
-- **非正規化**: ユーザー固有のデータ（userBooks）
+- **非正規化**: ユーザー固有のデータ（books）
 - パフォーマンスを考慮した適切なバランス
 
 ### 2. セキュリティ
@@ -227,7 +227,7 @@ interface ReadingStreak {
 ### 複合インデックス（必須）
 
 ```
-Collection: users/{userId}/userBooks
+Collection: users/{userId}/books
 - status ASC, createdAt DESC
 - status ASC, rating DESC
 - status ASC, updatedAt DESC
@@ -235,7 +235,7 @@ Collection: users/{userId}/userBooks
 - status ASC, plannedReadingDate ASC
 - isPrivate ASC, createdAt DESC
 
-Collection: users/{userId}/userBooks/{userBookId}/chats
+Collection: users/{userId}/books/{bookId}/chats
 - createdAt DESC
 
 Collection: users/{userId}/goals
@@ -244,7 +244,7 @@ Collection: users/{userId}/goals
 
 Collection: users/{userId}/activities
 - date DESC
-- userBookId ASC, date DESC
+- bookId ASC, date DESC
 
 Collection: users/{userId}/achievements
 - isCompleted DESC, unlockedAt DESC
@@ -267,10 +267,10 @@ Collection: users/{userId}/achievements
    - 存在しない場合は新規作成（visibility: public）
 3. 手動入力本の場合:
    - manualBookDataに情報を格納
-4. users/{userId}/userBooksにユーザー固有のデータを作成
+4. users/{userId}/booksにユーザー固有のデータを作成
 
 ### チャットメモの追加
-1. users/{userId}/userBooks/{userBookId}の存在確認
+1. users/{userId}/books/{bookId}の存在確認
 2. chatsサブコレクションに追加
 3. 親ドキュメントのupdatedAtを更新
 4. AI応答の場合はCloud Functions経由で処理
@@ -282,7 +282,7 @@ Collection: users/{userId}/achievements
 4. アチーブメントの条件確認と解除
 
 ### 統計情報の取得
-1. userBooksコレクションをstatus別に集計
+1. booksコレクションをstatus別に集計
 2. activitiesから読書履歴を取得
 3. goalsから目標進捗を取得
 4. キャッシュの活用で高速化
