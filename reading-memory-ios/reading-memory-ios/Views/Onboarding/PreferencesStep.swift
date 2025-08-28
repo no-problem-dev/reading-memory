@@ -1,14 +1,8 @@
 import SwiftUI
 
 struct PreferencesStep: View {
-    @Binding var selectedGenres: Set<String>
+    @Binding var selectedGenres: Set<BookGenre>
     @Binding var monthlyGoal: Int
-    
-    let genres = [
-        "小説", "ビジネス", "自己啓発", "技術書",
-        "歴史", "科学", "哲学", "アート",
-        "料理", "旅行", "エッセイ", "漫画"
-    ]
     
     var body: some View {
         VStack(spacing: 32) {
@@ -36,7 +30,7 @@ struct PreferencesStep: View {
                     .font(.headline)
                 
                 LazyVGrid(columns: [GridItem(.adaptive(minimum: 100))], spacing: 12) {
-                    ForEach(genres, id: \.self) { genre in
+                    ForEach(BookGenre.allCases, id: \.self) { genre in
                         GenreChip(
                             genre: genre,
                             isSelected: selectedGenres.contains(genre),
@@ -89,13 +83,13 @@ struct PreferencesStep: View {
 
 // MARK: - Genre Chip
 struct GenreChip: View {
-    let genre: String
+    let genre: BookGenre
     let isSelected: Bool
     let action: () -> Void
     
     var body: some View {
         Button(action: action) {
-            Text(genre)
+            Text(genre.displayName)
                 .font(.callout)
                 .padding(.horizontal, 16)
                 .padding(.vertical, 8)

@@ -2,7 +2,7 @@ import SwiftUI
 
 struct BookShelfHomeView: View {
     @State private var viewModel = BookShelfViewModel()
-    @Binding var showAddBook: Bool
+    @State private var showAddBook = false
     @State private var navigationPath = NavigationPath()
     @State private var chatBook: Book?
     
@@ -16,7 +16,9 @@ struct BookShelfHomeView: View {
     
     var body: some View {
         NavigationStack(path: $navigationPath) {
-            ScrollView {
+            ZStack {
+                // Main content
+                ScrollView {
                 VStack(spacing: MemorySpacing.xl) {
                     // ヘッダーメッセージ
                     if !currentlyReadingBooks.isEmpty || !completedBooks.isEmpty {
@@ -75,9 +77,30 @@ struct BookShelfHomeView: View {
             .fullScreenCover(item: $chatBook) { book in
                 BookChatView(book: book)
                                 }
+                
+                // Floating Action Button
+                if navigationPath.isEmpty {
+                    VStack {
+                        Spacer()
+                        HStack {
+                            Spacer()
+                            FloatingActionButton(action: {
+                                showAddBook = true
+                            }, icon: "plus")
+                            .padding(.bottom, MemorySpacing.md)
+                            .padding(.trailing, MemorySpacing.lg)
+                        }
+                    }
+                    .transition(.scale.combined(with: .opacity))
+                    .animation(.spring(), value: navigationPath.isEmpty)
+                }
+            }
         }
         .task {
             await viewModel.loadBooks()
+        }
+        .sheet(isPresented: $showAddBook) {
+            BookAdditionFlowView()
         }
     }
 }
@@ -395,6 +418,6 @@ struct MemoryBookCover: View {
 }
 
 #Preview {
-    BookShelfHomeView(showAddBook: .constant(false))
+    BookShelfHomeView()
         .environment(AuthViewModel())
         }

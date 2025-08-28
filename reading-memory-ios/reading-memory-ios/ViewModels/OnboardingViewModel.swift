@@ -6,7 +6,7 @@ import PhotosUI
 class OnboardingViewModel {
     var displayName = ""
     var profileImage: UIImage?
-    var selectedGenres: Set<String> = []
+    var selectedGenres: Set<BookGenre> = []
     var monthlyGoal = 3
     var firstBook: Book?
     var firstBookSearchResult: BookSearchResult?
@@ -43,7 +43,7 @@ class OnboardingViewModel {
             let apiClient = APIClient.shared
             _ = try await apiClient.completeOnboarding(
                 displayName: displayName.trimmingCharacters(in: .whitespacesAndNewlines),
-                favoriteGenres: Array(selectedGenres),
+                favoriteGenres: Array(selectedGenres).map { $0.rawValue },
                 monthlyGoal: monthlyGoal,
                 avatarImageId: avatarImageId,
                 bio: nil

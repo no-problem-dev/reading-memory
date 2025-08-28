@@ -298,6 +298,56 @@ struct BookDetailView: View {
             }
             .buttonStyle(PlainButtonStyle())
             .disabled(isGeneratingSummary)
+            
+            // Purchase Button (if purchase URL exists)
+            if let purchaseUrl = book.purchaseUrl, !purchaseUrl.isEmpty {
+                Button {
+                    if let url = URL(string: purchaseUrl) {
+                        UIApplication.shared.open(url)
+                    }
+                } label: {
+                    HStack {
+                        ZStack {
+                            Circle()
+                                .fill(
+                                    LinearGradient(
+                                        gradient: Gradient(colors: [
+                                            MemoryTheme.Colors.goldenMemoryLight.opacity(0.2),
+                                            MemoryTheme.Colors.goldenMemory.opacity(0.1)
+                                        ]),
+                                        startPoint: .topLeading,
+                                        endPoint: .bottomTrailing
+                                    )
+                                )
+                                .frame(width: 48, height: 48)
+                            
+                            Image(systemName: "cart.fill")
+                                .font(.system(size: 22))
+                                .foregroundColor(MemoryTheme.Colors.goldenMemory)
+                        }
+                        
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("オンラインで購入")
+                                .font(.headline)
+                                .foregroundColor(Color(.label))
+                            Text("書籍の詳細を見る")
+                                .font(.caption)
+                                .foregroundColor(Color(.secondaryLabel))
+                        }
+                        
+                        Spacer()
+                        
+                        Image(systemName: "arrow.up.forward")
+                            .font(.system(size: 14))
+                            .foregroundColor(Color(.tertiaryLabel))
+                    }
+                    .padding(MemorySpacing.md)
+                    .background(Color(.tertiarySystemBackground))
+                    .cornerRadius(MemoryRadius.large)
+                    .memoryShadow(.soft)
+                }
+                .buttonStyle(PlainButtonStyle())
+            }
         }
     }
     

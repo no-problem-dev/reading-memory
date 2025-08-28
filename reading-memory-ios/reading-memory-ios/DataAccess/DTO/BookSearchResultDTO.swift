@@ -12,6 +12,7 @@ struct BookSearchResultDTO: Codable {
     let description: String?
     let coverImageUrl: String?  // 外部APIからの画像URL
     let dataSource: String
+    let affiliateUrl: String?
 }
 
 /// 書籍検索APIレスポンス

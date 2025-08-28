@@ -90,7 +90,7 @@ struct ProfileView: View {
                     }
                 }
             }
-            .sheet(isPresented: $showingEditView) {
+            .navigationDestination(isPresented: $showingEditView) {
                 ProfileEditView(viewModel: viewModel)
             }
             .sheet(isPresented: $showingGoalSetting) {
@@ -226,7 +226,7 @@ struct ProfileView: View {
         }
     }
     
-    private func favoriteGenresSection(genres: [String]) -> some View {
+    private func favoriteGenresSection(genres: [BookGenre]) -> some View {
         MemoryCard(padding: MemorySpacing.md) {
             VStack(alignment: .leading, spacing: MemorySpacing.sm) {
                 HStack(spacing: MemorySpacing.xs) {
@@ -240,7 +240,7 @@ struct ProfileView: View {
                 
                 FlowLayout(spacing: MemorySpacing.xs) {
                     ForEach(genres, id: \.self) { genre in
-                        Text(genre)
+                        Text(genre.displayName)
                             .font(.caption)
                             .padding(.horizontal, MemorySpacing.md)
                             .padding(.vertical, MemorySpacing.xs)

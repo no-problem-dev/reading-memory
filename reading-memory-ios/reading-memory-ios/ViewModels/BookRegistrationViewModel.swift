@@ -67,7 +67,7 @@ final class BookRegistrationViewModel: BaseViewModel {
         return result
     }
     
-    func registerBookFromSearchResult(_ searchResult: BookSearchResult) async -> Bool {
+    func registerBookFromSearchResult(_ searchResult: BookSearchResult, status: ReadingStatus = .wantToRead) async -> Bool {
         // まず制限チェック
         await checkBookQuota()
         
@@ -90,7 +90,7 @@ final class BookRegistrationViewModel: BaseViewModel {
             print("Data Source: \(searchResult.dataSource.rawValue)")
             
             // 検索結果から本を作成（画像のアップロードを含む）
-            let createdBook = try await self.bookRepository.createBookFromSearchResult(searchResult)
+            let createdBook = try await self.bookRepository.createBookFromSearchResult(searchResult, status: status)
             
             // アクティビティを記録（読みたいリストに追加）
             if createdBook.status == .wantToRead {

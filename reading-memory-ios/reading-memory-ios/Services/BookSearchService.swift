@@ -40,6 +40,8 @@ final class BookSearchService {
             dataSource = .googleBooks
         case "openBD":
             dataSource = .openBD
+        case "rakutenBooks":
+            dataSource = .rakutenBooks
         default:
             dataSource = .manual
         }
@@ -61,7 +63,8 @@ final class BookSearchService {
             pageCount: dto.pageCount,
             description: dto.description,
             coverImageUrl: dto.coverImageUrl,
-            dataSource: dataSource
+            dataSource: dataSource,
+            affiliateUrl: dto.affiliateUrl
         )
     }
     
@@ -72,6 +75,8 @@ final class BookSearchService {
             dataSource = .googleBooks
         case "openBD":
             dataSource = .openBD
+        case "rakutenBooks":
+            dataSource = .rakutenBooks
         default:
             dataSource = .manual
         }

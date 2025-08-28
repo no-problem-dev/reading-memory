@@ -33,9 +33,6 @@ struct BookSearchView: View {
             }
         }
         .keyboardAware()
-        .onTapGesture {
-            isSearchFieldFocused = false
-        }
     }
     
     // MARK: - Components

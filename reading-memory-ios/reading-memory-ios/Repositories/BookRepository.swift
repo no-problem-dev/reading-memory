@@ -42,8 +42,42 @@ final class BookRepository {
     }
     
     /// 検索結果から本を作成（画像のアップロードを含む）
-    func createBookFromSearchResult(_ searchResult: BookSearchResult) async throws -> Book {
+    func createBookFromSearchResult(_ searchResult: BookSearchResult, status: ReadingStatus = .wantToRead) async throws -> Book {
         var book = searchResult.toBook()
+        
+        // ステータスを設定
+        book = Book(
+            id: book.id,
+            isbn: book.isbn,
+            title: book.title,
+            author: book.author,
+            publisher: book.publisher,
+            publishedDate: book.publishedDate,
+            pageCount: book.pageCount,
+            description: book.description,
+            coverImageId: book.coverImageId,
+            dataSource: book.dataSource,
+            purchaseUrl: book.purchaseUrl,
+            status: status,
+            rating: book.rating,
+            readingProgress: book.readingProgress,
+            currentPage: book.currentPage,
+            addedDate: book.addedDate,
+            startDate: book.startDate,
+            completedDate: book.completedDate,
+            lastReadDate: book.lastReadDate,
+            priority: book.priority,
+            plannedReadingDate: book.plannedReadingDate,
+            reminderEnabled: book.reminderEnabled,
+            purchaseLinks: book.purchaseLinks,
+            memo: book.memo,
+            tags: book.tags,
+            genre: book.genre,
+            aiSummary: book.aiSummary,
+            summaryGeneratedAt: book.summaryGeneratedAt,
+            createdAt: book.createdAt,
+            updatedAt: book.updatedAt
+        )
         
         // coverImageUrlがある場合は画像をアップロード
         if let coverImageUrl = searchResult.coverImageUrl,
@@ -68,6 +102,7 @@ final class BookRepository {
                         description: book.description,
                         coverImageId: imageId,  // アップロードしたimageIdを設定
                         dataSource: book.dataSource,
+                        purchaseUrl: book.purchaseUrl,
                         status: book.status,
                         rating: book.rating,
                         readingProgress: book.readingProgress,
@@ -82,6 +117,7 @@ final class BookRepository {
                         purchaseLinks: book.purchaseLinks,
                         memo: book.memo,
                         tags: book.tags,
+                        genre: book.genre,
                         aiSummary: book.aiSummary,
                         summaryGeneratedAt: book.summaryGeneratedAt,
                         createdAt: book.createdAt,

@@ -531,7 +531,7 @@ final class APIClient {
         
         let createRequest = CreateUserProfileRequest(
             displayName: profile.displayName,
-            favoriteGenres: profile.favoriteGenres,
+            favoriteGenres: profile.favoriteGenres.map { $0.rawValue },
             readingGoal: profile.readingGoal,
             monthlyGoal: profile.monthlyGoal,
             bio: profile.bio,
@@ -562,7 +562,7 @@ final class APIClient {
             displayName: profile.displayName,
             avatarImageId: profile.avatarImageId,
             bio: profile.bio,
-            favoriteGenres: profile.favoriteGenres,
+            favoriteGenres: profile.favoriteGenres.map { $0.rawValue },
             readingGoal: profile.readingGoal,
             monthlyGoal: profile.monthlyGoal,
             isPublic: profile.isPublic
@@ -819,6 +819,7 @@ struct BookCreateRequest: Encodable {
     let description: String?
     let coverImageId: String?
     let dataSource: String
+    let purchaseUrl: String?
     let status: String
     let rating: Double?
     let readingProgress: Double?
@@ -831,6 +832,7 @@ struct BookCreateRequest: Encodable {
     let purchaseLinks: [PurchaseLink]?
     let memo: String?
     let tags: [String]
+    let genre: String?
     
     init(from book: Book) {
         self.isbn = book.isbn
@@ -842,6 +844,7 @@ struct BookCreateRequest: Encodable {
         self.description = book.description
         self.coverImageId = book.coverImageId
         self.dataSource = book.dataSource.rawValue
+        self.purchaseUrl = book.purchaseUrl
         self.status = book.status.rawValue
         self.rating = book.rating
         self.readingProgress = book.readingProgress
@@ -854,6 +857,7 @@ struct BookCreateRequest: Encodable {
         self.purchaseLinks = book.purchaseLinks
         self.memo = book.memo
         self.tags = book.tags
+        self.genre = book.genre?.rawValue
     }
 }
 

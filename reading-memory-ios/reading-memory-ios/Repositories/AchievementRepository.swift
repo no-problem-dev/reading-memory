@@ -78,8 +78,15 @@ class AchievementRepository: AchievementRepositoryProtocol {
     private func calculateProgress(for badge: Badge, books: [Book], streaks: [ReadingStreak]) -> Double {
         switch badge.requirement.type {
         case .booksRead:
-            let completedBooks = books.filter { $0.status == .completed }.count
-            return min(Double(completedBooks) / Double(badge.requirement.value), 1.0)
+            // Special handling for genre diversity badges
+            if badge.id.contains("genre_explorer") || badge.id.contains("genre_master") || badge.id.contains("genre_omnivore") {
+                let completedBooksWithGenre = books.filter { $0.status == .completed && $0.genre != nil }
+                let uniqueGenres = Set(completedBooksWithGenre.compactMap { $0.genre })
+                return min(Double(uniqueGenres.count) / Double(badge.requirement.value), 1.0)
+            } else {
+                let completedBooks = books.filter { $0.status == .completed }.count
+                return min(Double(completedBooks) / Double(badge.requirement.value), 1.0)
+            }
             
         case .streakDays:
             let maxStreak = streaks.map { $0.longestStreak }.max() ?? 0
@@ -88,7 +95,7 @@ class AchievementRepository: AchievementRepositoryProtocol {
         case .genreBooks:
             guard let targetGenre = badge.requirement.genre else { return 0 }
             let genreBooks = books.filter { book in
-                book.status == .completed && book.tags.contains(targetGenre)
+                book.status == .completed && book.genre?.rawValue == targetGenre
             }.count
             return min(Double(genreBooks) / Double(badge.requirement.value), 1.0)
             

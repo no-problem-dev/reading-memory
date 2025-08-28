@@ -40,7 +40,7 @@ gcloud run deploy ${SERVICE_NAME} \
   --region ${REGION} \
   --allow-unauthenticated \
   --set-env-vars NODE_ENV=production,GCP_PROJECT_ID=${PROJECT_ID} \
-  --set-secrets "GOOGLE_BOOKS_API_KEY=GOOGLE_BOOKS_API_KEY:latest,CLAUDE_API_KEY=CLAUDE_API_KEY:latest" \
+  --set-secrets "GOOGLE_BOOKS_API_KEY=GOOGLE_BOOKS_API_KEY:latest,CLAUDE_API_KEY=CLAUDE_API_KEY:latest,RAKUTEN_APPLICATION_ID=rakuten-application-id:latest,RAKUTEN_AFFILIATE_ID=rakuten-affiliate-id:latest" \
   --memory 1Gi \
   --cpu 1 \
   --timeout 60 \

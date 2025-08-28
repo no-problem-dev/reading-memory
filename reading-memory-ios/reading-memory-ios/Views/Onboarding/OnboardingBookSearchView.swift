@@ -35,7 +35,7 @@ struct OnboardingBookSearchView: View {
                 }
             }
         }
-        .keyboardAware()
+        .scrollDismissesKeyboard(.interactively)
     }
     
     private var searchBar: some View {

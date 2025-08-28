@@ -71,7 +71,7 @@ class GoalRepository: GoalRepositoryProtocol {
         case .bookCount:
             return completedBooks.count
         case .genreCount:
-            let genres = Set(completedBooks.compactMap { $0.tags }.flatMap { $0 })
+            let genres = Set(completedBooks.compactMap { $0.genre })
             return genres.count
         default:
             return 0

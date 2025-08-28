@@ -76,7 +76,7 @@ router.post(
     body('title').notEmpty().withMessage('Title is required'),
     body('author').notEmpty().withMessage('Author is required'),
     body('status').isIn(['want_to_read', 'reading', 'completed', 'dnf']).withMessage('Invalid status'),
-    body('dataSource').isIn(['manual', 'google_books', 'openbd', 'rakuten_books']).withMessage('Invalid data source'),
+    body('dataSource').isIn(['manual', 'googleBooks', 'openBD', 'rakutenBooks']).withMessage('Invalid data source'),
   ],
   validateRequest,
   booksController.createBook

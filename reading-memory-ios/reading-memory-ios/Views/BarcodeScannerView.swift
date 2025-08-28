@@ -141,8 +141,7 @@ struct BarcodeScannerView: View {
                 }
             }
         }
-        .keyboardAware()
-        .onChange(of: scannedISBN) { oldValue, newValue in
+                .onChange(of: scannedISBN) { oldValue, newValue in
             if let isbn = newValue {
                 searchBook(isbn: isbn)
             }
@@ -487,8 +486,7 @@ struct ManualISBNEntryView: View {
                 }
             }
         }
-        .keyboardAware()
-    }
+            }
 }
 
 #Preview {

@@ -18,7 +18,7 @@ final class ProfileViewModel: BaseViewModel {
     // Edit form properties
     var editDisplayName = ""
     var editBio = ""
-    var editFavoriteGenres: [String] = []
+    var editFavoriteGenres: [BookGenre] = []
     var editReadingGoal: String = ""
     var editIsPublic = false
     
@@ -32,7 +32,7 @@ final class ProfileViewModel: BaseViewModel {
         var wantToReadBooks: Int = 0
         var totalMemos: Int = 0
         var averageRating: Double = 0.0
-        var favoriteGenres: [String] = []
+        var favoriteGenres: [BookGenre] = []
         var readingStreak: Int = 0
         var booksThisMonth: Int = 0
         var booksThisYear: Int = 0
@@ -254,14 +254,13 @@ final class ProfileViewModel: BaseViewModel {
         }
     }
     
-    func addGenre(_ genre: String) {
-        let trimmedGenre = genre.trimmingCharacters(in: .whitespacesAndNewlines)
-        if !trimmedGenre.isEmpty && !editFavoriteGenres.contains(trimmedGenre) {
-            editFavoriteGenres.append(trimmedGenre)
+    func addGenre(_ genre: BookGenre) {
+        if !editFavoriteGenres.contains(genre) {
+            editFavoriteGenres.append(genre)
         }
     }
     
-    func removeGenre(_ genre: String) {
+    func removeGenre(_ genre: BookGenre) {
         editFavoriteGenres.removeAll { $0 == genre }
     }
 }

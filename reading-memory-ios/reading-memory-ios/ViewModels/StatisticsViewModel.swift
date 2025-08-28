@@ -304,10 +304,9 @@ final class StatisticsViewModel: BaseViewModel {
     private func generateGenreDistribution(books: [Book]) {
         var genreCounts: [String: Int] = [:]
         
-        for _ in books {
-            // Book doesn't have genres property, so we'll use a placeholder
-            let genre = "未分類" // TODO: Add genre support to Book model
-            genreCounts[genre, default: 0] += 1
+        for book in books {
+            let genreName = book.genre?.displayName ?? "未分類"
+            genreCounts[genreName, default: 0] += 1
         }
         
         genreDistribution = genreCounts.map { GenreData(name: $0.key, count: $0.value) }

@@ -12,6 +12,7 @@ struct BookDTO: Codable {
     let description: String?
     let coverImageId: String?
     let dataSource: String
+    let purchaseUrl: String?
     
     // 読書ステータス
     let status: String
@@ -34,6 +35,7 @@ struct BookDTO: Codable {
     // メモとタグ
     let memo: String?
     let tags: [String]
+    let genre: String?
     
     // AI要約
     let aiSummary: String?
@@ -54,6 +56,7 @@ struct BookDTO: Codable {
         self.description = book.description
         self.coverImageId = book.coverImageId
         self.dataSource = book.dataSource.rawValue
+        self.purchaseUrl = book.purchaseUrl
         self.status = book.status.rawValue
         self.rating = book.rating
         self.readingProgress = book.readingProgress
@@ -68,6 +71,7 @@ struct BookDTO: Codable {
         self.purchaseLinks = book.purchaseLinks?.map { PurchaseLinkDTO(from: $0) }
         self.memo = book.memo
         self.tags = book.tags
+        self.genre = book.genre?.rawValue
         self.aiSummary = book.aiSummary
         self.summaryGeneratedAt = book.summaryGeneratedAt
         self.createdAt = book.createdAt
@@ -88,6 +92,7 @@ struct BookDTO: Codable {
             description: description,
             coverImageId: coverImageId,
             dataSource: BookDataSource(rawValue: dataSource) ?? .manual,
+            purchaseUrl: purchaseUrl,
             status: bookStatus,
             rating: rating,
             readingProgress: readingProgress,
@@ -102,6 +107,7 @@ struct BookDTO: Codable {
             purchaseLinks: purchaseLinks?.map { $0.toDomain() },
             memo: memo,
             tags: tags,
+            genre: genre != nil ? BookGenre(rawValue: genre!) : nil,
             aiSummary: aiSummary,
             summaryGeneratedAt: summaryGeneratedAt,
             createdAt: createdAt,

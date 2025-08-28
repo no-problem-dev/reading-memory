@@ -166,25 +166,8 @@ struct BookRegistrationView: View {
                     .padding(.top, MemorySpacing.lg)
                 }
                 
-                // Loading overlay
-                if viewModel.isLoading {
-                    Color.black.opacity(0.5)
-                        .ignoresSafeArea()
-                    
-                    VStack(spacing: MemorySpacing.md) {
-                        ProgressView()
-                            .progressViewStyle(CircularProgressViewStyle(tint: .white))
-                            .scaleEffect(1.5)
-                        
-                        Text("保存中...")
-                            .font(MemoryTheme.Fonts.body())
-                            .foregroundColor(.white)
-                    }
-                    .padding(MemorySpacing.xl)
-                    .background(MemoryTheme.Colors.inkBlack.opacity(0.8))
-                    .cornerRadius(MemoryRadius.large)
-                }
             }
+            .memoryLoading(isLoading: viewModel.isLoading, message: "保存中...")
             .navigationTitle("本を登録")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -217,7 +200,7 @@ struct BookRegistrationView: View {
                 Text(viewModel.errorMessage ?? "不明なエラーが発生しました")
             }
         }
-        .keyboardAware()
+        .scrollDismissesKeyboard(.interactively)
         .onAppear {
             if let book = prefilledBook {
                 title = book.title
@@ -478,9 +461,10 @@ struct BookRegistrationView: View {
                     pageCount: Int(pageCount) ?? searchResult.pageCount,
                     description: description.isEmpty ? searchResult.description : description.trimmingCharacters(in: .whitespacesAndNewlines),
                     coverImageUrl: searchResult.coverImageUrl,
-                    dataSource: searchResult.dataSource
+                    dataSource: searchResult.dataSource,
+                    affiliateUrl: searchResult.affiliateUrl
                 )
-                success = await viewModel.registerBookFromSearchResult(modifiedSearchResult)
+                success = await viewModel.registerBookFromSearchResult(modifiedSearchResult, status: selectedStatus)
             } else {
                 success = await viewModel.registerBook(book)
             }

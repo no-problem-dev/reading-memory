@@ -86,24 +86,7 @@ struct ProfileHeaderView: View {
                     .frame(width: 80, height: 80)
                     .memoryShadow(.soft)
                 
-                if let photoURL = authViewModel.currentUser?.photoURL,
-                   let url = URL(string: photoURL) {
-                    CachedAsyncImage(url: url) { image in
-                        image
-                            .resizable()
-                            .aspectRatio(contentMode: .fill)
-                            .frame(width: 72, height: 72)
-                            .clipShape(Circle())
-                    } placeholder: {
-                        Image(systemName: "person.circle.fill")
-                            .font(.system(size: 60))
-                            .foregroundColor(MemoryTheme.Colors.primaryBlue)
-                    }
-                } else {
-                    Image(systemName: "person.circle.fill")
-                        .font(.system(size: 60))
-                        .foregroundColor(MemoryTheme.Colors.primaryBlue)
-                }
+                ProfileImageView(imageId: profile?.avatarImageId, size: 72)
             }
             
             // 名前

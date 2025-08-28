@@ -3,7 +3,6 @@ import SwiftUI
 struct MainTabView: View {
     @Environment(AuthViewModel.self) private var authViewModel
     @State private var selectedTab = 0
-    @State private var showAddBook = false
     
     var body: some View {
         ZStack {
@@ -14,7 +13,7 @@ struct MainTabView: View {
             // Main Content
             TabView(selection: $selectedTab) {
                 // 本棚（ホーム）
-                BookShelfHomeView(showAddBook: $showAddBook)
+                BookShelfHomeView()
                     .tabItem {
                         Label {
                             Text("メモリー")
@@ -46,56 +45,26 @@ struct MainTabView: View {
                     }
                     .tag(2)
                 
-                // プロフィール
+                // 設定
                 ProfileTabView()
                     .tabItem {
                         Label {
-                            Text("プロフィール")
+                            Text("設定")
                         } icon: {
                             // カスタムアイコンまたはシステムアイコン
                             if selectedTab == 3 {
-                                Image(systemName: "person.crop.circle.fill")
+                                Image(systemName: "gearshape.fill")
                             } else {
-                                Image(systemName: "person.crop.circle")
+                                Image(systemName: "gearshape")
                             }
                         }
                     }
                     .tag(3)
             }
             .tint(MemoryTheme.Colors.primaryBlue)
-            
-            // FAB for adding books (only show on home tab)
-            if selectedTab == 0 {
-                VStack {
-                    Spacer()
-                    HStack {
-                        Spacer()
-                        MemoryFloatingActionButton {
-                            showAddBook = true
-                        }
-                        .padding(.bottom, 100) // Increased to avoid tab bar
-                        .padding(.trailing, MemorySpacing.lg)
-                    }
-                }
-                .transition(.scale.combined(with: .opacity))
-                .animation(.spring(), value: selectedTab)
-            }
-        }
-        .sheet(isPresented: $showAddBook) {
-            BookAdditionFlowView()
         }
     }
 }
-
-// Memory Floating Action Button wrapper
-struct MemoryFloatingActionButton: View {
-    let action: () -> Void
-    
-    var body: some View {
-        FloatingActionButton(action: action, icon: "plus")
-    }
-}
-
 
 #Preview {
     MainTabView()

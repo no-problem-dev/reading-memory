@@ -22,7 +22,7 @@ struct UserProfileDTO: Codable {
             displayName: displayName,
             avatarImageId: avatarImageId,
             bio: bio,
-            favoriteGenres: favoriteGenres,
+            favoriteGenres: favoriteGenres.compactMap { BookGenre(rawValue: $0) },
             readingGoal: readingGoal,
             monthlyGoal: monthlyGoal,
             streakStartDate: streakStartDate,
@@ -40,7 +40,7 @@ struct UserProfileDTO: Codable {
         self.displayName = profile.displayName
         self.avatarImageId = profile.avatarImageId
         self.bio = profile.bio
-        self.favoriteGenres = profile.favoriteGenres
+        self.favoriteGenres = profile.favoriteGenres.map { $0.rawValue }
         self.readingGoal = profile.readingGoal
         self.monthlyGoal = profile.monthlyGoal
         self.streakStartDate = profile.streakStartDate

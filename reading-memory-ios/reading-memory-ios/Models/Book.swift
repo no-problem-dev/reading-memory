@@ -14,6 +14,7 @@ struct Book: Identifiable, Equatable, Hashable, Codable {
     let description: String?
     let coverImageId: String?
     let dataSource: BookDataSource
+    let purchaseUrl: String?
     
     // 読書ステータス
     let status: ReadingStatus
@@ -36,6 +37,7 @@ struct Book: Identifiable, Equatable, Hashable, Codable {
     // メモとタグ
     let memo: String?
     let tags: [String]
+    let genre: BookGenre?
     
     // AI要約
     let aiSummary: String?
@@ -56,6 +58,7 @@ struct Book: Identifiable, Equatable, Hashable, Codable {
         description: String? = nil,
         coverImageId: String? = nil,
         dataSource: BookDataSource,
+        purchaseUrl: String? = nil,
         status: ReadingStatus,
         rating: Double? = nil,
         readingProgress: Double? = nil,
@@ -70,6 +73,7 @@ struct Book: Identifiable, Equatable, Hashable, Codable {
         purchaseLinks: [PurchaseLink]? = nil,
         memo: String? = nil,
         tags: [String] = [],
+        genre: BookGenre? = nil,
         aiSummary: String? = nil,
         summaryGeneratedAt: Date? = nil,
         createdAt: Date,
@@ -85,6 +89,7 @@ struct Book: Identifiable, Equatable, Hashable, Codable {
         self.description = description
         self.coverImageId = coverImageId
         self.dataSource = dataSource
+        self.purchaseUrl = purchaseUrl
         self.status = status
         self.rating = rating
         self.readingProgress = readingProgress
@@ -99,6 +104,7 @@ struct Book: Identifiable, Equatable, Hashable, Codable {
         self.purchaseLinks = purchaseLinks
         self.memo = memo
         self.tags = tags
+        self.genre = genre
         self.aiSummary = aiSummary
         self.summaryGeneratedAt = summaryGeneratedAt
         self.createdAt = createdAt
@@ -116,6 +122,7 @@ struct Book: Identifiable, Equatable, Hashable, Codable {
         description: String? = nil,
         coverImageId: String? = nil,
         dataSource: BookDataSource,
+        purchaseUrl: String? = nil,
         status: ReadingStatus = .wantToRead
     ) -> Book {
         let now = Date()
@@ -130,6 +137,7 @@ struct Book: Identifiable, Equatable, Hashable, Codable {
             description: description,
             coverImageId: coverImageId,
             dataSource: dataSource,
+            purchaseUrl: purchaseUrl,
             status: status,
             addedDate: now,
             createdAt: now,
@@ -151,6 +159,7 @@ struct Book: Identifiable, Equatable, Hashable, Codable {
         purchaseLinks: [PurchaseLink]? = nil,
         memo: String? = nil,
         tags: [String]? = nil,
+        genre: BookGenre? = nil,
         aiSummary: String? = nil,
         summaryGeneratedAt: Date? = nil
     ) -> Book {
@@ -165,6 +174,7 @@ struct Book: Identifiable, Equatable, Hashable, Codable {
             description: self.description,
             coverImageId: self.coverImageId,
             dataSource: self.dataSource,
+            purchaseUrl: self.purchaseUrl,
             status: status ?? self.status,
             rating: rating ?? self.rating,
             readingProgress: readingProgress ?? self.readingProgress,
@@ -179,6 +189,7 @@ struct Book: Identifiable, Equatable, Hashable, Codable {
             purchaseLinks: purchaseLinks ?? self.purchaseLinks,
             memo: memo ?? self.memo,
             tags: tags ?? self.tags,
+            genre: genre ?? self.genre,
             aiSummary: aiSummary ?? self.aiSummary,
             summaryGeneratedAt: summaryGeneratedAt ?? self.summaryGeneratedAt,
             createdAt: self.createdAt,
@@ -206,6 +217,7 @@ struct Book: Identifiable, Equatable, Hashable, Codable {
         purchaseLinks: UpdateValue<[PurchaseLink]> = .keep,
         memo: UpdateValue<String> = .keep,
         tags: UpdateValue<[String]> = .keep,
+        genre: UpdateValue<BookGenre> = .keep,
         aiSummary: UpdateValue<String> = .keep,
         summaryGeneratedAt: UpdateValue<Date> = .keep
     ) -> Book {
@@ -220,6 +232,7 @@ struct Book: Identifiable, Equatable, Hashable, Codable {
             description: self.description,
             coverImageId: self.coverImageId,
             dataSource: self.dataSource,
+            purchaseUrl: self.purchaseUrl,
             status: status ?? self.status,
             rating: {
                 switch rating {
@@ -292,6 +305,13 @@ struct Book: Identifiable, Equatable, Hashable, Codable {
                 case .set(let value): return value
                 case .clear: return []
                 case .keep: return self.tags
+                }
+            }(),
+            genre: {
+                switch genre {
+                case .set(let value): return value
+                case .clear: return nil
+                case .keep: return self.genre
                 }
             }(),
             aiSummary: {

@@ -15,6 +15,7 @@ struct BookSearchResult: Identifiable, Equatable {
     let description: String?
     let coverImageUrl: String?  // 外部APIからの画像URL
     let dataSource: BookDataSource
+    let affiliateUrl: String?
     
     init(
         isbn: String? = nil,
@@ -25,7 +26,8 @@ struct BookSearchResult: Identifiable, Equatable {
         pageCount: Int? = nil,
         description: String? = nil,
         coverImageUrl: String? = nil,
-        dataSource: BookDataSource
+        dataSource: BookDataSource,
+        affiliateUrl: String? = nil
     ) {
         self.id = UUID().uuidString
         self.isbn = isbn
@@ -37,6 +39,7 @@ struct BookSearchResult: Identifiable, Equatable {
         self.description = description
         self.coverImageUrl = coverImageUrl
         self.dataSource = dataSource
+        self.affiliateUrl = affiliateUrl
     }
     
     /// BookSearchResultをBookに変換（保存用）
@@ -51,7 +54,8 @@ struct BookSearchResult: Identifiable, Equatable {
             pageCount: pageCount,
             description: description,
             coverImageId: nil,  // 保存時に画像をアップロードして設定
-            dataSource: dataSource
+            dataSource: dataSource,
+            purchaseUrl: affiliateUrl
         )
     }
 }

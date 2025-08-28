@@ -1,7 +1,7 @@
 import { Response, NextFunction } from 'express';
 import { AuthRequest } from '../middleware/auth';
 import { ApiError } from '../middleware/errorHandler';
-import { getFirestore, getStorage, getAuth } from '../config/firebase';
+import { getFirestore, getStorage } from '../config/firebase';
 import { logger } from '../utils/logger';
 import * as admin from 'firebase-admin';
 import { serializeTimestamps } from '../utils/timestamp';
@@ -177,7 +177,6 @@ export const deleteAccount = async (
     const uid = req.user.uid;
     const db = getFirestore();
     const storage = getStorage();
-    const auth = getAuth();
     
     const result: DeleteResult = {
       success: false,

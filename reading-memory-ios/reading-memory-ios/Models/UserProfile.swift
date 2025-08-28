@@ -5,7 +5,7 @@ struct UserProfile: Identifiable, Codable {
     let displayName: String
     let avatarImageId: String?
     let bio: String?
-    let favoriteGenres: [String]
+    let favoriteGenres: [BookGenre]
     let readingGoal: Int? // Books per year
     let monthlyGoal: Int? // Books per month
     let streakStartDate: Date?
@@ -37,7 +37,7 @@ struct UserProfile: Identifiable, Codable {
          displayName: String,
          avatarImageId: String? = nil,
          bio: String? = nil,
-         favoriteGenres: [String] = [],
+         favoriteGenres: [BookGenre] = [],
          readingGoal: Int? = nil,
          monthlyGoal: Int? = nil,
          streakStartDate: Date? = nil,

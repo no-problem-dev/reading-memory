@@ -162,8 +162,7 @@ struct WantToReadDetailView: View {
                 }
             }
         }
-        .keyboardAware()
-        .sheet(isPresented: $showingAddLink) {
+                .sheet(isPresented: $showingAddLink) {
             AddPurchaseLinkView { link in
                 purchaseLinks.append(link)
             }
@@ -256,8 +255,7 @@ struct AddPurchaseLinkView: View {
                 }
             }
         }
-        .keyboardAware()
-    }
+            }
 }
 
 // 購入リンク編集ビュー
@@ -318,6 +316,5 @@ struct EditPurchaseLinkView: View {
                 }
             }
         }
-        .keyboardAware()
-    }
+            }
 }

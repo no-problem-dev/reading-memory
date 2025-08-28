@@ -122,7 +122,7 @@ struct EditBookView: View {
                 Text(errorMessage ?? "保存中にエラーが発生しました")
             }
         }
-        .keyboardAware()
+        .scrollDismissesKeyboard(.interactively)
     }
     
     // MARK: - Components

@@ -87,7 +87,7 @@ struct ProfileTabView: View {
                 }
             }
             .listStyle(InsetGroupedListStyle())
-            .navigationTitle("プロフィール")
+            .navigationTitle("設定")
             .navigationBarTitleDisplayMode(.large)
             .background(MemoryTheme.Colors.background)
             .sheet(isPresented: $showLogout) {

@@ -7,6 +7,8 @@ export const config = {
   isProduction: process.env.NODE_ENV === 'production',
   googleBooksApiKey: process.env.GOOGLE_BOOKS_API_KEY || '',
   claudeApiKey: process.env.CLAUDE_API_KEY || '',
+  rakutenApplicationId: process.env.RAKUTEN_APPLICATION_ID || '',
+  rakutenAffiliateId: process.env.RAKUTEN_AFFILIATE_ID || '',
   gcpProjectId: process.env.GCP_PROJECT_ID || 'reading-memory',
   firebase: {
     projectId: process.env.FIREBASE_PROJECT_ID || process.env.GCP_PROJECT_ID || 'reading-memory',
