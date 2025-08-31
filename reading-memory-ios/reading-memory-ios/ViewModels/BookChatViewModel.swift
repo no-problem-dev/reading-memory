@@ -20,13 +20,23 @@ final class BookChatViewModel: BaseViewModel {
     }
     
     func loadChats() async {
-        await withLoadingNoThrow { [weak self] in
-            guard let self = self else { return }
-            
-            chats = try await repository.getChats(
-                bookId: self.book.id
+        do {
+            isLoading = true
+            let loadedChats = try await repository.getChats(
+                bookId: book.id
             )
+            chats = loadedChats
+            print("Loaded \(loadedChats.count) chats for book: \(book.title)")
+        } catch {
+            // キャンセルエラーは無視（プルダウンリフレッシュ時に発生）
+            if (error as NSError).code == NSURLErrorCancelled {
+                print("Chat loading was cancelled")
+            } else {
+                print("Error loading chats: \(error)")
+                handleError(error)
+            }
         }
+        isLoading = false
     }
     
     func sendMessage(_ message: String, image: UIImage? = nil) async {

@@ -117,7 +117,8 @@
       "Bash(gcloud run revisions describe:*)",
       "Bash(gcloud run revisions:*)",
       "Bash(npx eslint:*)",
-      "Bash(awk:*)"
+      "Bash(awk:*)",
+      "mcp__serena__insert_before_symbol"
     ],
     "deny": []
   }

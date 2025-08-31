@@ -75,7 +75,7 @@ struct BookShelfHomeView: View {
                 BookDetailView(bookId: book.id)
                                 }
             .fullScreenCover(item: $chatBook) { book in
-                BookChatView(book: book)
+                BookMemoryTabView(bookId: book.id)
                                 }
                 
                 // Floating Action Button
