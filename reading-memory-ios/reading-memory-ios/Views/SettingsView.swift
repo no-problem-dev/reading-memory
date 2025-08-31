@@ -109,7 +109,12 @@ struct SettingsView: View {
             message: "本当に退会しますか？\n\nこの操作は取り消すことができません。すべての読書記録、メモ、設定が完全に削除されます。",
             primaryButton: .cancel(Text("キャンセル")),
             secondaryButton: .destructive(Text("続ける")) {
-                showFinalDeleteConfirmation()
+                // アラートを一旦閉じてから次のアラートを表示
+                Task { @MainActor in
+                    alertItem = nil
+                    try? await Task.sleep(nanoseconds: 100_000_000) // 0.1秒待機
+                    showFinalDeleteConfirmation()
+                }
             }
         )
     }

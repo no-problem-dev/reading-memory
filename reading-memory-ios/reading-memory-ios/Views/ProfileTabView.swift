@@ -210,6 +210,7 @@ struct DeleteAccountConfirmationView: View {
     @State private var isDeleting = false
     @State private var showError = false
     @State private var errorMessage = ""
+    @State private var showFinalConfirmation = false
     
     var body: some View {
         NavigationStack {
@@ -291,7 +292,7 @@ struct DeleteAccountConfirmationView: View {
                     // ボタン
                     VStack(spacing: MemorySpacing.md) {
                         Button {
-                            deleteAccount()
+                            showFinalConfirmation = true
                         } label: {
                             if isDeleting {
                                 HStack(spacing: MemorySpacing.sm) {
@@ -364,6 +365,14 @@ struct DeleteAccountConfirmationView: View {
             } message: {
                 Text(errorMessage)
             }
+            .alert("最終確認", isPresented: $showFinalConfirmation) {
+                Button("キャンセル", role: .cancel) {}
+                Button("削除する", role: .destructive) {
+                    deleteAccount()
+                }
+            } message: {
+                Text("本当に退会してよろしいですか？\n\nこの操作を実行すると、二度と元に戻すことはできません。")
+            }
         }
     }
     
@@ -373,9 +382,15 @@ struct DeleteAccountConfirmationView: View {
         Task {
             do {
                 try await AuthService.shared.deleteAccount()
-                // 削除が成功した場合、UIは自動的にログイン画面に戻る
+                // 削除が成功した場合、AuthStateListenerが反応するのを待つ
+                try await Task.sleep(nanoseconds: 500_000_000) // 0.5秒待機
+                
+                // AuthStateListenerが反応しない場合の保険として、手動でnilに設定
                 await MainActor.run {
-                    dismiss()
+                    if authViewModel.currentUser != nil {
+                        authViewModel.currentUser = nil
+                    }
+                    // dismissは不要 - ContentViewが自動的にログイン画面を表示する
                 }
             } catch {
                 await MainActor.run {
