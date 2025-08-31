@@ -48,12 +48,13 @@ struct ContentView: View {
             if oldUser != newUser {
                 // ユーザーがnilになった場合（ログアウト・削除）、即座にデータをリセット
                 if newUser == nil {
+                    // 即座にデータをリセットして、ログイン画面を表示
                     isDataReady = false
                     needsOnboarding = false
                     isCheckingProfile = false
-                    // 少し待ってからisDataReadyをtrueに設定して画面を更新
-                    Task {
-                        try? await Task.sleep(nanoseconds: 100_000_000) // 0.1秒
+                    // 非同期でisDataReadyをtrueに設定
+                    Task { @MainActor in
+                        try? await Task.sleep(nanoseconds: 50_000_000) // 0.05秒
                         isDataReady = true
                     }
                 } else {

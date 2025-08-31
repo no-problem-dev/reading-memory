@@ -18,7 +18,7 @@ struct ProfileTabView: View {
                             .frame(maxWidth: .infinity)
                             .padding(.horizontal, -20) // List のパディングを相殺
                         
-                        ProfileHeaderView()
+                        ProfileHeaderSection()
                             .padding(.vertical, MemorySpacing.lg)
                     }
                     .textCase(nil) // ヘッダーテキストの大文字変換を無効化
@@ -33,7 +33,9 @@ struct ProfileTabView: View {
                     }
                     
                     NavigationLink {
-                        PublicBookshelfSettingsView()
+                        Text("公開本棚の設定")
+                            .navigationTitle("公開本棚")
+                            .navigationBarTitleDisplayMode(.inline)
                     } label: {
                         Label("公開本棚の設定", systemImage: "books.vertical.circle")
                     }
@@ -57,7 +59,9 @@ struct ProfileTabView: View {
                 
                 Section {
                     NavigationLink {
-                        AboutView()
+                        Text("読書メモリーについて")
+                            .navigationTitle("このアプリについて")
+                            .navigationBarTitleDisplayMode(.inline)
                     } label: {
                         Label("このアプリについて", systemImage: "info.circle.fill")
                     }
@@ -211,11 +215,13 @@ struct DeleteAccountConfirmationView: View {
     @State private var showError = false
     @State private var errorMessage = ""
     @State private var showFinalConfirmation = false
+    @State private var showingSheet = true
     
     var body: some View {
-        NavigationStack {
-            ScrollView {
-                VStack(spacing: MemorySpacing.xl) {
+        if showingSheet {
+            NavigationStack {
+                ScrollView {
+                    VStack(spacing: MemorySpacing.xl) {
                     // 警告アイコン
                     ZStack {
                         Circle()
@@ -374,6 +380,18 @@ struct DeleteAccountConfirmationView: View {
                 Text("本当に退会してよろしいですか？\n\nこの操作を実行すると、二度と元に戻すことはできません。")
             }
         }
+    } else {
+        Color.clear
+            .onAppear {
+                // シートが閉じられた後、少し待ってからログイン画面に遷移
+                Task {
+                    try? await Task.sleep(nanoseconds: 500_000_000) // 0.5秒
+                    if authViewModel.currentUser == nil {
+                        // すでにログイン画面に遷移しているはず
+                    }
+                }
+            }
+    }
     }
     
     private func deleteAccount() {
@@ -382,15 +400,17 @@ struct DeleteAccountConfirmationView: View {
         Task {
             do {
                 try await AuthService.shared.deleteAccount()
-                // 削除が成功した場合、AuthStateListenerが反応するのを待つ
-                try await Task.sleep(nanoseconds: 500_000_000) // 0.5秒待機
-                
-                // AuthStateListenerが反応しない場合の保険として、手動でnilに設定
+                // 削除が成功した場合、シートを閉じる
                 await MainActor.run {
-                    if authViewModel.currentUser != nil {
+                    showingSheet = false
+                    dismiss()
+                    
+                    // 強制的にサインアウト処理を実行
+                    Task {
+                        try? await Task.sleep(nanoseconds: 100_000_000) // 0.1秒待機
+                        try? AuthService.shared.signOut()
                         authViewModel.currentUser = nil
                     }
-                    // dismissは不要 - ContentViewが自動的にログイン画面を表示する
                 }
             } catch {
                 await MainActor.run {
@@ -399,6 +419,115 @@ struct DeleteAccountConfirmationView: View {
                     isDeleting = false
                 }
             }
+        }
+    }
+}
+
+// プロフィールヘッダーセクション
+struct ProfileHeaderSection: View {
+    @Environment(AuthViewModel.self) private var authViewModel
+    @State private var profile: UserProfile?
+    @State private var statistics = ProfileViewModel.ProfileStatistics()
+    
+    var body: some View {
+        VStack(spacing: MemorySpacing.md) {
+            // アバター
+            ZStack {
+                Circle()
+                    .fill(
+                        LinearGradient(
+                            gradient: Gradient(colors: [
+                                MemoryTheme.Colors.primaryBlueLight.opacity(0.3),
+                                MemoryTheme.Colors.primaryBlue.opacity(0.1)
+                            ]),
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
+                    .frame(width: 80, height: 80)
+                    .memoryShadow(.soft)
+                
+                ProfileImageView(imageId: profile?.avatarImageId, size: 72)
+            }
+            
+            // 名前
+            if let profile = profile {
+                VStack(spacing: MemorySpacing.xs) {
+                    Text(profile.displayName)
+                        .font(MemoryTheme.Fonts.headline())
+                        .foregroundColor(MemoryTheme.Colors.inkBlack)
+                    
+                    if let bio = profile.bio, !bio.isEmpty {
+                        Text(bio)
+                            .font(MemoryTheme.Fonts.footnote())
+                            .foregroundColor(MemoryTheme.Colors.inkGray)
+                            .multilineTextAlignment(.center)
+                            .lineLimit(2)
+                    }
+                }
+            }
+            
+            // 統計サマリー
+            HStack(spacing: MemorySpacing.lg) {
+                ProfileStatItem(
+                    value: "\(statistics.completedBooks)",
+                    label: "読了"
+                )
+                Divider()
+                    .frame(height: 30)
+                    .foregroundColor(MemoryTheme.Colors.inkPale)
+                ProfileStatItem(
+                    value: "\(statistics.readingBooks)",
+                    label: "読書中"
+                )
+                Divider()
+                    .frame(height: 30)
+                    .foregroundColor(MemoryTheme.Colors.inkPale)
+                ProfileStatItem(
+                    value: "\(statistics.wantToReadBooks)",
+                    label: "読みたい"
+                )
+            }
+            .padding(.horizontal, MemorySpacing.lg)
+            .padding(.vertical, MemorySpacing.sm)
+            .background(MemoryTheme.Colors.cardBackground)
+            .cornerRadius(MemoryRadius.medium)
+            .memoryShadow(.soft)
+        }
+        .task {
+            await loadProfile()
+            await loadStatistics()
+        }
+    }
+    
+    private func loadProfile() async {
+        do {
+            profile = try await APIClient.shared.getUserProfile()
+        } catch {
+            print("Failed to load profile: \(error)")
+        }
+    }
+    
+    private func loadStatistics() async {
+        let viewModel = ProfileViewModel()
+        await viewModel.loadProfile()
+        statistics = viewModel.statistics
+    }
+}
+
+struct ProfileStatItem: View {
+    let value: String
+    let label: String
+    
+    var body: some View {
+        VStack(spacing: MemorySpacing.xs) {
+            Text(value)
+                .font(MemoryTheme.Fonts.title3())
+                .fontWeight(.bold)
+                .foregroundColor(MemoryTheme.Colors.primaryBlue)
+            Text(label)
+                .font(MemoryTheme.Fonts.caption())
+                .foregroundColor(MemoryTheme.Colors.inkGray)
         }
     }
 }
