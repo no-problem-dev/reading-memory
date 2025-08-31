@@ -10,8 +10,11 @@ export class ClaudeService {
       throw new Error('CLAUDE_API_KEY is not set');
     }
 
+    // APIキーから改行文字を除去
+    const cleanApiKey = apiKey.trim().replace(/[\r\n]/g, '');
+
     this.client = new Anthropic({
-      apiKey: apiKey,
+      apiKey: cleanApiKey,
     });
   }
 
