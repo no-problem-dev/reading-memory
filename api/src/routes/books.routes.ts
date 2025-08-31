@@ -123,6 +123,8 @@ router.post(
     body('message').notEmpty().withMessage('Message is required'),
     body('messageType').optional().isIn(['user', 'ai']).withMessage('Invalid message type'),
     body('imageId').optional().isString().withMessage('Image ID must be a string'),
+    body('chapterOrSection').optional().isString().withMessage('Chapter or section must be a string'),
+    body('pageNumber').optional().isInt({ min: 1 }).withMessage('Page number must be a positive integer'),
   ],
   validateRequest,
   chatsController.createChat
@@ -135,6 +137,8 @@ router.put(
     param('bookId').notEmpty().withMessage('Book ID is required'),
     param('chatId').notEmpty().withMessage('Chat ID is required'),
     body('message').notEmpty().withMessage('Message is required'),
+    body('chapterOrSection').optional().isString().withMessage('Chapter or section must be a string'),
+    body('pageNumber').optional().isInt({ min: 1 }).withMessage('Page number must be a positive integer'),
   ],
   validateRequest,
   chatsController.updateChat

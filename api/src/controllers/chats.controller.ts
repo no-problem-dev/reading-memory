@@ -4,6 +4,7 @@ import { ApiError } from '../middleware/errorHandler';
 import { getFirestore } from '../config/firebase';
 import { FieldValue, Query } from 'firebase-admin/firestore';
 import { serializeTimestamps } from '../utils/timestamp';
+import { Chat, ChatResponse, ChatsResponse } from '../types/chat';
 
 export const getChats = async (
   req: AuthRequest,
@@ -40,12 +41,13 @@ export const getChats = async (
     }
     
     const snapshot = await query.get();
-    const chats = snapshot.docs.map(doc => serializeTimestamps({
+    const chats: Chat[] = snapshot.docs.map(doc => serializeTimestamps({
       id: doc.id,
       ...doc.data()
-    }));
+    }) as Chat);
     
-    res.json({ chats });
+    const response: ChatsResponse = { chats };
+    res.json(response);
   } catch (error) {
     next(error);
   }
@@ -61,7 +63,7 @@ export const createChat = async (
     const db = getFirestore();
     const userId = req.user!.uid;
     const { bookId } = req.params;
-    const { message, messageType = 'user', imageId } = req.body;
+    const { message, messageType = 'user', imageId, chapterOrSection, pageNumber } = req.body;
     
     if (!message || message.trim().length === 0) {
       throw new ApiError(400, 'INVALID_ARGUMENT', 'Message cannot be empty');
@@ -93,20 +95,29 @@ export const createChat = async (
       updatedAt: FieldValue.serverTimestamp()
     };
     
-    // Add imageId if provided
+    // Add optional fields if provided
     if (imageId) {
       chatData.imageId = imageId;
+    }
+    
+    if (chapterOrSection) {
+      chatData.chapterOrSection = chapterOrSection;
+    }
+    
+    if (pageNumber !== undefined && pageNumber !== null) {
+      chatData.pageNumber = pageNumber;
     }
     
     const docRef = await db.collection('users').doc(userId).collection('books').doc(bookId).collection('chats').add(chatData);
     const doc = await docRef.get();
     
-    res.status(201).json({
-      chat: serializeTimestamps({
-        id: doc.id,
-        ...doc.data()
-      })
-    });
+    const chat: Chat = serializeTimestamps({
+      id: doc.id,
+      ...doc.data()
+    }) as Chat;
+    
+    const response: ChatResponse = { chat };
+    res.status(201).json(response);
   } catch (error) {
     next(error);
   }
@@ -122,7 +133,7 @@ export const updateChat = async (
     const db = getFirestore();
     const userId = req.user!.uid;
     const { bookId, chatId } = req.params;
-    const { message } = req.body;
+    const { message, chapterOrSection, pageNumber } = req.body;
     
     if (!message || message.trim().length === 0) {
       throw new ApiError(400, 'INVALID_ARGUMENT', 'Message cannot be empty');
@@ -135,20 +146,30 @@ export const updateChat = async (
       throw new ApiError(404, 'NOT_FOUND', 'Chat not found');
     }
     
-    const updates = {
+    const updates: any = {
       message: message.trim(),
       updatedAt: FieldValue.serverTimestamp()
     };
     
+    // Add optional fields if provided
+    if (chapterOrSection !== undefined) {
+      updates.chapterOrSection = chapterOrSection;
+    }
+    
+    if (pageNumber !== undefined && pageNumber !== null) {
+      updates.pageNumber = pageNumber;
+    }
+    
     await chatRef.update(updates);
     const updatedDoc = await chatRef.get();
     
-    res.json({
-      chat: serializeTimestamps({
-        id: updatedDoc.id,
-        ...updatedDoc.data()
-      })
-    });
+    const chat: Chat = serializeTimestamps({
+      id: updatedDoc.id,
+      ...updatedDoc.data()
+    }) as Chat;
+    
+    const response: ChatResponse = { chat };
+    res.json(response);
   } catch (error) {
     next(error);
   }

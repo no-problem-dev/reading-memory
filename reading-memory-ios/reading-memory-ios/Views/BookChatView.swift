@@ -412,7 +412,7 @@ struct ChatBubbleView: View {
     
     var body: some View {
         HStack(alignment: .bottom, spacing: MemorySpacing.sm) {
-            if !chat.isAI {
+            if chat.messageType != .ai {
                 Spacer(minLength: 50)
             } else {
                 // Enhanced AI Avatar
@@ -432,7 +432,7 @@ struct ChatBubbleView: View {
                     
                     Image(systemName: "sparkles")
                         .font(.system(size: 18, weight: .medium))
-                        .symbolEffect(.variableColor.iterative, options: .repeating, value: chat.isAI)
+                        .symbolEffect(.variableColor.iterative, options: .repeating, value: chat.messageType == .ai)
                         .foregroundStyle(
                             LinearGradient(
                                 gradient: Gradient(colors: [
@@ -447,7 +447,7 @@ struct ChatBubbleView: View {
                 .memoryShadow(.soft)
             }
             
-            VStack(alignment: chat.isAI ? .leading : .trailing, spacing: MemorySpacing.xs) {
+            VStack(alignment: chat.messageType == .ai ? .leading : .trailing, spacing: MemorySpacing.xs) {
                 // 画像がある場合は表示
                 if chat.imageId != nil {
                     ChatImageView(imageId: chat.imageId)
@@ -460,12 +460,12 @@ struct ChatBubbleView: View {
                 if !chat.message.isEmpty {
                     Text(chat.message)
                         .font(MemoryTheme.Fonts.callout())
-                        .foregroundColor(chat.isAI ? MemoryTheme.Colors.inkBlack : .white)
+                        .foregroundColor(chat.messageType == .ai ? MemoryTheme.Colors.inkBlack : .white)
                         .padding(.horizontal, MemorySpacing.md)
                         .padding(.vertical, MemorySpacing.sm + 2)
                         .background(
                             Group {
-                                if chat.isAI {
+                                if chat.messageType == .ai {
                                     RoundedRectangle(cornerRadius: MemoryRadius.medium)
                                         .fill(MemoryTheme.Colors.cardBackground)
                                         .overlay(
@@ -488,7 +488,7 @@ struct ChatBubbleView: View {
                                 }
                             }
                         )
-                        .cornerRadius(4, corners: chat.isAI ? [.topLeft] : [.topRight])
+                        .cornerRadius(4, corners: chat.messageType == .ai ? [.topLeft] : [.topRight])
                 }
                 
                 HStack(spacing: MemorySpacing.xs) {
@@ -496,7 +496,7 @@ struct ChatBubbleView: View {
                         .font(MemoryTheme.Fonts.caption())
                         .foregroundColor(MemoryTheme.Colors.inkGray.opacity(0.8))
                     
-                    if chat.isAI {
+                    if chat.messageType == .ai {
                         Text("AI")
                             .font(MemoryTheme.Fonts.caption().weight(.medium))
                             .foregroundColor(MemoryTheme.Colors.primaryBlue.opacity(0.7))
@@ -527,7 +527,7 @@ struct ChatBubbleView: View {
                 }
             }, perform: {})
             
-            if chat.isAI {
+            if chat.messageType == .ai {
                 Spacer(minLength: 50)
             }
         }

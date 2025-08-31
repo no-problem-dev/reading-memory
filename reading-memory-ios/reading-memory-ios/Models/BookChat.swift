@@ -11,17 +11,6 @@ struct BookChat: Identifiable, Equatable {
     let createdAt: Date
     let updatedAt: Date
     
-    // 互換性のため一時的に残す
-    var userBookId: String {
-        get { bookId }
-        set { }
-    }
-    
-    // Computed property for backward compatibility
-    var isAI: Bool {
-        messageType == .ai
-    }
-    
     init(
         id: String,
         bookId: String,

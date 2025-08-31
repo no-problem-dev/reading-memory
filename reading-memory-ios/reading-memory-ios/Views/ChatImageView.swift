@@ -5,35 +5,25 @@ struct ChatImageView: View {
     let imageId: String?
     
     @State private var imageUrl: URL?
+    @State private var uiImage: UIImage?
+    @State private var isLoading = false
     
     var body: some View {
         Group {
-            if let imageUrl = imageUrl {
-                AsyncImage(url: imageUrl) { phase in
-                    switch phase {
-                    case .empty:
-                        RoundedRectangle(cornerRadius: MemoryRadius.medium)
-                            .fill(MemoryTheme.Colors.inkPale)
-                            .overlay(
-                                ProgressView()
-                                    .tint(MemoryTheme.Colors.primaryBlue)
-                            )
-                    case .success(let image):
-                        image
-                            .resizable()
-                            .aspectRatio(contentMode: .fit)
-                            .cornerRadius(MemoryRadius.medium)
-                    case .failure(_):
-                        RoundedRectangle(cornerRadius: MemoryRadius.medium)
-                            .fill(MemoryTheme.Colors.inkPale)
-                            .overlay(
-                                Image(systemName: "photo.fill")
-                                    .foregroundColor(.gray)
-                            )
-                    @unknown default:
-                        EmptyView()
-                    }
-                }
+            if let uiImage = uiImage {
+                // URLSessionで取得した画像を表示
+                Image(uiImage: uiImage)
+                    .resizable()
+                    .aspectRatio(contentMode: .fit)
+                    .cornerRadius(MemoryRadius.medium)
+            } else if isLoading {
+                // 画像読み込み中
+                RoundedRectangle(cornerRadius: MemoryRadius.medium)
+                    .fill(MemoryTheme.Colors.inkPale)
+                    .overlay(
+                        ProgressView()
+                            .tint(MemoryTheme.Colors.primaryBlue)
+                    )
             } else if imageId != nil {
                 // 画像IDがあるがURLがまだ取得できていない場合
                 RoundedRectangle(cornerRadius: MemoryRadius.medium)
@@ -42,10 +32,38 @@ struct ChatImageView: View {
                         ProgressView()
                             .tint(MemoryTheme.Colors.primaryBlue)
                     )
+            } else {
+                // 画像がない場合（空のビュー）
+                EmptyView()
             }
         }
         .task {
-            imageUrl = await ImageService.shared.getImageUrl(id: imageId)
+            if let imageId = imageId {
+                isLoading = true
+                imageUrl = await ImageService.shared.getImageUrl(id: imageId)
+                
+                // URLSessionで画像を取得
+                if let url = imageUrl {
+                    await loadImage(from: url)
+                }
+                isLoading = false
+            }
+        }
+    }
+    
+    private func loadImage(from url: URL) async {
+        do {
+            let (data, response) = try await URLSession.shared.data(from: url)
+            
+            if let httpResponse = response as? HTTPURLResponse,
+               httpResponse.statusCode == 200,
+               let image = UIImage(data: data) {
+                await MainActor.run {
+                    self.uiImage = image
+                }
+            }
+        } catch {
+            print("Failed to load image from URL: \(url), error: \(error)")
         }
     }
 }

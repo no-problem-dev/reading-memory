@@ -600,7 +600,7 @@ final class APIClient {
         return response.chats.map { $0.toDomain(bookId: bookId) }
     }
     
-    func createChat(bookId: String, message: String, messageType: MessageType, imageId: String? = nil) async throws -> BookChat {
+    func createChat(bookId: String, message: String, messageType: MessageType, imageId: String? = nil, chapterOrSection: String? = nil, pageNumber: Int? = nil) async throws -> BookChat {
         let encoder = JSONEncoder()
         let formatter = DateFormatter()
         formatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss.SSSZZZZZ"
@@ -616,6 +616,14 @@ final class APIClient {
         
         if let imageId = imageId {
             bodyDict["imageId"] = imageId
+        }
+        
+        if let chapterOrSection = chapterOrSection {
+            bodyDict["chapterOrSection"] = chapterOrSection
+        }
+        
+        if let pageNumber = pageNumber {
+            bodyDict["pageNumber"] = pageNumber
         }
         
         let body = try JSONSerialization.data(withJSONObject: bodyDict, options: [])
