@@ -100,67 +100,11 @@ class OnboardingViewModel {
     }
     
     private func uploadProfileImage(image: UIImage) async throws -> String {
-        // 500KB以下に圧縮
-        guard let compressedData = image.compressedJPEGData(maxFileSizeKB: 500) else {
-            throw AppError.custom("画像の圧縮に失敗しました")
-        }
-        
-        guard let compressedImage = UIImage(data: compressedData) else {
-            throw AppError.custom("圧縮データから画像を作成できませんでした")
-        }
-        
         let storageService = StorageService.shared
-        return try await storageService.uploadImage(compressedImage)
+        // プロフィール画像用の専用メソッドを使用（正方形クロップ + 圧縮）
+        return try await storageService.uploadProfileImage(image)
     }
 }
 
 // MARK: - UIImage Extension
-private extension UIImage {
-    /// 指定されたファイルサイズ以下になるまで画像を圧縮
-    /// - Parameters:
-    ///   - maxFileSizeKB: 最大ファイルサイズ（KB単位）
-    ///   - initialQuality: 初期圧縮品質（0.0〜1.0）
-    /// - Returns: 圧縮されたJPEGデータ
-    func compressedJPEGData(maxFileSizeKB: Int = 500, initialQuality: CGFloat = 0.8) -> Data? {
-        let maxFileSize = maxFileSizeKB * 1024 // KBをバイトに変換
-        
-        // 最初に指定品質で圧縮を試みる
-        if let data = self.jpegData(compressionQuality: initialQuality),
-           data.count <= maxFileSize {
-            return data
-        }
-        
-        // 品質を段階的に下げる
-        let qualities: [CGFloat] = [0.7, 0.5, 0.3, 0.2, 0.1]
-        for quality in qualities {
-            if let data = self.jpegData(compressionQuality: quality),
-               data.count <= maxFileSize {
-                return data
-            }
-        }
-        
-        // それでも大きい場合は、画像サイズを縮小してから圧縮
-        let scales: [(CGFloat, CGFloat)] = [(0.8, 0.5), (0.6, 0.4), (0.4, 0.3), (0.3, 0.2)]
-        for (scale, quality) in scales {
-            let newSize = CGSize(width: self.size.width * scale, height: self.size.height * scale)
-            let resizedImage = self.resized(to: newSize)
-            if let data = resizedImage.jpegData(compressionQuality: quality),
-               data.count <= maxFileSize {
-                return data
-            }
-        }
-        
-        // 最終手段：最小サイズ・最低品質
-        let minSize = CGSize(width: 200, height: 200)
-        let minImage = self.resized(to: minSize)
-        let finalData = minImage.jpegData(compressionQuality: 0.1)
-        return finalData
-    }
-    
-    func resized(to size: CGSize) -> UIImage {
-        let renderer = UIGraphicsImageRenderer(size: size)
-        return renderer.image { _ in
-            self.draw(in: CGRect(origin: .zero, size: size))
-        }
-    }
-}
+// UIImage拡張は共通のUIImage+Compression.swiftに移動済み

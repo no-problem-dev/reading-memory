@@ -122,6 +122,7 @@ router.post(
     param('bookId').notEmpty().withMessage('Book ID is required'),
     body('message').notEmpty().withMessage('Message is required'),
     body('messageType').optional().isIn(['user', 'ai']).withMessage('Invalid message type'),
+    body('imageId').optional().isString().withMessage('Image ID must be a string'),
   ],
   validateRequest,
   chatsController.createChat

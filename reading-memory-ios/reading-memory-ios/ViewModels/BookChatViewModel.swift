@@ -61,7 +61,8 @@ final class BookChatViewModel: BaseViewModel {
     
     private func uploadChatImage(image: UIImage) async throws -> String {
         let storageService = StorageService.shared
-        return try await storageService.uploadImage(image)
+        // 500KB以下に確実に圧縮してアップロード
+        return try await storageService.uploadImage(image, maxFileSizeKB: 500)
     }
     
     func setError(_ message: String) {
