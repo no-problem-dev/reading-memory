@@ -772,27 +772,6 @@ struct EditBookView: View {
         }
     }
     
-    private struct BookCoverPlaceholder: View {
-        var body: some View {
-            ZStack {
-                RoundedRectangle(cornerRadius: MemoryRadius.medium)
-                    .fill(
-                        LinearGradient(
-                            gradient: Gradient(colors: [
-                                MemoryTheme.Colors.inkPale.opacity(0.5),
-                                MemoryTheme.Colors.inkPale.opacity(0.3)
-                            ]),
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        )
-                    )
-                
-                Image(systemName: "book.closed.fill")
-                    .font(.system(size: 30))
-                    .foregroundColor(MemoryTheme.Colors.inkLightGray)
-            }
-        }
-    }
 }
 
 
