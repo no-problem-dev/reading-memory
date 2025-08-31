@@ -1,8 +1,8 @@
 import SwiftUI
 
 struct BookNoteContentView: View {
-    let bookId: String
-    @State private var viewModel = BookNoteViewModel()
+    let book: Book
+    @Bindable var viewModel: BookNoteViewModel
     @FocusState private var isTextEditorFocused: Bool
     
     var body: some View {
@@ -13,63 +13,55 @@ struct BookNoteContentView: View {
                     isTextEditorFocused = false
                 }
             
-            if viewModel.isLoading && viewModel.book == nil {
-                ProgressView("読み込み中...")
-                    .progressViewStyle(CircularProgressViewStyle(tint: MemoryTheme.Colors.primaryBlue))
-            } else if let book = viewModel.book {
-                VStack(spacing: 0) {
-                    // Header Section for consistency with chat tab
-                    HStack {
-                        Text("読書メモ")
-                            .font(.subheadline)
-                            .foregroundColor(Color(.secondaryLabel))
-                        
-                        Spacer()
-                        
-                        HStack(spacing: 4) {
-                            Image(systemName: "note.text")
-                                .font(.system(size: 14))
-                            Text("通常メモ")
-                                .font(.caption)
-                        }
+            VStack(spacing: 0) {
+                // Header Section for consistency with chat tab
+                HStack {
+                    Text("読書メモ")
+                        .font(.subheadline)
                         .foregroundColor(Color(.secondaryLabel))
-                    }
-                    .padding(.horizontal)
-                    .padding(.vertical, MemorySpacing.sm)
-                    .background(Color(.tertiarySystemBackground))
-                    .overlay(
-                        Rectangle()
-                            .fill(Color(.separator))
-                            .frame(height: 0.5),
-                        alignment: .bottom
-                    )
                     
-                    ScrollView {
-                        VStack(spacing: MemorySpacing.lg) {
-                            // Book Info Header
-                            bookInfoHeader(book: book)
-                            
-                            // Note Editor
-                            noteEditor()
-                            
-                            // Save Button
-                            saveButton()
-                            
-                            // Save Confirmation
-                            if viewModel.showingSaveConfirmation {
-                                saveConfirmationView()
-                            }
+                    Spacer()
+                    
+                    HStack(spacing: 4) {
+                        Image(systemName: "note.text")
+                            .font(.system(size: 14))
+                        Text("通常メモ")
+                            .font(.caption)
+                    }
+                    .foregroundColor(Color(.secondaryLabel))
+                }
+                .padding(.horizontal)
+                .padding(.vertical, MemorySpacing.sm)
+                .background(Color(.tertiarySystemBackground))
+                .overlay(
+                    Rectangle()
+                        .fill(Color(.separator))
+                        .frame(height: 0.5),
+                    alignment: .bottom
+                )
+                
+                ScrollView {
+                    VStack(spacing: MemorySpacing.lg) {
+                        // Book Info Header
+                        bookInfoHeader(book: book)
+                        
+                        // Note Editor
+                        noteEditor()
+                        
+                        // Save Button
+                        saveButton()
+                        
+                        // Save Confirmation
+                        if viewModel.showingSaveConfirmation {
+                            saveConfirmationView()
                         }
-                        .padding()
                     }
-                    .onTapGesture {
-                        isTextEditorFocused = false
-                    }
+                    .padding()
+                }
+                .onTapGesture {
+                    isTextEditorFocused = false
                 }
             }
-        }
-        .task {
-            await viewModel.loadBook(bookId: bookId)
         }
         .alert("エラー", isPresented: .constant(viewModel.errorMessage != nil)) {
             Button("OK") {

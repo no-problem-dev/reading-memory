@@ -268,7 +268,8 @@ struct BadgeDetailView: View {
                         .font(.title3)
                         .foregroundColor(Color(badge.tier.color))
                     VStack(alignment: .leading) {
-                        Text("\(badge.requirement.genre ?? "")の本")
+                        let genreName = badge.requirement.genre.flatMap { BookGenre(rawValue: $0)?.displayName } ?? "特定ジャンル"
+                        Text("\(genreName)の本")
                             .font(.caption)
                             .foregroundColor(MemoryTheme.Colors.inkGray)
                         Text("\(currentValue) / \(badge.requirement.value) 冊")
@@ -430,7 +431,8 @@ struct BadgeDetailView: View {
         case .streakDays:
             return "毎日少しでも読書をして、連続記録を伸ばしましょう。読書メモを残すと記録されます。"
         case .genreBooks:
-            return "\(badge.requirement.genre ?? "特定のジャンル")の本を探して読んでみましょう。さまざまなジャンルに挑戦するのも楽しいですよ。"
+            let genreName = badge.requirement.genre.flatMap { BookGenre(rawValue: $0)?.displayName } ?? "特定のジャンル"
+            return "\(genreName)の本を探して読んでみましょう。さまざまなジャンルに挑戦するのも楽しいですよ。"
         case .memos:
             return "読書中の気づきや感想をメモに残しましょう。後で見返すと新たな発見があるかもしれません。"
         case .yearlyGoal:

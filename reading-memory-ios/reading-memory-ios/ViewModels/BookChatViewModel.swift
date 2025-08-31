@@ -108,12 +108,8 @@ final class BookChatViewModel: BaseViewModel {
     }
     
     func toggleAI() {
-        // プレミアムチェック
-        guard FeatureGate.canUseAI else {
-            showPaywall = true
-            return
-        }
-        isAIEnabled.toggle()
+        // この関数は使わなくなったため、削除または非推奨にすることを推奨
+        // ChatContentViewで直接制御するようになりました
     }
     
     

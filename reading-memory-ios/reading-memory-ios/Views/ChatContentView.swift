@@ -2,18 +2,16 @@ import SwiftUI
 import PhotosUI
 
 struct ChatContentView: View {
-    let bookId: String
-    @State private var book: Book?
-    @State private var viewModel: BookChatViewModel?
+    let book: Book
+    @Bindable var viewModel: BookChatViewModel
+    
     @State private var messageText = ""
     @State private var selectedPhoto: PhotosPickerItem?
     @State private var selectedImage: UIImage?
     @FocusState private var isInputFocused: Bool
     @State private var scrollToBottom = false
-    @State private var isLoading = true
-    
-    private let bookRepository = BookRepository.shared
-    private let authService = AuthService.shared
+    @State private var hasLoadedInitialData = false
+    @State private var showingPaywall = false
     
     var body: some View {
         ZStack {
@@ -23,32 +21,31 @@ struct ChatContentView: View {
                     isInputFocused = false
                 }
             
-            if isLoading {
-                ProgressView("読み込み中...")
-                    .progressViewStyle(CircularProgressViewStyle(tint: MemoryTheme.Colors.primaryBlue))
-            } else if let _ = book, let viewModel = viewModel {
-                VStack(spacing: 0) {
-                    // AI トグルセクション
-                    aiToggleSection(viewModel: viewModel)
-                    
-                    // メッセージリスト
-                    chatMessagesSection(viewModel: viewModel)
-                    
-                    // 入力エリア
-                    inputSection(viewModel: viewModel)
-                }
-            } else {
-                Text("本の情報を読み込めませんでした")
-                    .foregroundColor(Color(.secondaryLabel))
+            VStack(spacing: 0) {
+                // AI トグルセクション
+                aiToggleSection(viewModel: viewModel)
+                
+                // メッセージリスト
+                chatMessagesSection(viewModel: viewModel)
+                
+                // 入力エリア
+                inputSection(viewModel: viewModel)
             }
         }
         .task {
-            await loadBook()
+            // 初回のみデータを読み込む
+            if !hasLoadedInitialData {
+                await viewModel.loadChats()
+                hasLoadedInitialData = true
+            }
         }
         .onChange(of: selectedPhoto) { _, newItem in
             Task {
                 await loadImage(from: newItem)
             }
+        }
+        .onChange(of: viewModel.showPaywall) { _, shouldShow in
+            showingPaywall = shouldShow
         }
         .toolbar {
             ToolbarItemGroup(placement: .keyboard) {
@@ -58,39 +55,22 @@ struct ChatContentView: View {
                 }
             }
         }
-        .sheet(isPresented: .constant(viewModel?.showPaywall ?? false)) {
+        .sheet(isPresented: $showingPaywall) {
             PaywallView()
+                .onDisappear {
+                    // Paywallが閉じられたときにフラグをリセット
+                    viewModel.showPaywall = false
+                }
         }
-        .alert("エラー", isPresented: .constant(viewModel?.showError ?? false)) {
+        .alert("エラー", isPresented: .constant(viewModel.showError)) {
             Button("OK") {
-                viewModel?.clearError()
+                viewModel.clearError()
             }
         } message: {
-            if let errorMessage = viewModel?.errorMessage {
+            if let errorMessage = viewModel.errorMessage {
                 Text(errorMessage)
             }
         }
-    }
-    
-    private func loadBook() async {
-        guard authService.currentUser?.uid != nil else { return }
-        
-        do {
-            if let loadedBook = try await bookRepository.getBook(bookId: bookId) {
-                book = loadedBook
-                await MainActor.run {
-                    let chatViewModel = ServiceContainer.shared.makeBookChatViewModel(book: loadedBook)
-                    viewModel = chatViewModel
-                }
-                await viewModel?.loadChats()
-            } else {
-                print("Book not found with ID: \(bookId)")
-            }
-        } catch {
-            print("Error loading book: \(error)")
-        }
-        
-        isLoading = false
     }
     
     private var canSend: Bool {
@@ -106,7 +86,7 @@ struct ChatContentView: View {
         selectedImage = nil
         selectedPhoto = nil
         
-        await viewModel?.sendMessage(message, image: image)
+        await viewModel.sendMessage(message, image: image)
         scrollToBottom = true
     }
     
@@ -117,7 +97,7 @@ struct ChatContentView: View {
         // プレミアムチェック
         guard FeatureGate.canAttachPhotos else {
             selectedPhoto = nil
-            viewModel?.showPaywall = true
+            viewModel.showPaywall = true
             return
         }
         
@@ -132,7 +112,7 @@ struct ChatContentView: View {
                 selectedImage = resizedImage
             }
         } catch {
-            viewModel?.setError("画像の読み込みに失敗しました")
+            viewModel.setError("画像の読み込みに失敗しました")
         }
     }
     
@@ -147,7 +127,14 @@ struct ChatContentView: View {
             
             Toggle("", isOn: Binding(
                 get: { viewModel.isAIEnabled },
-                set: { _ in viewModel.toggleAI() }
+                set: { newValue in 
+                    // プレミアムチェック
+                    if newValue && !FeatureGate.canUseAI {
+                        viewModel.showPaywall = true
+                    } else {
+                        viewModel.isAIEnabled = newValue
+                    }
+                }
             ))
             .toggleStyle(SwitchToggleStyle(tint: MemoryTheme.Colors.primaryBlue))
             .labelsHidden()

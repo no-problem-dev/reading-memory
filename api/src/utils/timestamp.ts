@@ -24,7 +24,7 @@ export function serializeTimestamps(data: any): any {
         result[key] = value.toISOString();
       } else if (
         typeof value === 'number' && 
-        (key.toLowerCase().includes('date') || key.toLowerCase().includes('at')) &&
+        (key.toLowerCase().includes('date') || (key.toLowerCase().includes('at') && !key.toLowerCase().includes('rating'))) &&
         value > 0 && value < 2000000000 // Unix timestamp range check (before year 2033)
       ) {
         // Convert Unix timestamp (seconds) to ISO 8601 string
