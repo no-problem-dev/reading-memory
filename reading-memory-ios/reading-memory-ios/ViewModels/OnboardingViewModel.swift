@@ -1,6 +1,5 @@
 import SwiftUI
 import PhotosUI
-// import FirebaseStorage
 
 @Observable
 class OnboardingViewModel {
@@ -49,45 +48,8 @@ class OnboardingViewModel {
                 bio: nil
             )
             
-            // 3. Add first book if selected
-            if let searchResult = firstBookSearchResult {
-                // 検索結果から本を作成（画像のアップロードを含む）
-                _ = try await bookRepository.createBookFromSearchResult(searchResult)
-            } else if let selectedBook = firstBook {
-                // 既存の本を保存
-                let book = Book(
-                    id: UUID().uuidString,
-                    isbn: selectedBook.isbn,
-                    title: selectedBook.title,
-                    author: selectedBook.author,
-                    publisher: selectedBook.publisher,
-                    publishedDate: selectedBook.publishedDate,
-                    pageCount: selectedBook.pageCount,
-                    description: selectedBook.description,
-                    coverImageId: selectedBook.coverImageId,
-                    dataSource: selectedBook.dataSource,
-                    status: .reading,
-                    rating: nil,
-                    readingProgress: nil,
-                    currentPage: nil,
-                    addedDate: Date(),
-                    startDate: Date(),
-                    completedDate: nil,
-                    lastReadDate: nil,
-                    priority: nil,
-                    plannedReadingDate: nil,
-                    reminderEnabled: false,
-                    purchaseLinks: nil,
-                    memo: nil,
-                    tags: [],
-                    aiSummary: nil,
-                    summaryGeneratedAt: nil,
-                    createdAt: Date(),
-                    updatedAt: Date()
-                )
-                
-                _ = try await bookRepository.createBook(book)
-            }
+            // 3. First book is already registered via BookSearchView/BarcodeScannerView
+            // No need to register it again here
             
             isLoading = false
             return true
@@ -105,6 +67,3 @@ class OnboardingViewModel {
         return try await storageService.uploadProfileImage(image)
     }
 }
-
-// MARK: - UIImage Extension
-// UIImage拡張は共通のUIImage+Compression.swiftに移動済み

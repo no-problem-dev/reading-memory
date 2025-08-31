@@ -13,6 +13,14 @@ struct BarcodeScannerView: View {
     @State private var foundSearchResult: BookSearchResult?
     private let authService = AuthService.shared
     
+    let defaultStatus: ReadingStatus
+    let onBookRegistered: ((Book) -> Void)?
+    
+    init(defaultStatus: ReadingStatus = .wantToRead, onBookRegistered: ((Book) -> Void)? = nil) {
+        self.defaultStatus = defaultStatus
+        self.onBookRegistered = onBookRegistered
+    }
+    
     var body: some View {
         NavigationStack {
             ZStack {
@@ -160,7 +168,14 @@ struct BarcodeScannerView: View {
         }
         .fullScreenCover(isPresented: $showBookRegistration) {
             if let searchResult = foundSearchResult {
-                BookRegistrationView(searchResult: searchResult)
+                BookRegistrationView(
+                    searchResult: searchResult, 
+                    defaultStatus: defaultStatus,
+                    onCompletion: { book in
+                        onBookRegistered?(book)
+                        dismiss()
+                    }
+                )
             }
         }
         .overlay {
@@ -336,6 +351,28 @@ class CameraViewController: UIViewController, AVCaptureMetadataOutputObjectsDele
     }
     
     private func setupCamera() {
+        // カメラ権限の確認
+        let authStatus = AVCaptureDevice.authorizationStatus(for: .video)
+        switch authStatus {
+        case .authorized:
+            setupCaptureSession()
+        case .notDetermined:
+            AVCaptureDevice.requestAccess(for: .video) { [weak self] granted in
+                if granted {
+                    DispatchQueue.main.async {
+                        self?.setupCaptureSession()
+                    }
+                }
+            }
+        case .denied, .restricted:
+            print("Camera access denied")
+            return
+        @unknown default:
+            return
+        }
+    }
+    
+    private func setupCaptureSession() {
         captureSession = AVCaptureSession()
         
         guard let videoCaptureDevice = AVCaptureDevice.default(for: .video) else { return }

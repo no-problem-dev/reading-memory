@@ -3,6 +3,13 @@ import SwiftUI
 struct FirstBookStep: View {
     @Binding var selectedBook: Book?
     @Binding var isShowingBookSearch: Bool
+    @State private var showSearchSheet = false
+    @State private var showBarcodeSheet = false
+    
+    enum AdditionOption {
+        case search
+        case barcode
+    }
     
     var body: some View {
         VStack(spacing: 32) {
@@ -41,7 +48,9 @@ struct FirstBookStep: View {
                 // Add book options
                 VStack(spacing: 20) {
                     // Barcode scan button
-                    Button(action: { isShowingBookSearch = true }) {
+                    Button(action: { 
+                        showBarcodeSheet = true
+                    }) {
                         HStack(spacing: 16) {
                             Image(systemName: "barcode.viewfinder")
                                 .font(.title2)
@@ -68,7 +77,9 @@ struct FirstBookStep: View {
                     .buttonStyle(.plain)
                     
                     // Manual search button
-                    Button(action: { isShowingBookSearch = true }) {
+                    Button(action: { 
+                        showSearchSheet = true
+                    }) {
                         HStack(spacing: 16) {
                             Image(systemName: "magnifyingglass")
                                 .font(.title2)
@@ -108,6 +119,30 @@ struct FirstBookStep: View {
             Spacer()
         }
         .padding(.vertical)
+        .sheet(isPresented: $showSearchSheet) {
+            NavigationStack {
+                BookSearchView(
+                    defaultStatus: .reading,
+                    onBookRegistered: { book in
+                        print("DEBUG: Book registered - title: \(book.title), coverImageId: \(book.coverImageId ?? "nil")")
+                        selectedBook = book
+                        // BookSearchView内でdismiss()が呼ばれるので、ここでは設定しない
+                    }
+                )
+            }
+        }
+        .sheet(isPresented: $showBarcodeSheet) {
+            NavigationStack {
+                BarcodeScannerView(
+                    defaultStatus: .reading,
+                    onBookRegistered: { book in
+                        print("DEBUG: Book registered from barcode - title: \(book.title), coverImageId: \(book.coverImageId ?? "nil")")
+                        selectedBook = book
+                        // BarcodeScannerView内でdismiss()が呼ばれるので、ここでは設定しない
+                    }
+                )
+            }
+        }
     }
 }
 
@@ -116,43 +151,61 @@ struct BookCard: View {
     let book: Book
     
     var body: some View {
-        HStack(spacing: 16) {
-            // Book cover
-            RemoteImage(imageId: book.coverImageId)
-                .frame(width: 80, height: 120)
-                .cornerRadius(8)
-                .shadow(radius: 4)
+        VStack(spacing: 16) {
+            // Book cover - centered
+            HStack {
+                Spacer()
+                if let imageId = book.coverImageId, !imageId.isEmpty {
+                    RemoteImage(imageId: imageId)
+                        .frame(width: 120, height: 180)
+                        .cornerRadius(12)
+                        .shadow(color: .black.opacity(0.1), radius: 8, x: 0, y: 4)
+                } else {
+                    // プレースホルダー画像
+                    RoundedRectangle(cornerRadius: 12)
+                        .fill(Color.gray.opacity(0.1))
+                        .frame(width: 120, height: 180)
+                        .overlay(
+                            Image(systemName: "book.closed.fill")
+                                .font(.system(size: 40))
+                                .foregroundColor(.gray.opacity(0.5))
+                        )
+                        .shadow(color: .black.opacity(0.1), radius: 8, x: 0, y: 4)
+                }
+                Spacer()
+            }
             
-            // Book info
-            VStack(alignment: .leading, spacing: 8) {
+            // Book info - centered
+            VStack(spacing: 8) {
                 Text(book.title)
                     .font(.headline)
                     .lineLimit(2)
+                    .multilineTextAlignment(.center)
                 
                 Text(book.author)
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
                 
-                Spacer()
-                
-                HStack {
+                HStack(spacing: 4) {
                     Image(systemName: "checkmark.circle.fill")
                         .foregroundColor(.green)
+                        .font(.system(size: 14))
                     Text("選択済み")
                         .font(.caption)
                         .foregroundColor(.green)
                 }
+                .padding(.top, 4)
             }
-            
-            Spacer()
         }
-        .padding()
-        .background(Color.gray.opacity(0.05))
-        .cornerRadius(12)
-        .overlay(
-            RoundedRectangle(cornerRadius: 12)
-                .stroke(Color.blue.opacity(0.3), lineWidth: 1)
+        .padding(20)
+        .background(
+            RoundedRectangle(cornerRadius: 16)
+                .fill(Color.gray.opacity(0.05))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 16)
+                        .stroke(Color.blue.opacity(0.2), lineWidth: 1)
+                )
         )
     }
 }

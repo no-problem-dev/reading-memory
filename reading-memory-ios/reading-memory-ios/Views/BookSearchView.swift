@@ -8,6 +8,15 @@ struct BookSearchView: View {
     @State private var showingRegistration = false
     @FocusState private var isSearchFieldFocused: Bool
     
+    // オプショナルなコールバック
+    let onBookRegistered: ((Book) -> Void)?
+    let defaultStatus: ReadingStatus
+    
+    init(defaultStatus: ReadingStatus = .wantToRead, onBookRegistered: ((Book) -> Void)? = nil) {
+        self.onBookRegistered = onBookRegistered
+        self.defaultStatus = defaultStatus
+    }
+    
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
@@ -28,7 +37,14 @@ struct BookSearchView: View {
             }
             .sheet(isPresented: $showingRegistration) {
                 if let searchResult = selectedSearchResult {
-                    BookRegistrationView(searchResult: searchResult)
+                    BookRegistrationView(
+                        searchResult: searchResult,
+                        defaultStatus: defaultStatus,
+                        onCompletion: { book in
+                            onBookRegistered?(book)
+                            dismiss()
+                        }
+                    )
                 }
             }
         }

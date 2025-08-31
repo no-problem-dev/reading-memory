@@ -101,11 +101,11 @@ struct BookAdditionFlowView: View {
             .sheet(item: $selectedOption) { option in
                 switch option {
                 case .search:
-                    BookSearchView()
+                    BookSearchView(defaultStatus: .reading)
                 case .barcode:
-                    BarcodeScannerView()
+                    BarcodeScannerView(defaultStatus: .reading)
                 case .manual:
-                    BookRegistrationView(isFromHome: true)
+                    BookRegistrationView(defaultStatus: .reading)
                 }
             }
             .sheet(isPresented: $showPaywall) {

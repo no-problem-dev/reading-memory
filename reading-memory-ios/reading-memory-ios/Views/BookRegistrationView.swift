@@ -27,27 +27,29 @@ struct BookRegistrationView: View {
     @State private var coverImageId: String?
     @State private var selectedStatus: ReadingStatus = .wantToRead
     
-    let isFromHome: Bool
-    
     let prefilledBook: Book?
     let searchResult: BookSearchResult?
+    let defaultStatus: ReadingStatus
+    let onCompletion: ((Book) -> Void)?
     
-    init(prefilledBook: Book? = nil, isFromHome: Bool = false) {
+    init(prefilledBook: Book? = nil, defaultStatus: ReadingStatus = .wantToRead, onCompletion: ((Book) -> Void)? = nil) {
         self.prefilledBook = prefilledBook
         self.searchResult = nil
-        self.isFromHome = isFromHome
+        self.defaultStatus = defaultStatus
+        self.onCompletion = onCompletion
         if let book = prefilledBook {
             _selectedStatus = State(initialValue: book.status)
         } else {
-            _selectedStatus = State(initialValue: isFromHome ? .reading : .wantToRead)
+            _selectedStatus = State(initialValue: defaultStatus)
         }
     }
     
-    init(searchResult: BookSearchResult, isFromHome: Bool = false) {
+    init(searchResult: BookSearchResult, defaultStatus: ReadingStatus = .wantToRead, onCompletion: ((Book) -> Void)? = nil) {
         self.prefilledBook = nil
         self.searchResult = searchResult
-        self.isFromHome = isFromHome
-        _selectedStatus = State(initialValue: isFromHome ? .reading : .wantToRead)
+        self.defaultStatus = defaultStatus
+        self.onCompletion = onCompletion
+        _selectedStatus = State(initialValue: defaultStatus)
     }
     
     var body: some View {
@@ -403,7 +405,13 @@ struct BookRegistrationView: View {
         }
     }
     
+    @State private var isRegistering = false
+    
     private func saveBook() {
+        // 二重登録を防ぐ
+        guard !isRegistering else { return }
+        isRegistering = true
+        
         Task {
             let book: Book
             
@@ -447,7 +455,7 @@ struct BookRegistrationView: View {
             }
             
             // searchResultがある場合は専用のメソッドを使用
-            let success: Bool
+            let result: (success: Bool, book: Book?)
             if let searchResult = searchResult {
                 // 検索結果からの登録（入力された情報で上書き）
                 var updatedSearchResult = searchResult
@@ -464,18 +472,22 @@ struct BookRegistrationView: View {
                     dataSource: searchResult.dataSource,
                     affiliateUrl: searchResult.affiliateUrl
                 )
-                success = await viewModel.registerBookFromSearchResult(modifiedSearchResult, status: selectedStatus)
+                result = await viewModel.registerBookFromSearchResult(modifiedSearchResult, status: selectedStatus)
             } else {
-                success = await viewModel.registerBook(book)
+                result = await viewModel.registerBook(book)
             }
             
-            if success {
+            if result.success, let createdBook = result.book {
+                onCompletion?(createdBook)
                 dismiss()
+            } else {
+                // 登録失敗時はフラグをリセット
+                isRegistering = false
             }
         }
     }
 }
 
 #Preview {
-    BookRegistrationView(isFromHome: false)
+    BookRegistrationView(defaultStatus: .wantToRead)
         }

@@ -144,16 +144,31 @@ struct OnboardingView: View {
             }
         }
         .sheet(isPresented: $isShowingBookSearch) {
-            OnboardingBookSearchView(onBookSelected: { searchResult in
-                viewModel.firstBookSearchResult = searchResult
-                viewModel.firstBook = searchResult.toBook()  // 表示用にBookオブジェクトも作成
-                isShowingBookSearch = false
-            })
-                    }
+            NavigationStack {
+                BookSearchView(onBookRegistered: { book in
+                    viewModel.firstBook = book
+                    // BookSearchResultが必要な場合は、bookから再構築
+                    viewModel.firstBookSearchResult = BookSearchResult(
+                        isbn: book.isbn,
+                        title: book.title,
+                        author: book.author,
+                        publisher: book.publisher,
+                        publishedDate: book.publishedDate,
+                        pageCount: book.pageCount,
+                        description: book.description,
+                        coverImageUrl: nil,  // すでに保存済みなのでURLは不要
+                        dataSource: book.dataSource,
+                        affiliateUrl: nil
+                    )
+                })
+                    .navigationTitle("最初の本を選ぶ")
+                    .navigationBarTitleDisplayMode(.inline)
+            }
+        }
         .onAppear {
             viewModel = OnboardingViewModel(authViewModel: authViewModel)
         }
-            }
+    }
     
     private var canProceed: Bool {
         switch currentStep {
