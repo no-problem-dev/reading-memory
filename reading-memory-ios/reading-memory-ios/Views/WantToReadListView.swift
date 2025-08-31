@@ -43,14 +43,14 @@ struct WantToReadListView: View {
                         startReadingButton(for: book)
                     }
                 }
-                .onMove { source, destination in
-                    Task {
-                        await viewModel.reorderBooks(from: source, to: destination)
-                    }
-                }
+                // .onMove { source, destination in
+                //     Task {
+                //         await viewModel.reorderBooks(from: source, to: destination)
+                //     }
+                // }
             }
             .listStyle(PlainListStyle())
-            .environment(\.editMode, $editMode)
+            // .environment(\.editMode, $editMode)
         }
     }
     
@@ -88,7 +88,7 @@ struct WantToReadListView: View {
         NavigationStack(path: $navigationPath) {
             mainContent
             .navigationTitle("読みたいリスト")
-            .navigationBarTitleDisplayMode(.large)
+            .navigationBarTitleDisplayMode(.inline)
             .navigationDestination(for: Book.self) { book in
                 BookDetailView(bookId: book.id)
                                 }
@@ -102,18 +102,6 @@ struct WantToReadListView: View {
                         }
                     } else {
                         Menu {
-                            if viewModel.sortOption == .priority {
-                                Button {
-                                    withAnimation {
-                                        editMode = .active
-                                    }
-                                } label: {
-                                    Label("並び替え", systemImage: "arrow.up.arrow.down")
-                                }
-                            }
-                            
-                            Divider()
-                            
                             ForEach(WantToReadListViewModel.SortOption.allCases, id: \.self) { option in
                                 Button {
                                     viewModel.sortOption = option

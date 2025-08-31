@@ -12,11 +12,11 @@ struct MainTabView: View {
             
             // Main Content
             TabView(selection: $selectedTab) {
-                // 本棚（ホーム）
+                // 本棚
                 BookShelfHomeView()
                     .tabItem {
                         Label {
-                            Text("メモリー")
+                            Text("本棚")
                         } icon: {
                             Image(systemName: selectedTab == 0 ? "books.vertical.fill" : "books.vertical")
                         }

@@ -39,7 +39,7 @@ struct EmptyReadingCard: View {
                     .font(MemoryTheme.Fonts.title3())
                     .foregroundColor(MemoryTheme.Colors.inkBlack)
                 
-                Text("本を追加して、読書メモリーを作りましょう")
+                Text("本を追加して、読書記録を始めましょう")
                     .font(MemoryTheme.Fonts.callout())
                     .foregroundColor(MemoryTheme.Colors.inkGray)
                     .multilineTextAlignment(.center)

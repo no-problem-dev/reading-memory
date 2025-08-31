@@ -14,57 +14,64 @@ struct BookShelfHomeView: View {
         viewModel.filteredBooks.filter { $0.status == .completed }
     }
     
+    var dnfBooks: [Book] {
+        viewModel.filteredBooks.filter { $0.status == .dnf }
+    }
+    
     var body: some View {
         NavigationStack(path: $navigationPath) {
             ZStack {
-                // Main content
+                // Background
+                MemoryTheme.Colors.secondaryBackground
+                    .ignoresSafeArea()
+                
                 ScrollView {
-                VStack(spacing: MemorySpacing.xl) {
-                    // ヘッダーメッセージ
-                    if !currentlyReadingBooks.isEmpty || !completedBooks.isEmpty {
-                        HeaderMessageView()
-                    }
-                    
-                    // 現在読書中セクション
-                    if !currentlyReadingBooks.isEmpty {
-                        CurrentlyReadingSection(
-                            books: currentlyReadingBooks,
-                            onChatTapped: { book in
-                                chatBook = book
-                            },
-                            onBookTapped: { book in
-                                navigationPath.append(book)
-                            }
+                    VStack(spacing: 0) {
+                        // Header using new component with updated subtitle
+                        TabHeaderView(
+                            title: "本棚",
+                            subtitle: "本との出会いと読書体験を大切に記録",
+                            iconName: "books.vertical.circle.fill"
                         )
-                    } else {
-                        EmptyReadingCard(onAddBook: {
-                            showAddBook = true
-                        })
-                        .padding(.horizontal, MemorySpacing.md)
-                    }
-                    
-                    // メモリーシェルフ（完読本）
-                    if !completedBooks.isEmpty {
-                        MemoryShelfSection(books: completedBooks) { book in
-                            navigationPath.append(book)
+                        
+                        VStack(spacing: MemorySpacing.xl) {
+                            // 現在読書中セクション
+                            if !currentlyReadingBooks.isEmpty {
+                                CurrentlyReadingSection(
+                                    books: currentlyReadingBooks,
+                                    onChatTapped: { book in
+                                        chatBook = book
+                                    },
+                                    onBookTapped: { book in
+                                        navigationPath.append(book)
+                                    }
+                                )
+                            } else {
+                                EmptyReadingCard(onAddBook: {
+                                    showAddBook = true
+                                })
+                                .padding(.horizontal, MemorySpacing.md)
+                            }
+                            
+                            // 読み終わった本セクション
+                            if !completedBooks.isEmpty {
+                                MemoryShelfSection(books: completedBooks) { book in
+                                    navigationPath.append(book)
+                                }
+                                .padding(.horizontal, MemorySpacing.md)
+                            }
+                            
+                            // 途中で読むのをやめた本セクション
+                            if !dnfBooks.isEmpty {
+                                DNFShelfSection(books: dnfBooks) { book in
+                                    navigationPath.append(book)
+                                }
+                                .padding(.horizontal, MemorySpacing.md)
+                            }
                         }
-                        .padding(.horizontal, MemorySpacing.md)
+                        .padding(.bottom, 100)
                     }
                 }
-                .padding(.bottom, 100)
-            }
-            .background(MemoryTheme.Colors.background)
-            .navigationTitle("読書メモリー")
-            .navigationBarTitleDisplayMode(.large)
-            .refreshable {
-                await viewModel.loadBooks()
-            }
-            .navigationDestination(for: Book.self) { book in
-                BookDetailView(bookId: book.id)
-                                }
-            .fullScreenCover(item: $chatBook) { book in
-                BookMemoryTabView(bookId: book.id)
-                                }
                 
                 // Floating Action Button
                 if navigationPath.isEmpty {
@@ -83,6 +90,16 @@ struct BookShelfHomeView: View {
                     .animation(.spring(), value: navigationPath.isEmpty)
                 }
             }
+            .navigationBarHidden(true)
+            .refreshable {
+                await viewModel.loadBooks()
+            }
+            .navigationDestination(for: Book.self) { book in
+                BookDetailView(bookId: book.id)
+                            }
+            .fullScreenCover(item: $chatBook) { book in
+                BookMemoryTabView(bookId: book.id)
+                            }
         }
         .task {
             await viewModel.loadBooks()

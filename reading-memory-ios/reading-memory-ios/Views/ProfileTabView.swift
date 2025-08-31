@@ -7,99 +7,114 @@ struct ProfileTabView: View {
     
     var body: some View {
         NavigationStack {
-            List {
-                // プロフィール情報をリストのヘッダーとして配置
-                Section {
-                    EmptyView()
-                } header: {
-                    ZStack {
-                        MemoryTheme.Colors.secondaryBackground
-                            .ignoresSafeArea(edges: .horizontal)
-                            .frame(maxWidth: .infinity)
-                            .padding(.horizontal, -20) // List のパディングを相殺
+            ZStack {
+                // Background
+                MemoryTheme.Colors.secondaryBackground
+                    .ignoresSafeArea()
+                
+                VStack(spacing: 0) {
+                    // Header using new component
+                    TabHeaderView(
+                        title: "設定",
+                        subtitle: "アプリを自分好みに",
+                        iconName: "gearshape.circle.fill"
+                    )
+                    
+                    // Content
+                    List {
+                        // プロフィール情報をリストのヘッダーとして配置
+                        Section {
+                            EmptyView()
+                        } header: {
+                            ZStack {
+                                MemoryTheme.Colors.background
+                                    .ignoresSafeArea(edges: .horizontal)
+                                    .frame(maxWidth: .infinity)
+                                    .padding(.horizontal, -20) // List のパディングを相殺
+                                
+                                ProfileHeaderSection()
+                                    .padding(.vertical, MemorySpacing.lg)
+                            }
+                            .textCase(nil) // ヘッダーテキストの大文字変換を無効化
+                            .listRowInsets(EdgeInsets())
+                        }
                         
-                        ProfileHeaderSection()
-                            .padding(.vertical, MemorySpacing.lg)
+                        Section {
+                            NavigationLink {
+                                ProfileEditView(viewModel: profileViewModel)
+                            } label: {
+                                Label("プロフィールを編集", systemImage: "person.fill")
+                            }
+                            
+                            NavigationLink {
+                                Text("公開本棚の設定")
+                                    .navigationTitle("公開本棚")
+                                    .navigationBarTitleDisplayMode(.inline)
+                            } label: {
+                                Label("公開本棚の設定", systemImage: "books.vertical.circle")
+                            }
+                        }
+                        
+                        Section {
+                            NavigationLink {
+                                Text("プライバシー設定")
+                                    .navigationTitle("プライバシー設定")
+                            } label: {
+                                Label("プライバシー設定", systemImage: "lock.fill")
+                            }
+                            
+                            NavigationLink {
+                                Text("通知設定")
+                                    .navigationTitle("通知設定")
+                            } label: {
+                                Label("通知設定", systemImage: "bell.fill")
+                            }
+                        }
+                        
+                        Section {
+                            NavigationLink {
+                                Text("読書メモリーについて")
+                                    .navigationTitle("このアプリについて")
+                                    .navigationBarTitleDisplayMode(.inline)
+                            } label: {
+                                Label("このアプリについて", systemImage: "info.circle.fill")
+                            }
+                            
+                            NavigationLink {
+                                Text("お問い合わせ")
+                                    .navigationTitle("お問い合わせ")
+                            } label: {
+                                Label("お問い合わせ", systemImage: "envelope.fill")
+                            }
+                        }
+                        
+                        Section {
+                            Button {
+                                showLogout = true
+                            } label: {
+                                Label("ログアウト", systemImage: "rectangle.portrait.and.arrow.forward")
+                                    .foregroundColor(.red)
+                            }
+                            
+                            Button(role: .destructive) {
+                                showDeleteAccount = true
+                            } label: {
+                                Label("アカウントを削除", systemImage: "trash")
+                                    .foregroundColor(.red)
+                            }
+                        }
                     }
-                    .textCase(nil) // ヘッダーテキストの大文字変換を無効化
-                    .listRowInsets(EdgeInsets())
-                }
-                
-                Section {
-                    NavigationLink {
-                        ProfileEditView(viewModel: profileViewModel)
-                    } label: {
-                        Label("プロフィールを編集", systemImage: "person.fill")
-                    }
-                    
-                    NavigationLink {
-                        Text("公開本棚の設定")
-                            .navigationTitle("公開本棚")
-                            .navigationBarTitleDisplayMode(.inline)
-                    } label: {
-                        Label("公開本棚の設定", systemImage: "books.vertical.circle")
-                    }
-                }
-                
-                Section {
-                    NavigationLink {
-                        Text("プライバシー設定")
-                            .navigationTitle("プライバシー設定")
-                    } label: {
-                        Label("プライバシー設定", systemImage: "lock.fill")
-                    }
-                    
-                    NavigationLink {
-                        Text("通知設定")
-                            .navigationTitle("通知設定")
-                    } label: {
-                        Label("通知設定", systemImage: "bell.fill")
-                    }
-                }
-                
-                Section {
-                    NavigationLink {
-                        Text("読書メモリーについて")
-                            .navigationTitle("このアプリについて")
-                            .navigationBarTitleDisplayMode(.inline)
-                    } label: {
-                        Label("このアプリについて", systemImage: "info.circle.fill")
-                    }
-                    
-                    NavigationLink {
-                        Text("お問い合わせ")
-                            .navigationTitle("お問い合わせ")
-                    } label: {
-                        Label("お問い合わせ", systemImage: "envelope.fill")
-                    }
-                }
-                
-                Section {
-                    Button {
-                        showLogout = true
-                    } label: {
-                        Label("ログアウト", systemImage: "rectangle.portrait.and.arrow.forward")
-                            .foregroundColor(.red)
-                    }
-                    
-                    Button(role: .destructive) {
-                        showDeleteAccount = true
-                    } label: {
-                        Label("アカウントを削除", systemImage: "trash")
-                            .foregroundColor(.red)
-                    }
+                    .listStyle(InsetGroupedListStyle())
+                    .background(MemoryTheme.Colors.background)
                 }
             }
-            .listStyle(InsetGroupedListStyle())
-            .navigationTitle("設定")
-            .navigationBarTitleDisplayMode(.large)
-            .background(MemoryTheme.Colors.background)
+            .navigationBarHidden(true)
             .sheet(isPresented: $showLogout) {
                 LogoutConfirmationView()
-                                }
+                            }
             .sheet(isPresented: $showDeleteAccount) {
                 DeleteAccountConfirmationView()
-                                }
+                            }
         }
         .task {
             await profileViewModel.loadProfile()

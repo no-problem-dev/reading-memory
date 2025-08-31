@@ -288,9 +288,9 @@ struct ChatContentView: View {
                         .lineLimit(1...5)
                 }
                 .background(Color(.secondarySystemBackground))
-                .cornerRadius(MemoryRadius.full)
+                .cornerRadius(MemoryRadius.large)
                 .overlay(
-                    RoundedRectangle(cornerRadius: MemoryRadius.full)
+                    RoundedRectangle(cornerRadius: MemoryRadius.large)
                         .stroke(
                             isInputFocused ? MemoryTheme.Colors.primaryBlue : Color(.separator),
                             lineWidth: isInputFocused ? 2 : 0.5

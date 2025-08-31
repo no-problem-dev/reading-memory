@@ -90,10 +90,10 @@ struct WantToReadRowView: View {
             
             Spacer()
             
-            // 並び替えハンドル（EditModeの時のみ表示）
-            Image(systemName: "line.3.horizontal")
-                .foregroundColor(.secondary)
-                .opacity(0.5)
+            // 並び替えハンドル無効化
+            // Image(systemName: "line.3.horizontal")
+            //     .foregroundColor(.secondary)
+            //     .opacity(0.5)
         }
         .padding(.vertical, 8)
         .padding(.horizontal, 16)

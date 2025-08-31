@@ -26,13 +26,13 @@ struct Badge: Identifiable, Codable {
         var color: String {
             switch self {
             case .bronze:
-                return "brown"
+                return "WarmCoral"
             case .silver:
-                return "gray"
+                return "InkGray"
             case .gold:
                 return "GoldenMemory"
             case .platinum:
-                return "purple"
+                return "MemoryBlue"
             }
         }
     }

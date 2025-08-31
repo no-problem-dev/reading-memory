@@ -16,86 +16,54 @@ struct DiscoveryView: View {
                 
                 ScrollView {
                     VStack(spacing: 0) {
-                        // Header
-                        VStack(spacing: MemorySpacing.md) {
-                            HStack {
-                                VStack(alignment: .leading, spacing: MemorySpacing.xs) {
-                                    Text("発見")
-                                        .font(MemoryTheme.Fonts.hero())
-                                        .foregroundColor(MemoryTheme.Colors.inkBlack)
-                                    Text("新しい本との出会いを")
-                                        .font(MemoryTheme.Fonts.callout())
-                                        .foregroundColor(MemoryTheme.Colors.inkGray)
-                                }
-                                Spacer()
-                                
-                                Image(systemName: "sparkle.magnifyingglass")
-                                    .font(.system(size: 40))
-                                    .foregroundStyle(
-                                        LinearGradient(
-                                            gradient: Gradient(colors: [
-                                                MemoryTheme.Colors.warmCoralLight,
-                                                MemoryTheme.Colors.warmCoral
-                                            ]),
-                                            startPoint: .topLeading,
-                                            endPoint: .bottomTrailing
-                                        )
-                                    )
-                            }
-                            .padding(.horizontal, MemorySpacing.lg)
-                            .padding(.top, MemorySpacing.lg)
-                            
-                            // Search Bar
-                            Button {
-                                showSearch = true
-                            } label: {
-                                HStack {
-                                    Image(systemName: "magnifyingglass")
-                                        .font(.system(size: 18))
-                                        .foregroundColor(MemoryTheme.Colors.inkGray)
-                                    
-                                    Text("本を探す...")
-                                        .font(MemoryTheme.Fonts.body())
-                                        .foregroundColor(MemoryTheme.Colors.inkLightGray)
-                                    
-                                    Spacer()
-                                    
+                        // Header using new component
+                        TabHeaderView(
+                            title: "発見",
+                            subtitle: "新しい本との出会いを",
+                            iconName: "sparkle.magnifyingglass",
+                            actionButton: {
+                                AnyView(
+                                    // Search Bar
                                     Button {
-                                        guard FeatureGate.canScanBarcode else {
-                                            showPaywall = true
-                                            return
-                                        }
-                                        showBarcodeScanner = true
+                                        showSearch = true
                                     } label: {
-                                        Image(systemName: "barcode.viewfinder")
-                                            .font(.system(size: 20))
-                                            .foregroundColor(MemoryTheme.Colors.primaryBlue)
-                                            .padding(8)
-                                            .background(
-                                                Circle()
-                                                    .fill(MemoryTheme.Colors.primaryBlue.opacity(0.1))
-                                            )
+                                        HStack {
+                                            Image(systemName: "magnifyingglass")
+                                                .font(.system(size: 18))
+                                                .foregroundColor(MemoryTheme.Colors.inkGray)
+                                            
+                                            Text("本を探す...")
+                                                .font(MemoryTheme.Fonts.body())
+                                                .foregroundColor(MemoryTheme.Colors.inkLightGray)
+                                            
+                                            Spacer()
+                                            
+                                            Button {
+                                                guard FeatureGate.canScanBarcode else {
+                                                    showPaywall = true
+                                                    return
+                                                }
+                                                showBarcodeScanner = true
+                                            } label: {
+                                                Image(systemName: "barcode.viewfinder")
+                                                    .font(.system(size: 20))
+                                                    .foregroundColor(MemoryTheme.Colors.primaryBlue)
+                                                    .padding(8)
+                                                    .background(
+                                                        Circle()
+                                                            .fill(MemoryTheme.Colors.primaryBlue.opacity(0.1))
+                                                    )
+                                            }
+                                        }
+                                        .padding(.horizontal, MemorySpacing.md)
+                                        .padding(.vertical, MemorySpacing.md)
+                                        .background(MemoryTheme.Colors.cardBackground)
+                                        .cornerRadius(MemoryRadius.full)
+                                        .memoryShadow(.soft)
                                     }
-                                }
-                                .padding(.horizontal, MemorySpacing.md)
-                                .padding(.vertical, MemorySpacing.md)
-                                .background(MemoryTheme.Colors.cardBackground)
-                                .cornerRadius(MemoryRadius.full)
-                                .memoryShadow(.soft)
+                                    .buttonStyle(PlainButtonStyle())
+                                )
                             }
-                            .buttonStyle(PlainButtonStyle())
-                            .padding(.horizontal, MemorySpacing.md)
-                        }
-                        .padding(.bottom, MemorySpacing.lg)
-                        .background(
-                            LinearGradient(
-                                gradient: Gradient(colors: [
-                                    MemoryTheme.Colors.background,
-                                    MemoryTheme.Colors.secondaryBackground
-                                ]),
-                                startPoint: .top,
-                                endPoint: .bottom
-                            )
                         )
                         
                         VStack(spacing: MemorySpacing.xl) {
@@ -112,7 +80,7 @@ struct DiscoveryView: View {
             .navigationBarHidden(true)
             .navigationDestination(for: Book.self) { book in
                 BookDetailView(bookId: book.id)
-                                }
+                            }
             .sheet(isPresented: $showSearch) {
                 NavigationStack {
                     BookSearchView()

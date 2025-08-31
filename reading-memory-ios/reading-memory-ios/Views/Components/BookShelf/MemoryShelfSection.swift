@@ -5,6 +5,7 @@ struct MemoryShelfSection: View {
     let onBookTapped: (Book) -> Void
     
     @State private var showAllBooks = false
+    @State private var showBookList = false
     
     var body: some View {
         VStack(alignment: .leading, spacing: MemorySpacing.md) {
@@ -22,22 +23,34 @@ struct MemoryShelfSection: View {
                                 endPoint: .bottomTrailing
                             )
                         )
-                    Text("メモリーシェルフ")
+                    Text("読み終わった本")
                         .font(MemoryTheme.Fonts.headline())
                         .foregroundColor(MemoryTheme.Colors.inkBlack)
                 }
                 
                 Spacer()
                 
-                if books.count > 12 {
-                    Button(action: {
-                        withAnimation(MemoryTheme.Animation.normal) {
-                            showAllBooks.toggle()
+                HStack(spacing: MemorySpacing.sm) {
+                    if books.count > 6 {
+                        Button(action: {
+                            showBookList = true
+                        }) {
+                            Text("もっと見る")
+                                .font(MemoryTheme.Fonts.footnote())
+                                .foregroundColor(MemoryTheme.Colors.primaryBlue)
                         }
-                    }) {
-                        Text(showAllBooks ? "閉じる" : "すべて見る")
-                            .font(MemoryTheme.Fonts.footnote())
-                            .foregroundColor(MemoryTheme.Colors.primaryBlue)
+                    }
+                    
+                    if books.count > 12 {
+                        Button(action: {
+                            withAnimation(MemoryTheme.Animation.normal) {
+                                showAllBooks.toggle()
+                            }
+                        }) {
+                            Text(showAllBooks ? "閉じる" : "すべて表示")
+                                .font(MemoryTheme.Fonts.footnote())
+                                .foregroundColor(MemoryTheme.Colors.inkGray)
+                        }
                     }
                 }
             }
@@ -57,6 +70,18 @@ struct MemoryShelfSection: View {
             .padding(MemorySpacing.md)
             .background(MemoryTheme.Colors.secondaryBackground)
             .cornerRadius(MemoryRadius.large)
+        }
+        .sheet(isPresented: $showBookList) {
+            BookListView(
+                books: books,
+                title: "読み終わった本",
+                listType: .completed,
+                onBookTapped: onBookTapped,
+                onChatTapped: nil,
+                onDismiss: {
+                    showBookList = false
+                }
+            )
         }
     }
 }
