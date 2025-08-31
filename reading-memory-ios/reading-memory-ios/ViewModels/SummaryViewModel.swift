@@ -17,7 +17,7 @@ final class SummaryViewModel {
         case error(message: String)
     }
     
-    private(set) var viewState: ViewState = .loading
+    var viewState: ViewState = .loading
     private(set) var existingSummary: String?
     private(set) var isGenerating = false
     
