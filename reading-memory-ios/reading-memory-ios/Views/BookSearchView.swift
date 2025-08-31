@@ -47,6 +47,9 @@ struct BookSearchView: View {
                     )
                 }
             }
+            .onAppear {
+                isSearchFieldFocused = true
+            }
         }
         .keyboardAware()
     }

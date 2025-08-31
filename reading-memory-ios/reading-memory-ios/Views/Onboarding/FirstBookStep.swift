@@ -12,113 +12,118 @@ struct FirstBookStep: View {
     }
     
     var body: some View {
-        VStack(spacing: 32) {
-            // Header
-            VStack(spacing: 16) {
-                Image(systemName: "book.closed.fill")
-                    .font(.system(size: 60))
-                    .foregroundStyle(.blue.gradient)
-                
-                VStack(spacing: 8) {
-                    Text("最初の本を登録しましょう")
-                        .font(.title2)
-                        .fontWeight(.bold)
-                    
-                    Text("今読んでいる本、または最近読んだ本はありますか？")
-                        .font(.body)
-                        .foregroundStyle(.secondary)
-                        .multilineTextAlignment(.center)
-                }
-            }
-            .padding(.top, 40)
-            
-            // Book display or add button
-            if let book = selectedBook {
-                // Selected book card
+        ScrollView {
+            VStack(spacing: 32) {
+                // Header
                 VStack(spacing: 16) {
-                    BookCard(book: book)
+                    Image(systemName: "book.closed.fill")
+                        .font(.system(size: 60))
+                        .foregroundStyle(.blue.gradient)
                     
-                    Button("別の本を選ぶ") {
-                        isShowingBookSearch = true
+                    VStack(spacing: 8) {
+                        Text("最初の本を登録しましょう")
+                            .font(.title2)
+                            .fontWeight(.bold)
+                        
+                        Text("今読んでいる本、または最近読んだ本はありますか？")
+                            .font(.body)
+                            .foregroundStyle(.secondary)
+                            .multilineTextAlignment(.center)
                     }
-                    .foregroundColor(.blue)
                 }
-                .padding(.horizontal)
-            } else {
-                // Add book options
-                VStack(spacing: 20) {
-                    // Barcode scan button
-                    Button(action: { 
-                        showBarcodeSheet = true
-                    }) {
-                        HStack(spacing: 16) {
-                            Image(systemName: "barcode.viewfinder")
-                                .font(.title2)
-                                .foregroundColor(.blue)
-                            
-                            VStack(alignment: .leading, spacing: 4) {
-                                Text("バーコードで追加")
-                                    .font(.headline)
-                                    .foregroundColor(.primary)
-                                Text("本の裏表紙をスキャン")
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
-                            }
-                            
-                            Spacer()
-                            
-                            Image(systemName: "chevron.right")
-                                .foregroundStyle(.secondary)
-                        }
-                        .padding()
-                        .background(Color.gray.opacity(0.1))
-                        .cornerRadius(12)
-                    }
-                    .buttonStyle(.plain)
-                    
-                    // Manual search button
-                    Button(action: { 
-                        showSearchSheet = true
-                    }) {
-                        HStack(spacing: 16) {
-                            Image(systemName: "magnifyingglass")
-                                .font(.title2)
-                                .foregroundColor(.blue)
-                            
-                            VStack(alignment: .leading, spacing: 4) {
-                                Text("タイトルで検索")
-                                    .font(.headline)
-                                    .foregroundColor(.primary)
-                                Text("本のタイトルや著者名で検索")
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
-                            }
-                            
-                            Spacer()
-                            
-                            Image(systemName: "chevron.right")
-                                .foregroundStyle(.secondary)
-                        }
-                        .padding()
-                        .background(Color.gray.opacity(0.1))
-                        .cornerRadius(12)
-                    }
-                    .buttonStyle(.plain)
-                }
-                .padding(.horizontal)
+                .padding(.top, 40)
                 
-                // Skip option
-                VStack(spacing: 12) {
-                    Text("後で登録することもできます")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+                // Book display or add button
+                if let book = selectedBook {
+                    // Selected book card
+                    VStack(spacing: 16) {
+                        BookCard(book: book)
+                        
+                        Button("別の本を選ぶ") {
+                            isShowingBookSearch = true
+                        }
+                        .foregroundColor(.blue)
+                    }
+                    .padding(.horizontal)
+                } else {
+                    // Add book options
+                    VStack(spacing: 20) {
+                        // Barcode scan button
+                        Button(action: { 
+                            showBarcodeSheet = true
+                        }) {
+                            HStack(spacing: 16) {
+                                Image(systemName: "barcode.viewfinder")
+                                    .font(.title2)
+                                    .foregroundColor(.blue)
+                                
+                                VStack(alignment: .leading, spacing: 4) {
+                                    Text("バーコードで追加")
+                                        .font(.headline)
+                                        .foregroundColor(.primary)
+                                    Text("本の裏表紙をスキャン")
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+                                }
+                                
+                                Spacer()
+                                
+                                Image(systemName: "chevron.right")
+                                    .foregroundStyle(.secondary)
+                            }
+                            .padding()
+                            .background(Color.gray.opacity(0.1))
+                            .cornerRadius(12)
+                        }
+                        .buttonStyle(.plain)
+                        
+                        // Manual search button
+                        Button(action: { 
+                            showSearchSheet = true
+                        }) {
+                            HStack(spacing: 16) {
+                                Image(systemName: "magnifyingglass")
+                                    .font(.title2)
+                                    .foregroundColor(.blue)
+                                
+                                VStack(alignment: .leading, spacing: 4) {
+                                    Text("タイトルで検索")
+                                        .font(.headline)
+                                        .foregroundColor(.primary)
+                                    Text("本のタイトルや著者名で検索")
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+                                }
+                                
+                                Spacer()
+                                
+                                Image(systemName: "chevron.right")
+                                    .foregroundStyle(.secondary)
+                            }
+                            .padding()
+                            .background(Color.gray.opacity(0.1))
+                            .cornerRadius(12)
+                        }
+                        .buttonStyle(.plain)
+                    }
+                    .padding(.horizontal)
+                    
+                    // Skip option
+                    VStack(spacing: 12) {
+                        Text("後で登録することもできます")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                    .padding(.top, 20)
                 }
-                .padding(.top, 20)
+                
+                // スクロールビューの最下部に余白を追加
+                Color.clear
+                    .frame(height: 50)
             }
-            
-            Spacer()
+            .padding(.vertical)
         }
-        .padding(.vertical)
+        .scrollIndicators(.hidden)
         .sheet(isPresented: $showSearchSheet) {
             NavigationStack {
                 BookSearchView(

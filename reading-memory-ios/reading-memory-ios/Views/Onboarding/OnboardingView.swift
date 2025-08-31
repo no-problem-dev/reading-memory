@@ -213,83 +213,83 @@ struct WelcomeStep: View {
     @State private var isAnimating = false
     
     var body: some View {
-        VStack(spacing: MemorySpacing.xl) {
-            Spacer()
-            
-            // Animated logo
-            ZStack {
-                Circle()
-                    .fill(
-                        LinearGradient(
-                            gradient: Gradient(colors: [
-                                MemoryTheme.Colors.primaryBlueLight.opacity(0.2),
-                                MemoryTheme.Colors.primaryBlue.opacity(0.1)
-                            ]),
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
+        ScrollView {
+            VStack(spacing: MemorySpacing.xl) {
+                // Animated logo
+                ZStack {
+                    Circle()
+                        .fill(
+                            LinearGradient(
+                                gradient: Gradient(colors: [
+                                    MemoryTheme.Colors.primaryBlueLight.opacity(0.2),
+                                    MemoryTheme.Colors.primaryBlue.opacity(0.1)
+                                ]),
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
                         )
-                    )
-                    .frame(width: 140, height: 140)
-                    .scaleEffect(isAnimating ? 1.1 : 1.0)
-                    .animation(.easeInOut(duration: 2).repeatForever(autoreverses: true), value: isAnimating)
-                
-                Image(systemName: "books.vertical.fill")
-                    .font(.system(size: 70))
-                    .foregroundStyle(
-                        LinearGradient(
-                            gradient: Gradient(colors: [
-                                MemoryTheme.Colors.primaryBlue,
-                                MemoryTheme.Colors.primaryBlueDark
-                            ]),
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
+                        .frame(width: 140, height: 140)
+                        .scaleEffect(isAnimating ? 1.1 : 1.0)
+                        .animation(.easeInOut(duration: 2).repeatForever(autoreverses: true), value: isAnimating)
+                    
+                    Image(systemName: "books.vertical.fill")
+                        .font(.system(size: 70))
+                        .foregroundStyle(
+                            LinearGradient(
+                                gradient: Gradient(colors: [
+                                    MemoryTheme.Colors.primaryBlue,
+                                    MemoryTheme.Colors.primaryBlueDark
+                                ]),
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
                         )
+                }
+                .onAppear { isAnimating = true }
+                .padding(.bottom, MemorySpacing.md)
+                .padding(.top, MemorySpacing.xxl)
+                
+                VStack(spacing: MemorySpacing.md) {
+                    Text("読書メモリーへようこそ")
+                        .font(MemoryTheme.Fonts.hero())
+                        .foregroundColor(MemoryTheme.Colors.inkBlack)
+                        .multilineTextAlignment(.center)
+                    
+                    Text("本と過ごした時間を、\nずっと大切に")
+                        .font(MemoryTheme.Fonts.title3())
+                        .foregroundColor(MemoryTheme.Colors.inkGray)
+                        .multilineTextAlignment(.center)
+                }
+                
+                // Feature highlights
+                VStack(spacing: MemorySpacing.md) {
+                    MemoryFeatureRow(
+                        icon: "bubble.left.and.bubble.right.fill",
+                        title: "読書メモ",
+                        description: "読みながら気づきを記録",
+                        color: MemoryTheme.Colors.primaryBlue
                     )
+                    
+                    MemoryFeatureRow(
+                        icon: "sparkles",
+                        title: "記憶に定着",
+                        description: "AIが要約を生成し、理解を深める",
+                        color: MemoryTheme.Colors.warmCoral
+                    )
+                    
+                    MemoryFeatureRow(
+                        icon: "heart.circle.fill",
+                        title: "思い出になる",
+                        description: "本との出会いが大切な記憶に",
+                        color: MemoryTheme.Colors.goldenMemory
+                    )
+                }
+                .padding(.horizontal, MemorySpacing.md)
+                .padding(.bottom, MemorySpacing.xxl)
             }
-            .onAppear { isAnimating = true }
-            .padding(.bottom, MemorySpacing.md)
-            
-            VStack(spacing: MemorySpacing.md) {
-                Text("読書メモリーへようこそ")
-                    .font(MemoryTheme.Fonts.hero())
-                    .foregroundColor(MemoryTheme.Colors.inkBlack)
-                    .multilineTextAlignment(.center)
-                
-                Text("本と過ごした時間を、\nずっと大切に")
-                    .font(MemoryTheme.Fonts.title3())
-                    .foregroundColor(MemoryTheme.Colors.inkGray)
-                    .multilineTextAlignment(.center)
-            }
-            
-            // Feature highlights
-            VStack(spacing: MemorySpacing.md) {
-                MemoryFeatureRow(
-                    icon: "bubble.left.and.bubble.right.fill",
-                    title: "読書メモ",
-                    description: "読みながら気づきを記録",
-                    color: MemoryTheme.Colors.primaryBlue
-                )
-                
-                MemoryFeatureRow(
-                    icon: "sparkles",
-                    title: "記憶に定着",
-                    description: "AIが要約を生成し、理解を深める",
-                    color: MemoryTheme.Colors.warmCoral
-                )
-                
-                MemoryFeatureRow(
-                    icon: "heart.circle.fill",
-                    title: "思い出になる",
-                    description: "本との出会いが大切な記憶に",
-                    color: MemoryTheme.Colors.goldenMemory
-                )
-            }
-            .padding(.horizontal, MemorySpacing.md)
-            
-            Spacer()
-            Spacer()
+            .padding(.horizontal, MemorySpacing.lg)
         }
-        .padding(MemorySpacing.lg)
+        .scrollIndicators(.hidden)
     }
 }
 

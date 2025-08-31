@@ -37,6 +37,10 @@ struct ChatContentView: View {
             if !hasLoadedInitialData {
                 await viewModel.loadChats()
                 hasLoadedInitialData = true
+                // チャットデータの読み込み後、少し遅延してからキーボードを表示
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                    isInputFocused = true
+                }
             }
         }
         .onChange(of: selectedPhoto) { _, newItem in

@@ -59,6 +59,11 @@ final class APIClient {
         }
         
         if httpResponse.statusCode >= 200 && httpResponse.statusCode < 300 {
+            // 204 No Content の場合は、EmptyResponseを返す
+            if httpResponse.statusCode == 204 && T.self == EmptyResponse.self {
+                return EmptyResponse() as! T
+            }
+            
             do {
                 let decoder = JSONDecoder()
                 
