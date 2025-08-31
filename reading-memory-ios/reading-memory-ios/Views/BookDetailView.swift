@@ -8,11 +8,7 @@ struct BookDetailView: View {
     @State private var isLoading = true
     @State private var showingEditSheet = false
     @State private var showingDeleteAlert = false
-    @State private var showingSummarySheet = false
-    @State private var aiSummary: String?
-    @State private var isGeneratingSummary = false
-    @State private var summaryError: String?
-    @State private var showingSummaryError = false
+    @State private var showingLegacySummarySheet = false
     @State private var isUpdatingStatus = false
     @State private var showStatusChangeAnimation = false
     @State private var showPaywall = false
@@ -113,16 +109,8 @@ struct BookDetailView: View {
                 } message: {
                     Text("この本を削除してもよろしいですか？\nこの操作は取り消せません。")
                 }
-                .sheet(isPresented: $showingSummarySheet) {
-                    SummaryView(summary: aiSummary ?? "")
-                }
                 .sheet(isPresented: $showPaywall) {
                     PaywallView()
-                }
-                .alert("要約生成エラー", isPresented: $showingSummaryError) {
-                    Button("OK", role: .cancel) {}
-                } message: {
-                    Text(summaryError ?? "要約の生成に失敗しました")
                 }
             } else {
                 VStack(spacing: MemorySpacing.md) {
@@ -252,11 +240,7 @@ struct BookDetailView: View {
             .buttonStyle(PlainButtonStyle())
             
             // AI Summary Button
-            Button {
-                Task {
-                    await generateSummary()
-                }
-            } label: {
+            NavigationLink(destination: SummaryView(book: book)) {
                 HStack {
                     ZStack {
                         Circle()
@@ -278,25 +262,19 @@ struct BookDetailView: View {
                     }
                     
                     VStack(alignment: .leading, spacing: 2) {
-                        Text(book.aiSummary != nil ? "AI要約を再生成" : "AI要約を生成")
+                        Text(book.aiSummary != nil ? "AI要約を見る" : "AI要約を生成")
                             .font(.headline)
                             .foregroundColor(Color(.label))
-                        Text(book.aiSummary != nil ? "最新の読書メモで要約を更新" : "読書メモから要点をまとめます")
+                        Text(book.aiSummary != nil ? "生成された要約を確認" : "読書メモから要点をまとめます")
                             .font(.caption)
                             .foregroundColor(Color(.secondaryLabel))
                     }
                     
                     Spacer()
                     
-                    if isGeneratingSummary {
-                        ProgressView()
-                            .scaleEffect(0.8)
-                            .tint(MemoryTheme.Colors.warmCoral)
-                    } else {
-                        Image(systemName: "chevron.right")
-                            .font(.system(size: 14))
-                            .foregroundColor(Color(.tertiaryLabel))
-                    }
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 14))
+                        .foregroundColor(Color(.tertiaryLabel))
                 }
                 .padding(MemorySpacing.md)
                 .background(Color(.tertiarySystemBackground))
@@ -304,7 +282,6 @@ struct BookDetailView: View {
                 .memoryShadow(.soft)
             }
             .buttonStyle(PlainButtonStyle())
-            .disabled(isGeneratingSummary)
             
             // Purchase Button (if purchase URL exists)
             if let purchaseUrl = book.purchaseUrl, !purchaseUrl.isEmpty {
@@ -562,46 +539,6 @@ struct BookDetailView: View {
         }
     }
     
-    private func generateSummary() async {
-        guard authService.currentUser?.uid != nil else { return }
-        
-        // プレミアムチェック
-        guard FeatureGate.canUseAI else {
-            showPaywall = true
-            return
-        }
-        
-        isGeneratingSummary = true
-        summaryError = nil
-        
-        do {
-            let aiService = AIService.shared
-            let summary = try await aiService.generateBookSummaryAPI(
-                bookId: bookId
-            )
-            
-            aiSummary = summary
-            showingSummarySheet = true
-        } catch {
-            print("Error generating summary: \(error)")
-            
-            // エラーメッセージの取得
-            if let appError = error as? AppError {
-                switch appError {
-                case .custom(let message):
-                    summaryError = message
-                default:
-                    summaryError = "要約の生成に失敗しました。しばらく時間をおいてから再度お試しください。"
-                }
-            } else {
-                summaryError = "要約の生成に失敗しました。しばらく時間をおいてから再度お試しください。"
-            }
-            
-            showingSummaryError = true
-        }
-        
-        isGeneratingSummary = false
-    }
     
     private func updateStatus(to newStatus: ReadingStatus) async {
         guard let currentBook = book, authService.currentUser?.uid != nil else { return }
@@ -732,65 +669,6 @@ struct BookDetailView: View {
     }
 }
 
-
-// Summary View
-struct SummaryView: View {
-    let summary: String
-    @Environment(\.dismiss) private var dismiss
-    
-    var body: some View {
-        NavigationStack {
-            ScrollView {
-                VStack(spacing: MemorySpacing.lg) {
-                    // Header
-                    VStack(spacing: MemorySpacing.sm) {
-                        Image(systemName: "sparkles")
-                            .font(.system(size: 40))
-                            .foregroundColor(MemoryTheme.Colors.warmCoral)
-                        
-                        Text("AI要約")
-                            .font(.title2)
-                            .fontWeight(.bold)
-                            .foregroundColor(Color(.label))
-                    }
-                    .padding(.top, MemorySpacing.lg)
-                    
-                    // Summary Content
-                    VStack(alignment: .leading, spacing: MemorySpacing.md) {
-                        Text(summary)
-                            .font(.body)
-                            .foregroundColor(Color(.label))
-                            .lineSpacing(8)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                    }
-                    .padding(MemorySpacing.lg)
-                    .background(
-                        RoundedRectangle(cornerRadius: MemoryRadius.large)
-                            .fill(Color(.secondarySystemBackground))
-                    )
-                    .padding(.horizontal, MemorySpacing.md)
-                    
-                    // Footer Note
-                    Text("この要約は、あなたの読書メモをもとにAIが生成しました")
-                        .font(.caption)
-                        .foregroundColor(Color(.secondaryLabel))
-                        .multilineTextAlignment(.center)
-                        .padding(.horizontal, MemorySpacing.lg)
-                        .padding(.bottom, MemorySpacing.lg)
-                }
-            }
-            .background(Color(.systemBackground))
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("閉じる") {
-                        dismiss()
-                    }
-                }
-            }
-        }
-    }
-}
 
 
 // Rating Selector
