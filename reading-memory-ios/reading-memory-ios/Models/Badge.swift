@@ -30,7 +30,7 @@ struct Badge: Identifiable, Codable {
             case .silver:
                 return "gray"
             case .gold:
-                return "yellow"
+                return "GoldenMemory"
             case .platinum:
                 return "purple"
             }
