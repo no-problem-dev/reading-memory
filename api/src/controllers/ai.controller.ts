@@ -136,8 +136,10 @@ export const generateBookSummary = async (
     
     if (chats.length === 0) {
       res.json({
-        success: true,
-        summary: 'まだ読書メモがありません。',
+        success: false,
+        summary: '',
+        error: 'NO_CHATS',
+        message: 'まだ読書メモがありません。本について感じたことや気づいたことをチャットで記録してから、要約を生成してください。',
       });
       return;
     }

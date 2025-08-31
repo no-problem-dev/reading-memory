@@ -747,6 +747,8 @@ struct AIResponseResult: Decodable {
 struct SummaryResult: Decodable {
     let success: Bool
     let summary: String
+    let error: String?
+    let message: String?
 }
 
 struct BookSearchAPIResponse: Decodable {

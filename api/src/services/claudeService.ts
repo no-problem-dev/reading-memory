@@ -74,28 +74,49 @@ export class ClaudeService {
     chats: Array<{ message: string; isAI: boolean }>
   ): Promise<string> {
     try {
-      // ユーザーのメッセージのみを抽出
-      const userMessages = chats
-        .filter((chat) => !chat.isAI)
-        .map((chat) => chat.message)
+      // 対話の全体を構築（ユーザーとAIの対話を含む）
+      const conversation = chats
+        .map((chat) => {
+          const role = chat.isAI ? 'AI' : 'あなた';
+          return `${role}: ${chat.message}`;
+        })
         .join('\n\n');
 
-      if (!userMessages) {
-        return '読書メモがありません。';
+      if (!conversation || chats.length === 0) {
+        return 'まだ読書メモがありません。本について感じたことや気づいたことをチャットで記録してください。';
       }
 
-      const systemPrompt = 'あなたは読書ノートをまとめる専門家です。';
+      const systemPrompt = `あなたは優れた読書アドバイザーです。読者の読書体験を深く理解し、洞察に富んだ要約を作成します。
+読者が本から得た価値を明確に言語化し、今後の人生や仕事に活かせる形で整理します。`;
 
-      const userPrompt = `以下は「${bookTitle}」（著者: ${bookAuthor}）についての読書メモです。
-これらのメモから、ユーザーが得た主要な気づきや感想を3-5個の箇条書きでまとめてください。
+      const userPrompt = `「${bookTitle}」（著者: ${bookAuthor}）についての読書記録を分析し、以下の形式で要約を作成してください。
 
-読書メモ:
-${userMessages}`;
+【読書対話の記録】
+${conversation}
+
+【要約の形式】
+1. 📚 この本から得た最も重要な学び（2-3個）
+   - 具体的で実践可能な内容を箇条書きで
+
+2. 💡 心に残った洞察や気づき（2-3個）
+   - 読者の感情や思考の変化を含めて
+
+3. 🎯 今後の行動への示唆（1-2個）
+   - この本の学びをどう活かせるか
+
+4. 📝 読者の成長ポイント
+   - この読書体験を通じて読者がどう成長したか
+
+注意事項：
+- 読者の言葉や感情を大切にする
+- 単なる内容の要約ではなく、読者の体験と学びに焦点を当てる
+- 具体的で記憶に残る表現を使う
+- 読者が後で見返したときに、読書体験を鮮明に思い出せるようにする`;
 
       const response = await this.client.messages.create({
         model: 'claude-sonnet-4-0',
-        max_tokens: 500,
-        temperature: 0.3,
+        max_tokens: 1000,
+        temperature: 0.7,
         system: systemPrompt,
         messages: [
           {role: 'user', content: userPrompt},

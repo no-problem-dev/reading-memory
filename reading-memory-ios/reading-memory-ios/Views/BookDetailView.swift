@@ -11,6 +11,8 @@ struct BookDetailView: View {
     @State private var showingSummarySheet = false
     @State private var aiSummary: String?
     @State private var isGeneratingSummary = false
+    @State private var summaryError: String?
+    @State private var showingSummaryError = false
     @State private var isUpdatingStatus = false
     @State private var showStatusChangeAnimation = false
     @State private var showPaywall = false
@@ -116,6 +118,11 @@ struct BookDetailView: View {
                 }
                 .sheet(isPresented: $showPaywall) {
                     PaywallView()
+                }
+                .alert("要約生成エラー", isPresented: $showingSummaryError) {
+                    Button("OK", role: .cancel) {}
+                } message: {
+                    Text(summaryError ?? "要約の生成に失敗しました")
                 }
             } else {
                 VStack(spacing: MemorySpacing.md) {
@@ -271,10 +278,10 @@ struct BookDetailView: View {
                     }
                     
                     VStack(alignment: .leading, spacing: 2) {
-                        Text("AI要約を生成")
+                        Text(book.aiSummary != nil ? "AI要約を再生成" : "AI要約を生成")
                             .font(.headline)
                             .foregroundColor(Color(.label))
-                        Text("読書メモから要点をまとめます")
+                        Text(book.aiSummary != nil ? "最新の読書メモで要約を更新" : "読書メモから要点をまとめます")
                             .font(.caption)
                             .foregroundColor(Color(.secondaryLabel))
                     }
@@ -565,6 +572,7 @@ struct BookDetailView: View {
         }
         
         isGeneratingSummary = true
+        summaryError = nil
         
         do {
             let aiService = AIService.shared
@@ -576,8 +584,20 @@ struct BookDetailView: View {
             showingSummarySheet = true
         } catch {
             print("Error generating summary: \(error)")
-            aiSummary = "要約の生成に失敗しました。しばらく時間をおいてから再度お試しください。"
-            showingSummarySheet = true
+            
+            // エラーメッセージの取得
+            if let appError = error as? AppError {
+                switch appError {
+                case .custom(let message):
+                    summaryError = message
+                default:
+                    summaryError = "要約の生成に失敗しました。しばらく時間をおいてから再度お試しください。"
+                }
+            } else {
+                summaryError = "要約の生成に失敗しました。しばらく時間をおいてから再度お試しください。"
+            }
+            
+            showingSummaryError = true
         }
         
         isGeneratingSummary = false
@@ -721,25 +741,43 @@ struct SummaryView: View {
     var body: some View {
         NavigationStack {
             ScrollView {
-                VStack(alignment: .leading, spacing: MemorySpacing.md) {
-                    Image(systemName: "sparkles")
-                        .font(.system(size: 40))
-                        .foregroundColor(MemoryTheme.Colors.warmCoral)
-                        .frame(maxWidth: .infinity)
-                        .padding(.top, MemorySpacing.lg)
+                VStack(spacing: MemorySpacing.lg) {
+                    // Header
+                    VStack(spacing: MemorySpacing.sm) {
+                        Image(systemName: "sparkles")
+                            .font(.system(size: 40))
+                            .foregroundColor(MemoryTheme.Colors.warmCoral)
+                        
+                        Text("AI要約")
+                            .font(.title2)
+                            .fontWeight(.bold)
+                            .foregroundColor(Color(.label))
+                    }
+                    .padding(.top, MemorySpacing.lg)
                     
-                    Text("AI要約")
-                        .font(.title2)
-                        .foregroundColor(Color(.label))
-                        .frame(maxWidth: .infinity)
+                    // Summary Content
+                    VStack(alignment: .leading, spacing: MemorySpacing.md) {
+                        Text(summary)
+                            .font(.body)
+                            .foregroundColor(Color(.label))
+                            .lineSpacing(8)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                    }
+                    .padding(MemorySpacing.lg)
+                    .background(
+                        RoundedRectangle(cornerRadius: MemoryRadius.large)
+                            .fill(Color(.secondarySystemBackground))
+                    )
+                    .padding(.horizontal, MemorySpacing.md)
                     
-                    Text(summary)
-                        .font(.body)
-                        .foregroundColor(Color(.label))
-                        .lineSpacing(6)
-                        .padding(.horizontal, MemorySpacing.md)
+                    // Footer Note
+                    Text("この要約は、あなたの読書メモをもとにAIが生成しました")
+                        .font(.caption)
+                        .foregroundColor(Color(.secondaryLabel))
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal, MemorySpacing.lg)
+                        .padding(.bottom, MemorySpacing.lg)
                 }
-                .padding(.vertical, MemorySpacing.lg)
             }
             .background(Color(.systemBackground))
             .navigationBarTitleDisplayMode(.inline)
