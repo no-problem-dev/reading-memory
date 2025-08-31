@@ -8,7 +8,7 @@ struct BookDetailView: View {
     @State private var isLoading = true
     @State private var showingEditSheet = false
     @State private var showingDeleteAlert = false
-    @State private var showingLegacySummarySheet = false
+    @State private var showingSummaryView = false
     @State private var isUpdatingStatus = false
     @State private var showStatusChangeAnimation = false
     @State private var showPaywall = false
@@ -111,6 +111,9 @@ struct BookDetailView: View {
                 }
                 .sheet(isPresented: $showPaywall) {
                     PaywallView()
+                }
+                .sheet(isPresented: $showingSummaryView) {
+                    SummaryView(book: book)
                 }
             } else {
                 VStack(spacing: MemorySpacing.md) {
@@ -240,7 +243,9 @@ struct BookDetailView: View {
             .buttonStyle(PlainButtonStyle())
             
             // AI Summary Button
-            NavigationLink(destination: SummaryView(book: book)) {
+            Button {
+                showingSummaryView = true
+            } label: {
                 HStack {
                     ZStack {
                         Circle()
