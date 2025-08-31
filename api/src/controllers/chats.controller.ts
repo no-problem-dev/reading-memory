@@ -65,8 +65,9 @@ export const createChat = async (
     const { bookId } = req.params;
     const { message, messageType = 'user', imageId, chapterOrSection, pageNumber } = req.body;
     
-    if (!message || message.trim().length === 0) {
-      throw new ApiError(400, 'INVALID_ARGUMENT', 'Message cannot be empty');
+    // メッセージまたは画像のいずれかは必須
+    if ((!message || message.trim().length === 0) && !imageId) {
+      throw new ApiError(400, 'INVALID_ARGUMENT', 'Message or image is required');
     }
     
     // Check if book exists
@@ -89,7 +90,7 @@ export const createChat = async (
     
     // Create chat data
     const chatData: any = {
-      message: message.trim(),
+      message: message ? message.trim() : '',
       messageType,
       createdAt: FieldValue.serverTimestamp(),
       updatedAt: FieldValue.serverTimestamp()
@@ -135,6 +136,7 @@ export const updateChat = async (
     const { bookId, chatId } = req.params;
     const { message, chapterOrSection, pageNumber } = req.body;
     
+    // 更新時はメッセージが必須（画像は更新できないため）
     if (!message || message.trim().length === 0) {
       throw new ApiError(400, 'INVALID_ARGUMENT', 'Message cannot be empty');
     }

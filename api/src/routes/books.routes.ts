@@ -120,7 +120,7 @@ router.post(
   authenticate,
   [
     param('bookId').notEmpty().withMessage('Book ID is required'),
-    body('message').notEmpty().withMessage('Message is required'),
+    body('message').optional().isString().withMessage('Message must be a string'),
     body('messageType').optional().isIn(['user', 'ai']).withMessage('Invalid message type'),
     body('imageId').optional().isString().withMessage('Image ID must be a string'),
     body('chapterOrSection').optional().isString().withMessage('Chapter or section must be a string'),

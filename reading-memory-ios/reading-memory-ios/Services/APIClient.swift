@@ -113,6 +113,11 @@ final class APIClient {
                 throw AppError.custom("レスポンスの解析に失敗しました")
             }
         } else {
+            // デバッグ: エラーレスポンスをログ出力
+            if let responseString = String(data: data, encoding: .utf8) {
+                print("DEBUG: Error response (\(httpResponse.statusCode)): \(responseString)")
+            }
+            
             // エラーレスポンスの解析
             if let errorResponse = try? JSONDecoder().decode(ErrorResponse.self, from: data) {
                 throw AppError.custom(errorResponse.error.message)
@@ -627,6 +632,11 @@ final class APIClient {
         }
         
         let body = try JSONSerialization.data(withJSONObject: bodyDict, options: [])
+        
+        // デバッグ: リクエストボディをログ出力
+        if let jsonString = String(data: body, encoding: .utf8) {
+            print("DEBUG: Sending chat request body: \(jsonString)")
+        }
         
         let request = try await makeRequest(
             method: "POST",
