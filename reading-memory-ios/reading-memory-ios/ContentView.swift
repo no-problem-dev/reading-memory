@@ -46,8 +46,21 @@ struct ContentView: View {
         }
         .onChange(of: authViewModel.currentUser) { oldUser, newUser in
             if oldUser != newUser {
-                Task {
-                    await initializeUserIfNeeded()
+                // ユーザーがnilになった場合（ログアウト・削除）、即座にデータをリセット
+                if newUser == nil {
+                    isDataReady = false
+                    needsOnboarding = false
+                    isCheckingProfile = false
+                    // 少し待ってからisDataReadyをtrueに設定して画面を更新
+                    Task {
+                        try? await Task.sleep(nanoseconds: 100_000_000) // 0.1秒
+                        isDataReady = true
+                    }
+                } else {
+                    // ログインした場合
+                    Task {
+                        await initializeUserIfNeeded()
+                    }
                 }
             }
         }

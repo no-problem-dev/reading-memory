@@ -120,12 +120,10 @@ final class AuthService {
         
         // API側でAuth削除が成功した場合
         if result.deletedCollections.contains("auth") {
-            print("INFO: Account deletion successful, auth state will be updated automatically")
             // バックグラウンドでデータ削除が続行される
             _currentUser = nil
         } else {
             // Auth削除が失敗した場合はエラーとして扱う
-            print("ERROR: Failed to delete auth account: \(result.errors)")
             throw DeleteAccountError.serverError
         }
     }

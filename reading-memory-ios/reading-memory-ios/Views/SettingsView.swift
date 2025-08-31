@@ -2,10 +2,16 @@ import SwiftUI
 
 struct SettingsView: View {
     @Environment(AuthViewModel.self) private var authViewModel
-    @State private var showingDeleteAccountAlert = false
-    @State private var showingDeleteAccountConfirmation = false
+    @State private var alertItem: AlertItem?
     @State private var isDeleting = false
-    @State private var deleteError: String?
+    
+    struct AlertItem: Identifiable {
+        let id = UUID()
+        let title: String
+        let message: String
+        let primaryButton: Alert.Button
+        let secondaryButton: Alert.Button?
+    }
     
     var body: some View {
         NavigationView {
@@ -43,7 +49,7 @@ struct SettingsView: View {
                 
                 Section {
                     Button(action: {
-                        showingDeleteAccountAlert = true
+                        showFirstDeleteConfirmation()
                     }) {
                         HStack {
                             Image(systemName: "trash")
@@ -78,34 +84,56 @@ struct SettingsView: View {
                     .shadow(radius: 10)
                 }
             }
-            .alert("アカウント削除の確認", isPresented: $showingDeleteAccountAlert) {
-                Button("キャンセル", role: .cancel) {}
-                Button("続ける", role: .destructive) {
-                    showingDeleteAccountConfirmation = true
-                }
-            } message: {
-                Text("本当に退会しますか？\n\nこの操作は取り消すことができません。すべての読書記録、メモ、設定が完全に削除されます。")
-            }
-            .alert("最終確認", isPresented: $showingDeleteAccountConfirmation) {
-                Button("キャンセル", role: .cancel) {}
-                Button("削除する", role: .destructive) {
-                    Task {
-                        await deleteAccount()
-                    }
-                }
-            } message: {
-                Text("本当に退会してよろしいですか？\n\nこの操作を実行すると、二度と元に戻すことはできません。")
-            }
-            .alert("エラー", isPresented: .constant(deleteError != nil)) {
-                Button("OK") {
-                    deleteError = nil
-                }
-            } message: {
-                if let error = deleteError {
-                    Text(error)
-                }
+        }
+        .alert(item: $alertItem) { item in
+            if let secondaryButton = item.secondaryButton {
+                return Alert(
+                    title: Text(item.title),
+                    message: Text(item.message),
+                    primaryButton: item.primaryButton,
+                    secondaryButton: secondaryButton
+                )
+            } else {
+                return Alert(
+                    title: Text(item.title),
+                    message: Text(item.message),
+                    dismissButton: item.primaryButton
+                )
             }
         }
+    }
+    
+    private func showFirstDeleteConfirmation() {
+        alertItem = AlertItem(
+            title: "アカウント削除の確認",
+            message: "本当に退会しますか？\n\nこの操作は取り消すことができません。すべての読書記録、メモ、設定が完全に削除されます。",
+            primaryButton: .cancel(Text("キャンセル")),
+            secondaryButton: .destructive(Text("続ける")) {
+                showFinalDeleteConfirmation()
+            }
+        )
+    }
+    
+    private func showFinalDeleteConfirmation() {
+        alertItem = AlertItem(
+            title: "最終確認",
+            message: "本当に退会してよろしいですか？\n\nこの操作を実行すると、二度と元に戻すことはできません。",
+            primaryButton: .cancel(Text("キャンセル")),
+            secondaryButton: .destructive(Text("削除する")) {
+                Task {
+                    await deleteAccount()
+                }
+            }
+        )
+    }
+    
+    private func showError(_ message: String) {
+        alertItem = AlertItem(
+            title: "エラー",
+            message: message,
+            primaryButton: .default(Text("OK")),
+            secondaryButton: nil
+        )
     }
     
     private func deleteAccount() async {
@@ -113,34 +141,46 @@ struct SettingsView: View {
         
         // 認証状態を確認
         guard AuthService.shared.currentUser != nil else {
-            deleteError = "認証情報が見つかりません。再度ログインしてください。"
             isDeleting = false
+            showError("認証情報が見つかりません。再度ログインしてください。")
             return
         }
         
         do {
             try await AuthService.shared.deleteAccount()
-            // 削除成功 - AuthViewModelがauthStateListenerで自動的にcurrentUserをnilに設定し、
-            // ContentViewがログイン画面に遷移する
+            
+            // 削除成功 - アカウントが削除されたらAuthStateListenerが自動的に処理
             isDeleting = false
+            
+            // Auth削除後、少し待機してAuthStateの変更を待つ
+            try await Task.sleep(nanoseconds: 500_000_000) // 0.5秒待機
+            
+            // AuthStateListenerが反応しない場合の保険として、手動でnilに設定
+            if authViewModel.currentUser != nil {
+                authViewModel.currentUser = nil
+            }
         } catch {
             // Firebase Authのエラーコードを確認
             let nsError = error as NSError
+            var errorMessage = ""
+            
             if nsError.domain == "FIRAuthErrorDomain" {
                 switch nsError.code {
                 case 17014: // FIRAuthErrorCodeRequiresRecentLogin
-                    deleteError = "セキュリティ上の理由により、再度ログインが必要です。一度サインアウトして、もう一度ログインしてから退会処理を行ってください。"
+                    errorMessage = "セキュリティ上の理由により、再度ログインが必要です。一度サインアウトして、もう一度ログインしてから退会処理を行ってください。"
                 case 17008: // FIRAuthErrorCodeNetworkError
-                    deleteError = "ネットワークエラーが発生しました。インターネット接続を確認してください。"
+                    errorMessage = "ネットワークエラーが発生しました。インターネット接続を確認してください。"
                 default:
-                    deleteError = "退会処理中にエラーが発生しました: \(error.localizedDescription)"
+                    errorMessage = "退会処理中にエラーが発生しました: \(error.localizedDescription)"
                 }
             } else if let accountError = error as? DeleteAccountError {
-                self.deleteError = accountError.errorDescription ?? "退会処理中にエラーが発生しました。"
+                errorMessage = accountError.errorDescription ?? "退会処理中にエラーが発生しました。"
             } else {
-                deleteError = "退会処理中にエラーが発生しました: \(error.localizedDescription)"
+                errorMessage = "退会処理中にエラーが発生しました: \(error.localizedDescription)"
             }
+            
             isDeleting = false
+            showError(errorMessage)
         }
     }
 }
