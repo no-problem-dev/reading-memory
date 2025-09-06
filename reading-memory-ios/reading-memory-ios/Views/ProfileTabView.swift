@@ -1,8 +1,13 @@
 import SwiftUI
+import StoreKit
+import MessageUI
 
 struct ProfileTabView: View {
+    @Environment(SubscriptionStateStore.self) private var subscriptionState
     @State private var showLogout = false
     @State private var showDeleteAccount = false
+    @State private var showPaywall = false
+    @State private var showMailComposer = false
     @State private var profileViewModel = ProfileViewModel()
     
     var body: some View {
@@ -39,56 +44,48 @@ struct ProfileTabView: View {
                             .listRowInsets(EdgeInsets())
                         }
                         
-                        Section {
+                        // プレミアムプラン導線（非プレミアムユーザーのみ）
+                        if !subscriptionState.isSubscribed {
+                            Section {
+                                PremiumPromotionCard(showPaywall: $showPaywall)
+                                    .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0))
+                                    .listRowBackground(Color.clear)
+                            }
+                        }
+                        
+                        // アカウント設定
+                        Section("アカウント") {
                             NavigationLink {
                                 ProfileEditView()
                             } label: {
                                 Label("プロフィールを編集", systemImage: "person.fill")
                             }
-                            
-                            NavigationLink {
-                                Text("公開本棚の設定")
-                                    .navigationTitle("公開本棚")
-                                    .navigationBarTitleDisplayMode(.inline)
-                            } label: {
-                                Label("公開本棚の設定", systemImage: "books.vertical.circle")
-                            }
                         }
                         
-                        Section {
-                            NavigationLink {
-                                Text("プライバシー設定")
-                                    .navigationTitle("プライバシー設定")
-                            } label: {
-                                Label("プライバシー設定", systemImage: "lock.fill")
-                            }
-                            
-                            NavigationLink {
-                                Text("通知設定")
-                                    .navigationTitle("通知設定")
-                            } label: {
-                                Label("通知設定", systemImage: "bell.fill")
-                            }
-                        }
-                        
-                        Section {
-                            NavigationLink {
-                                Text("読書メモリーについて")
-                                    .navigationTitle("このアプリについて")
-                                    .navigationBarTitleDisplayMode(.inline)
-                            } label: {
-                                Label("このアプリについて", systemImage: "info.circle.fill")
-                            }
-                            
-                            NavigationLink {
-                                Text("お問い合わせ")
-                                    .navigationTitle("お問い合わせ")
+                        // サポート
+                        Section("サポート") {
+                            Button {
+                                if MFMailComposeViewController.canSendMail() {
+                                    showMailComposer = true
+                                } else {
+                                    // メールが設定されていない場合の処理
+                                    openMailToURL()
+                                }
                             } label: {
                                 Label("お問い合わせ", systemImage: "envelope.fill")
+                                    .foregroundColor(MemoryTheme.Colors.inkBlack)
+                            }
+                            
+                            Button {
+                                requestAppReview()
+                            } label: {
+                                Label("アプリを評価する", systemImage: "star.fill")
+                                    .foregroundColor(MemoryTheme.Colors.inkBlack)
                             }
                         }
                         
-                        Section {
+                        // その他
+                        Section("その他") {
                             Button {
                                 showLogout = true
                             } label: {
@@ -115,10 +112,58 @@ struct ProfileTabView: View {
             .sheet(isPresented: $showDeleteAccount) {
                 DeleteAccountConfirmationView()
                             }
+            .sheet(isPresented: $showPaywall) {
+                PaywallView()
+            }
+            .sheet(isPresented: $showMailComposer) {
+                MailComposerView(
+                    recipients: ["info@no-problem-net.com"],
+                    subject: "読書メモリー お問い合わせ",
+                    messageBody: generateSupportEmailBody()
+                )
+            }
         }
         .task {
             await profileViewModel.loadProfile()
         }
+    }
+    
+    // MARK: - Helper Methods
+    
+    private func requestAppReview() {
+        if let scene = UIApplication.shared.connectedScenes.first as? UIWindowScene {
+            SKStoreReviewController.requestReview(in: scene)
+        }
+    }
+    
+    private func openMailToURL() {
+        let subject = "読書メモリー お問い合わせ"
+        let body = generateSupportEmailBody()
+        
+        let encodedSubject = subject.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
+        let encodedBody = body.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
+        
+        if let url = URL(string: "mailto:info@no-problem-net.com?subject=\(encodedSubject)&body=\(encodedBody)") {
+            UIApplication.shared.open(url)
+        }
+    }
+    
+    private func generateSupportEmailBody() -> String {
+        let device = UIDevice.current
+        let appVersion = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "不明"
+        let buildNumber = Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "不明"
+        
+        return """
+        【お問い合わせ内容】
+        
+        
+        
+        ---
+        【アプリ情報】
+        アプリバージョン: \(appVersion) (\(buildNumber))
+        iOS バージョン: \(device.systemVersion)
+        デバイス: \(device.model)
+        """
     }
 }
 
@@ -547,7 +592,109 @@ struct ProfileStatItem: View {
     }
 }
 
+// MARK: - Premium Promotion Card
+struct PremiumPromotionCard: View {
+    @Binding var showPaywall: Bool
+    @State private var animateGradient = false
+    
+    var body: some View {
+        Button {
+            showPaywall = true
+        } label: {
+            VStack(spacing: 0) {
+                // グラデーション背景
+                ZStack {
+                    LinearGradient(
+                        gradient: Gradient(colors: [
+                            MemoryTheme.Colors.goldenMemory,
+                            MemoryTheme.Colors.goldenMemoryLight,
+                            MemoryTheme.Colors.primaryBlue
+                        ]),
+                        startPoint: animateGradient ? .topLeading : .bottomTrailing,
+                        endPoint: animateGradient ? .bottomTrailing : .topLeading
+                    )
+                    
+                    VStack(spacing: MemorySpacing.md) {
+                        HStack {
+                            VStack(alignment: .leading, spacing: MemorySpacing.xs) {
+                                HStack(spacing: MemorySpacing.xs) {
+                                    Image(systemName: "crown.fill")
+                                        .font(.system(size: 20))
+                                        .foregroundColor(.white)
+                                    
+                                    Text("メモリープラス")
+                                        .font(MemoryTheme.Fonts.title3())
+                                        .fontWeight(.bold)
+                                        .foregroundColor(.white)
+                                }
+                                
+                                Text("もっと便利な機能を使おう")
+                                    .font(MemoryTheme.Fonts.callout())
+                                    .foregroundColor(.white.opacity(0.9))
+                            }
+                            
+                            Spacer()
+                            
+                            Image(systemName: "chevron.right")
+                                .font(.system(size: 16))
+                                .foregroundColor(.white.opacity(0.8))
+                        }
+                        .padding(MemorySpacing.lg)
+                    }
+                }
+                .frame(height: 100)
+            }
+            .cornerRadius(MemoryRadius.large)
+            .padding(.horizontal, MemorySpacing.md)
+            .padding(.vertical, MemorySpacing.sm)
+            .memoryShadow(.medium)
+        }
+        .buttonStyle(PlainButtonStyle())
+        .onAppear {
+            withAnimation(Animation.easeInOut(duration: 3).repeatForever(autoreverses: true)) {
+                animateGradient = true
+            }
+        }
+    }
+}
+
+// MARK: - Mail Composer View
+struct MailComposerView: UIViewControllerRepresentable {
+    let recipients: [String]
+    let subject: String
+    let messageBody: String
+    @Environment(\.dismiss) private var dismiss
+    
+    func makeUIViewController(context: Context) -> MFMailComposeViewController {
+        let mailComposer = MFMailComposeViewController()
+        mailComposer.mailComposeDelegate = context.coordinator
+        mailComposer.setToRecipients(recipients)
+        mailComposer.setSubject(subject)
+        mailComposer.setMessageBody(messageBody, isHTML: false)
+        return mailComposer
+    }
+    
+    func updateUIViewController(_ uiViewController: MFMailComposeViewController, context: Context) {}
+    
+    func makeCoordinator() -> Coordinator {
+        Coordinator(dismiss: dismiss)
+    }
+    
+    class Coordinator: NSObject, MFMailComposeViewControllerDelegate {
+        let dismiss: DismissAction
+        
+        init(dismiss: DismissAction) {
+            self.dismiss = dismiss
+        }
+        
+        func mailComposeController(_ controller: MFMailComposeViewController, didFinishWith result: MFMailComposeResult, error: Error?) {
+            dismiss()
+        }
+    }
+}
+
 #Preview {
     ProfileTabView()
         .environment(AuthViewModel())
+        .environment(ServiceContainer.shared.getSubscriptionStateStore())
         }

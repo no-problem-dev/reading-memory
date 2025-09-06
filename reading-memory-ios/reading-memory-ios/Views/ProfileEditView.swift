@@ -11,7 +11,6 @@ struct ProfileEditView: View {
     @State private var editFavoriteGenres: [BookGenre] = []
     @State private var editReadingGoal: String = ""
     @State private var editMonthlyGoal: String = ""
-    @State private var editIsPublic = false
     @State private var selectedPhoto: PhotosPickerItem?
     @State private var profileImage: UIImage?
     @State private var isLoading = false
@@ -46,9 +45,6 @@ struct ProfileEditView: View {
                                 
                                 // Favorite Genres
                                 genresSection
-                                
-                                // Privacy Settings
-                                privacySection
                             }
                             .padding(.horizontal, MemorySpacing.md)
                             .padding(.bottom, MemorySpacing.lg)
@@ -273,25 +269,6 @@ struct ProfileEditView: View {
         }
     }
     
-    private var privacySection: some View {
-        MemoryCard {
-            VStack(spacing: MemorySpacing.md) {
-                sectionHeader(icon: "lock.fill", title: "プライバシー設定", color: MemoryTheme.Colors.inkGray)
-                
-                Toggle(isOn: $editIsPublic) {
-                    VStack(alignment: .leading, spacing: MemorySpacing.xs) {
-                        Text("プロフィールを公開")
-                            .font(MemoryTheme.Fonts.body())
-                            .foregroundColor(MemoryTheme.Colors.inkBlack)
-                        Text("他のユーザーがあなたのプロフィールを閲覧できるようになります")
-                            .font(MemoryTheme.Fonts.caption())
-                            .foregroundColor(MemoryTheme.Colors.inkGray)
-                    }
-                }
-                .tint(MemoryTheme.Colors.primaryBlue)
-            }
-        }
-    }
     
     // MARK: - Helper Views
     
@@ -349,7 +326,6 @@ struct ProfileEditView: View {
         editFavoriteGenres = profile.favoriteGenres
         editReadingGoal = profile.readingGoal != nil ? String(profile.readingGoal!) : ""
         editMonthlyGoal = profile.monthlyGoal != nil ? String(profile.monthlyGoal!) : ""
-        editIsPublic = profile.isPublic
     }
     
     private func loadImage(from item: PhotosPickerItem?) async {
@@ -393,7 +369,7 @@ struct ProfileEditView: View {
                 longestStreak: profile.longestStreak,
                 currentStreak: profile.currentStreak,
                 lastActivityDate: profile.lastActivityDate,
-                isPublic: editIsPublic,
+                isPublic: profile.isPublic,
                 createdAt: profile.createdAt,
                 updatedAt: Date()
             )
