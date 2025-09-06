@@ -198,18 +198,6 @@ struct WantToReadCard: View {
                     .foregroundColor(MemoryTheme.Colors.inkBlack)
                     .lineLimit(2)
                     .multilineTextAlignment(.leading)
-                
-                if let priority = book.priority {
-                    HStack(spacing: 2) {
-                        ForEach(0..<3) { index in
-                            Image(systemName: index < priority ? "star.fill" : "star")
-                                .font(.system(size: 12))
-                                .foregroundColor(
-                                    index < priority ? MemoryTheme.Colors.goldenMemory : MemoryTheme.Colors.inkPale
-                                )
-                        }
-                    }
-                }
             }
             .frame(width: 120, alignment: .leading)
         }

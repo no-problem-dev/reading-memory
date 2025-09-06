@@ -29,7 +29,9 @@ final class AIService {
         )
         
         guard result.success else {
-            throw AppError.custom("要約の生成に失敗しました")
+            // エラーメッセージがある場合はそれを使用
+            let errorMessage = result.message ?? "要約の生成に失敗しました"
+            throw AppError.custom(errorMessage)
         }
         
         return result.summary

@@ -103,9 +103,9 @@ struct ProfileSetupStep: View {
         do {
             if let data = try await item.loadTransferable(type: Data.self),
                let image = UIImage(data: data) {
-                // Resize image
-                let resizedImage = image.resized(to: CGSize(width: 400, height: 400))
-                profileImage = resizedImage
+                // Crop to square and resize image
+                let processedImage = image.croppedToSquare(targetSize: 400)
+                profileImage = processedImage
             }
         } catch {
             print("Failed to load image: \(error)")
@@ -113,12 +113,3 @@ struct ProfileSetupStep: View {
     }
 }
 
-// MARK: - UIImage Extension
-private extension UIImage {
-    func resized(to size: CGSize) -> UIImage {
-        let renderer = UIGraphicsImageRenderer(size: size)
-        return renderer.image { _ in
-            self.draw(in: CGRect(origin: .zero, size: size))
-        }
-    }
-}

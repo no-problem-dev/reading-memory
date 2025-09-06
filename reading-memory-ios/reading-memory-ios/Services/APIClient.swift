@@ -183,6 +183,9 @@ final class APIClient {
     // MARK: AI関連
     
     func generateAIResponse(bookId: String, message: String) async throws -> AIResponseResult {
+        print("🤖 AI Response - Starting request for book: \(bookId)")
+        print("🤖 AI Response - Message: \(message)")
+        
         let encoder = JSONEncoder()
         let formatter = DateFormatter()
         formatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss.SSSZZZZZ"
@@ -194,11 +197,17 @@ final class APIClient {
             "message": message
         ])
         
+        if let jsonString = String(data: body, encoding: .utf8) {
+            print("🤖 AI Response - Request body: \(jsonString)")
+        }
+        
         let request = try await makeRequest(
             method: "POST",
             path: "/api/v1/books/\(bookId)/ai-response",
             body: body
         )
+        
+        print("🤖 AI Response - Sending request to: \(request.url?.absoluteString ?? "unknown")")
         
         return try await execute(request, responseType: AIResponseResult.self)
     }
