@@ -141,7 +141,7 @@ struct BookInfoEditView: View {
                     
                     // 詳細情報セクション
                     VStack(spacing: MemorySpacing.md) {
-                        sectionHeader(icon: "info.circle", title: "詳細情報", color: MemoryTheme.Colors.goldenMemory)
+                        sectionHeader(icon: "info.circle", title: "詳細情報", color: MemoryTheme.Colors.primaryBlue)
                         
                         VStack(alignment: .leading, spacing: MemorySpacing.md) {
                             // ISBN
@@ -149,18 +149,18 @@ struct BookInfoEditView: View {
                                 Label("ISBN", systemImage: "barcode")
                                     .font(MemoryTheme.Fonts.caption())
                                     .fontWeight(.medium)
-                                    .foregroundColor(MemoryTheme.Colors.goldenMemory)
+                                    .foregroundColor(MemoryTheme.Colors.primaryBlue)
                                 
                                 TextField("ISBN番号", text: $isbn)
                                     .font(MemoryTheme.Fonts.body())
                                     .padding(12)
                                     .background(
                                         RoundedRectangle(cornerRadius: 10)
-                                            .fill(MemoryTheme.Colors.goldenMemoryLight.opacity(0.1))
+                                            .fill(MemoryTheme.Colors.inkPale.opacity(0.5))
                                     )
                                     .overlay(
                                         RoundedRectangle(cornerRadius: 10)
-                                            .stroke(isbn.isEmpty ? Color.clear : MemoryTheme.Colors.goldenMemory.opacity(0.3), lineWidth: 1)
+                                            .stroke(isbn.isEmpty ? Color.clear : MemoryTheme.Colors.primaryBlue.opacity(0.3), lineWidth: 1)
                                     )
                                     .keyboardType(.numberPad)
                             }
@@ -170,18 +170,18 @@ struct BookInfoEditView: View {
                                 Label("ページ数", systemImage: "doc.text")
                                     .font(MemoryTheme.Fonts.caption())
                                     .fontWeight(.medium)
-                                    .foregroundColor(MemoryTheme.Colors.goldenMemory)
+                                    .foregroundColor(MemoryTheme.Colors.primaryBlue)
                                 
                                 TextField("ページ数", text: $pageCount)
                                     .font(MemoryTheme.Fonts.body())
                                     .padding(12)
                                     .background(
                                         RoundedRectangle(cornerRadius: 10)
-                                            .fill(MemoryTheme.Colors.goldenMemoryLight.opacity(0.1))
+                                            .fill(MemoryTheme.Colors.inkPale.opacity(0.5))
                                     )
                                     .overlay(
                                         RoundedRectangle(cornerRadius: 10)
-                                            .stroke(pageCount.isEmpty ? Color.clear : MemoryTheme.Colors.goldenMemory.opacity(0.3), lineWidth: 1)
+                                            .stroke(pageCount.isEmpty ? Color.clear : MemoryTheme.Colors.primaryBlue.opacity(0.3), lineWidth: 1)
                                     )
                                     .keyboardType(.numberPad)
                             }
@@ -191,7 +191,7 @@ struct BookInfoEditView: View {
                                 Label("説明・あらすじ", systemImage: "text.alignleft")
                                     .font(MemoryTheme.Fonts.caption())
                                     .fontWeight(.medium)
-                                    .foregroundColor(MemoryTheme.Colors.goldenMemory)
+                                    .foregroundColor(MemoryTheme.Colors.primaryBlue)
                                 
                                 ZStack(alignment: .topLeading) {
                                     if description.isEmpty {
@@ -211,11 +211,11 @@ struct BookInfoEditView: View {
                                 .frame(minHeight: 120)
                                 .background(
                                     RoundedRectangle(cornerRadius: 10)
-                                        .fill(MemoryTheme.Colors.goldenMemoryLight.opacity(0.1))
+                                        .fill(MemoryTheme.Colors.inkPale.opacity(0.5))
                                 )
                                 .overlay(
                                     RoundedRectangle(cornerRadius: 10)
-                                        .stroke(description.isEmpty ? Color.clear : MemoryTheme.Colors.goldenMemory.opacity(0.3), lineWidth: 1)
+                                        .stroke(description.isEmpty ? Color.clear : MemoryTheme.Colors.primaryBlue.opacity(0.3), lineWidth: 1)
                                 )
                             }
                         }
