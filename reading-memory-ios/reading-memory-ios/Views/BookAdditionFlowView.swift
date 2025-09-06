@@ -2,6 +2,7 @@ import SwiftUI
 
 struct BookAdditionFlowView: View {
     @Environment(\.dismiss) private var dismiss
+    @Environment(SubscriptionStateStore.self) private var subscriptionState
     @State private var selectedOption: AdditionOption? = nil
     @State private var showPaywall = false
     
@@ -164,7 +165,7 @@ struct BookAdditionFlowView: View {
     private func optionCard(for option: AdditionOption) -> some View {
         Button {
             if option == .barcode {
-                guard FeatureGate.canScanBarcode else {
+                guard subscriptionState.canScanBarcode else {
                     showPaywall = true
                     return
                 }

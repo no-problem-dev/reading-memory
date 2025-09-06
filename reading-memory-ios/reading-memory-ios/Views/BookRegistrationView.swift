@@ -14,6 +14,7 @@ extension View {
 struct BookRegistrationView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(BookStore.self) private var bookStore
+    @Environment(SubscriptionStateStore.self) private var subscriptionState
     @State private var viewModel = ServiceContainer.shared.makeBookRegistrationViewModel()
     
     @State private var title = ""
@@ -204,7 +205,11 @@ struct BookRegistrationView: View {
             }
         }
         .scrollDismissesKeyboard(.interactively)
+        .sheet(isPresented: $viewModel.showPaywall) {
+            PaywallView()
+        }
         .onAppear {
+            viewModel.setSubscriptionStateStore(subscriptionState)
             if let book = prefilledBook {
                 title = book.title
                 author = book.author
@@ -455,16 +460,15 @@ struct BookRegistrationView: View {
                 )
             }
             
-            // BookStoreを使用して本を追加
-            do {
-                try await bookStore.addBook(book)
-                
+            // ViewModelを通じて本を登録（制限チェック含む）
+            let (success, registeredBook) = await viewModel.registerBook(book)
+            
+            if success, let registeredBook = registeredBook {
                 // 成功時の処理
-                onCompletion?(book)
+                onCompletion?(registeredBook)
                 dismiss()
-            } catch {
+            } else {
                 // 登録失敗時はフラグをリセット
-                print("Error adding book: \(error)")
                 isRegistering = false
             }
         }

@@ -40,14 +40,11 @@ final class BookStore {
     // MARK: - Dependencies
     
     private let bookRepository: BookRepository
-    private let authService: AuthService
     
     // MARK: - Initialization
     
-    init(bookRepository: BookRepository = BookRepository.shared,
-         authService: AuthService = AuthService.shared) {
+    init(bookRepository: BookRepository = BookRepository.shared) {
         self.bookRepository = bookRepository
-        self.authService = authService
     }
     
     // MARK: - Public Methods

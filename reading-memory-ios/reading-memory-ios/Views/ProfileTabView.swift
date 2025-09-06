@@ -41,7 +41,7 @@ struct ProfileTabView: View {
                         
                         Section {
                             NavigationLink {
-                                ProfileEditView(viewModel: profileViewModel)
+                                ProfileEditView()
                             } label: {
                                 Label("プロフィールを編集", systemImage: "person.fill")
                             }

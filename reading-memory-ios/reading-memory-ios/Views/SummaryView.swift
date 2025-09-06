@@ -5,6 +5,7 @@ struct SummaryView: View {
     let book: Book
     @State private var viewModel: SummaryViewModel
     @Environment(\.dismiss) private var dismiss
+    @Environment(SubscriptionStateStore.self) private var subscriptionState
     @State private var showPaywall = false
     
     // Animation States
@@ -73,7 +74,7 @@ struct SummaryView: View {
                 // 既存の要約がない場合は自動生成
                 if viewModel.existingSummary == nil {
                     // プレミアムチェック
-                    guard FeatureGate.canUseAI else {
+                    guard subscriptionState.canUseAI else {
                         showPaywall = true
                         return
                     }
@@ -239,7 +240,7 @@ struct SummaryView: View {
             Button {
                 Task {
                     // プレミアムチェック
-                    guard FeatureGate.canUseAI else {
+                    guard subscriptionState.canUseAI else {
                         showPaywall = true
                         return
                     }
@@ -268,7 +269,7 @@ struct SummaryView: View {
         Button {
             Task {
                 // プレミアムチェック
-                guard FeatureGate.canUseAI else {
+                guard subscriptionState.canUseAI else {
                     showPaywall = true
                     return
                 }

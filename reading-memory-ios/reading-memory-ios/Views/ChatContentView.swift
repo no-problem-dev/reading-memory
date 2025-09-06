@@ -4,6 +4,7 @@ import PhotosUI
 struct ChatContentView: View {
     let book: Book
     @Bindable var viewModel: BookChatViewModel
+    @Environment(SubscriptionStateStore.self) private var subscriptionState
     
     @State private var messageText = ""
     @State private var selectedPhoto: PhotosPickerItem?
@@ -99,7 +100,7 @@ struct ChatContentView: View {
         guard let item = item else { return }
         
         // プレミアムチェック
-        guard FeatureGate.canAttachPhotos else {
+        guard subscriptionState.canAttachPhotos else {
             selectedPhoto = nil
             viewModel.showPaywall = true
             return
@@ -133,7 +134,7 @@ struct ChatContentView: View {
                 get: { viewModel.isAIEnabled },
                 set: { newValue in 
                     // プレミアムチェック
-                    if newValue && !FeatureGate.canUseAI {
+                    if newValue && !subscriptionState.canUseAI {
                         viewModel.showPaywall = true
                     } else {
                         viewModel.isAIEnabled = newValue

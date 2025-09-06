@@ -11,11 +11,21 @@ final class BookRegistrationViewModel: BaseViewModel {
     private(set) var canAddBook = true
     var showPaywall = false
     
+    // 環境オブジェクト用のプロパティ
+    private var subscriptionStateStore: SubscriptionStateStore?
+    
     // 処理中のISBNを記録して二重登録を防ぐ
     private var processingISBNs = Set<String>()
     
     override init() {
         super.init()
+        Task {
+            await checkBookQuota()
+        }
+    }
+    
+    func setSubscriptionStateStore(_ store: SubscriptionStateStore) {
+        self.subscriptionStateStore = store
         Task {
             await checkBookQuota()
         }
@@ -28,8 +38,13 @@ final class BookRegistrationViewModel: BaseViewModel {
         let startOfMonth = Calendar.current.dateInterval(of: .month, for: Date())?.start ?? Date()
         monthlyBookCount = await bookRepository.getBookCount(userId: userId, since: startOfMonth)
         
-        // プレミアムチェック
-        canAddBook = FeatureGate.canAddBook(currentMonthlyCount: monthlyBookCount)
+        // 環境オブジェクトから購読状態を確認
+        if let subscriptionStateStore = subscriptionStateStore {
+            canAddBook = subscriptionStateStore.canAddBook()
+        } else {
+            // フォールバック（本来は起こらないはず）
+            canAddBook = monthlyBookCount < 3
+        }
     }
     
     func registerBook(_ book: Book) async -> (success: Bool, book: Book?) {

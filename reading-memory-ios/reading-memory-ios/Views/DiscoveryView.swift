@@ -1,6 +1,7 @@
 import SwiftUI
 
 struct DiscoveryView: View {
+    @Environment(SubscriptionStateStore.self) private var subscriptionState
     @State private var searchText = ""
     @State private var showSearch = false
     @State private var showBarcodeScanner = false
@@ -39,7 +40,7 @@ struct DiscoveryView: View {
                                             Spacer()
                                             
                                             Button {
-                                                guard FeatureGate.canScanBarcode else {
+                                                guard subscriptionState.canScanBarcode else {
                                                     showPaywall = true
                                                     return
                                                 }

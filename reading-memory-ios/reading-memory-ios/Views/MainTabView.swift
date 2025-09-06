@@ -3,6 +3,9 @@ import SwiftUI
 struct MainTabView: View {
     @Environment(AuthViewModel.self) private var authViewModel
     @State private var selectedTab = 0
+    @State private var bookStore = ServiceContainer.shared.getBookStore()
+    @State private var userProfileStore = ServiceContainer.shared.getUserProfileStore()
+    @State private var subscriptionStateStore = ServiceContainer.shared.getSubscriptionStateStore()
     
     var body: some View {
         ZStack {
@@ -63,10 +66,21 @@ struct MainTabView: View {
             }
             .tint(MemoryTheme.Colors.primaryBlue)
         }
+        .environment(bookStore)
+        .environment(userProfileStore)
+        .environment(subscriptionStateStore)
+        .task {
+            // プロフィールを初回ロード
+            await userProfileStore.loadProfile()
+            // 購読状態を初回ロード
+            await subscriptionStateStore.initialize()
+        }
     }
 }
 
 #Preview {
     MainTabView()
         .environment(AuthViewModel())
+        .environment(ServiceContainer.shared.getBookStore())
+        .environment(ServiceContainer.shared.getUserProfileStore())
 }

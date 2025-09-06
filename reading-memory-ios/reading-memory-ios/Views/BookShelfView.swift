@@ -2,6 +2,7 @@ import SwiftUI
 
 struct BookShelfView: View {
     @State private var viewModel = BookShelfViewModel()
+    @Environment(SubscriptionStateStore.self) private var subscriptionState
     @State private var selectedFilter: ReadingStatus? = nil
     @State private var selectedSort: SortOption = .dateAdded
     @State private var showingAddBook = false
@@ -91,7 +92,7 @@ struct BookShelfView: View {
             }
             .confirmationDialog("本を検索", isPresented: $showingAddBookOptions) {
                 Button("バーコードでスキャン", action: {
-                    guard FeatureGate.canScanBarcode else {
+                    guard subscriptionState.canScanBarcode else {
                         showPaywall = true
                         return
                     }
@@ -183,6 +184,7 @@ struct BookShelfView: View {
 }
 
 struct EmptyBookShelfView: View {
+    @Environment(SubscriptionStateStore.self) private var subscriptionState
     @State private var showingAddBook = false
     @State private var showingAddBookOptions = false
     @State private var showingBarcodeScanner = false
@@ -242,7 +244,7 @@ struct EmptyBookShelfView: View {
         }
         .confirmationDialog("本を検索", isPresented: $showingAddBookOptions) {
             Button("バーコードでスキャン", action: {
-                guard FeatureGate.canScanBarcode else {
+                guard subscriptionState.canScanBarcode else {
                     showPaywall = true
                     return
                 }

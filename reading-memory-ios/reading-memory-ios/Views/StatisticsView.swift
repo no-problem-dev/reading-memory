@@ -3,6 +3,7 @@ import Charts
 
 struct StatisticsView: View {
     @State private var viewModel = StatisticsViewModel()
+    @Environment(SubscriptionStateStore.self) private var subscriptionState
     @State private var selectedPeriod: StatisticsPeriod = .month
     @State private var showPaywall = false
     
@@ -28,7 +29,7 @@ struct StatisticsView: View {
                     // Summary Cards - Always visible
                     summaryCardsSection
                     
-                    if FeatureGate.canViewFullStatistics {
+                    if subscriptionState.canViewFullStatistics {
                         // Premium content
                         // Reading Trend Chart
                         readingTrendChart
