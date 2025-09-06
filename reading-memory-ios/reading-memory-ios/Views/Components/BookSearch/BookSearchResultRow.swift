@@ -131,7 +131,7 @@ private struct DataSourceBadge: View {
         case .googleBooks:
             return MemoryTheme.Colors.primaryBlue
         case .openBD:
-            return MemoryTheme.Colors.warmCoral
+            return MemoryTheme.Colors.goldenMemory
         case .rakutenBooks:
             return MemoryTheme.Colors.goldenMemory
         case .manual:

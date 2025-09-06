@@ -43,8 +43,8 @@ struct ProfileIconView: View {
             .fill(
                 LinearGradient(
                     gradient: Gradient(colors: [
-                        MemoryTheme.Colors.warmCoralLight,
-                        MemoryTheme.Colors.warmCoral
+                        MemoryTheme.Colors.goldenMemoryLight,
+                        MemoryTheme.Colors.goldenMemory
                     ]),
                     startPoint: .topLeading,
                     endPoint: .bottomTrailing

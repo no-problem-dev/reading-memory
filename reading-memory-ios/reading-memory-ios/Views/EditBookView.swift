@@ -288,7 +288,7 @@ struct EditBookView: View {
                     sectionHeader(
                         icon: "tag.fill",
                         title: "タグ",
-                        color: MemoryTheme.Colors.warmCoral
+                        color: MemoryTheme.Colors.goldenMemory
                     )
                     
                     // Tag list
@@ -312,7 +312,7 @@ struct EditBookView: View {
                                 }
                                 .padding(.horizontal, MemorySpacing.sm)
                                 .padding(.vertical, MemorySpacing.xs)
-                                .background(MemoryTheme.Colors.warmCoral)
+                                .background(MemoryTheme.Colors.goldenMemory)
                                 .cornerRadius(MemoryRadius.full)
                             }
                         }
@@ -459,7 +459,7 @@ struct EditBookView: View {
                     sectionHeader(
                         icon: "star.circle.fill",
                         title: "優先度",
-                        color: MemoryTheme.Colors.warmCoral
+                        color: MemoryTheme.Colors.goldenMemory
                     )
                     
                     HStack {
@@ -474,7 +474,7 @@ struct EditBookView: View {
                                         .font(.system(size: 24))
                                         .foregroundColor(
                                             priority >= level
-                                                ? MemoryTheme.Colors.warmCoral
+                                                ? MemoryTheme.Colors.goldenMemory
                                                 : MemoryTheme.Colors.inkLightGray
                                         )
                                     
@@ -482,7 +482,7 @@ struct EditBookView: View {
                                         .font(MemoryTheme.Fonts.caption())
                                         .foregroundColor(
                                             priority == level
-                                                ? MemoryTheme.Colors.warmCoral
+                                                ? MemoryTheme.Colors.goldenMemory
                                                 : MemoryTheme.Colors.inkGray
                                         )
                                 }

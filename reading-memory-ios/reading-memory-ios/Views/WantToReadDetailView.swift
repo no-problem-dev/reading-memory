@@ -179,11 +179,11 @@ struct WantToReadDetailView: View {
     private var priorityColor: Color {
         switch priority {
         case 0...2:
-            return .red
+            return MemoryTheme.Colors.primaryBlue
         case 3...5:
-            return .orange
+            return MemoryTheme.Colors.goldenMemory
         case 6...8:
-            return .yellow
+            return MemoryTheme.Colors.info
         default:
             return .gray
         }

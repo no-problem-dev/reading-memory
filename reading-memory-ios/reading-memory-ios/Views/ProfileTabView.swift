@@ -272,7 +272,7 @@ struct DeleteAccountConfirmationView: View {
                             VStack(alignment: .leading, spacing: MemorySpacing.xs) {
                                 HStack(spacing: MemorySpacing.xs) {
                                     Image(systemName: "checkmark.circle.fill")
-                                        .foregroundColor(.red)
+                                        .foregroundColor(MemoryTheme.Colors.warning)
                                         .font(.system(size: 16))
                                     Text("すべての読書記録")
                                         .font(MemoryTheme.Fonts.callout())
@@ -280,7 +280,7 @@ struct DeleteAccountConfirmationView: View {
                                 
                                 HStack(spacing: MemorySpacing.xs) {
                                     Image(systemName: "checkmark.circle.fill")
-                                        .foregroundColor(.red)
+                                        .foregroundColor(MemoryTheme.Colors.warning)
                                         .font(.system(size: 16))
                                     Text("すべてのチャットメモ")
                                         .font(MemoryTheme.Fonts.callout())
@@ -288,7 +288,7 @@ struct DeleteAccountConfirmationView: View {
                                 
                                 HStack(spacing: MemorySpacing.xs) {
                                     Image(systemName: "checkmark.circle.fill")
-                                        .foregroundColor(.red)
+                                        .foregroundColor(MemoryTheme.Colors.warning)
                                         .font(.system(size: 16))
                                     Text("読書目標とアチーブメント")
                                         .font(MemoryTheme.Fonts.callout())
@@ -296,7 +296,7 @@ struct DeleteAccountConfirmationView: View {
                                 
                                 HStack(spacing: MemorySpacing.xs) {
                                     Image(systemName: "checkmark.circle.fill")
-                                        .foregroundColor(.red)
+                                        .foregroundColor(MemoryTheme.Colors.warning)
                                         .font(.system(size: 16))
                                     Text("プロフィール情報")
                                         .font(MemoryTheme.Fonts.callout())

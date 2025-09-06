@@ -21,7 +21,7 @@ struct OnboardingView: View {
             LinearGradient(
                 gradient: Gradient(colors: [
                     MemoryTheme.Colors.primaryBlue.opacity(0.03),
-                    MemoryTheme.Colors.warmCoral.opacity(0.02),
+                    MemoryTheme.Colors.goldenMemory.opacity(0.02),
                     MemoryTheme.Colors.background
                 ]),
                 startPoint: .topLeading,
@@ -274,7 +274,7 @@ struct WelcomeStep: View {
                         icon: "sparkles",
                         title: "記憶に定着",
                         description: "AIが要約を生成し、理解を深める",
-                        color: MemoryTheme.Colors.warmCoral
+                        color: MemoryTheme.Colors.goldenMemory
                     )
                     
                     MemoryFeatureRow(

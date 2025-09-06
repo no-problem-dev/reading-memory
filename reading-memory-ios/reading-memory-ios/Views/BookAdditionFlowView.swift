@@ -57,7 +57,7 @@ struct BookAdditionFlowView: View {
                 LinearGradient(
                     gradient: Gradient(colors: [
                         MemoryTheme.Colors.primaryBlue.opacity(0.03),
-                        MemoryTheme.Colors.warmCoral.opacity(0.02),
+                        MemoryTheme.Colors.goldenMemory.opacity(0.02),
                         MemoryTheme.Colors.background
                     ]),
                     startPoint: .topLeading,
@@ -250,8 +250,8 @@ struct BookAdditionFlowView: View {
             ]
         case .barcode:
             colors = [
-                MemoryTheme.Colors.warmCoralLight.opacity(0.2),
-                MemoryTheme.Colors.warmCoral.opacity(0.1)
+                MemoryTheme.Colors.goldenMemoryLight.opacity(0.2),
+                MemoryTheme.Colors.goldenMemory.opacity(0.1)
             ]
         case .manual:
             colors = [
@@ -272,7 +272,7 @@ struct BookAdditionFlowView: View {
         case .search:
             return MemoryTheme.Colors.primaryBlue
         case .barcode:
-            return MemoryTheme.Colors.warmCoral
+            return MemoryTheme.Colors.goldenMemory
         case .manual:
             return MemoryTheme.Colors.inkGray
         }

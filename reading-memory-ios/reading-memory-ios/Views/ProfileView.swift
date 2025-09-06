@@ -197,7 +197,7 @@ struct ProfileView: View {
                     title: "読書中",
                     value: "\(viewModel.statistics.readingBooks)",
                     icon: "book.fill",
-                    color: MemoryTheme.Colors.warmCoral
+                    color: MemoryTheme.Colors.goldenMemory
                 )
                 
                 MemoryStatCard(
@@ -232,7 +232,7 @@ struct ProfileView: View {
                 HStack(spacing: MemorySpacing.xs) {
                     Image(systemName: "tag.fill")
                         .font(.system(size: 18))
-                        .foregroundColor(MemoryTheme.Colors.warmCoral)
+                        .foregroundColor(MemoryTheme.Colors.goldenMemory)
                     Text("お気に入りジャンル")
                         .font(.headline)
                         .foregroundColor(Color(.label))
@@ -247,14 +247,14 @@ struct ProfileView: View {
                             .background(
                                 LinearGradient(
                                     gradient: Gradient(colors: [
-                                        MemoryTheme.Colors.warmCoralLight.opacity(0.15),
-                                        MemoryTheme.Colors.warmCoral.opacity(0.1)
+                                        MemoryTheme.Colors.goldenMemoryLight.opacity(0.15),
+                                        MemoryTheme.Colors.goldenMemory.opacity(0.1)
                                     ]),
                                     startPoint: .topLeading,
                                     endPoint: .bottomTrailing
                                 )
                             )
-                            .foregroundColor(MemoryTheme.Colors.warmCoral)
+                            .foregroundColor(MemoryTheme.Colors.goldenMemory)
                             .cornerRadius(MemoryRadius.full)
                     }
                 }

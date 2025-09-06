@@ -265,7 +265,7 @@ struct FutureFeatureSection: View {
             HStack(spacing: MemorySpacing.xs) {
                 Image(systemName: "sparkles")
                     .font(.system(size: 20))
-                    .foregroundColor(MemoryTheme.Colors.warmCoral)
+                    .foregroundColor(MemoryTheme.Colors.goldenMemory)
                 Text("もうすぐ登場")
                     .font(MemoryTheme.Fonts.title3())
                     .foregroundColor(MemoryTheme.Colors.inkBlack)
@@ -282,7 +282,7 @@ struct FutureFeatureSection: View {
                 
                 FutureFeatureCard(
                     icon: "person.2.fill",
-                    iconColor: MemoryTheme.Colors.warmCoral,
+                    iconColor: MemoryTheme.Colors.goldenMemory,
                     title: "読書コミュニティ",
                     description: "同じ本を読んでいる人とつながって、感想を共有しよう"
                 )

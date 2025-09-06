@@ -142,7 +142,7 @@ struct BookRegistrationView: View {
                                 sectionHeader(
                                     icon: "info.circle.fill",
                                     title: "詳細情報",
-                                    color: MemoryTheme.Colors.warmCoral
+                                    color: MemoryTheme.Colors.goldenMemory
                                 )
                                 
                                 VStack(spacing: MemorySpacing.md) {

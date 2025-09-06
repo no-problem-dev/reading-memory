@@ -260,7 +260,7 @@ struct ProfileEditView: View {
                 sectionHeader(
                     icon: "tag.fill",
                     title: "お気に入りジャンル",
-                    color: MemoryTheme.Colors.warmCoral
+                    color: MemoryTheme.Colors.goldenMemory
                 )
                 
                 // Selected genres
@@ -286,8 +286,8 @@ struct ProfileEditView: View {
                             .background(
                                 LinearGradient(
                                     gradient: Gradient(colors: [
-                                        MemoryTheme.Colors.warmCoral,
-                                        MemoryTheme.Colors.warmCoralDark
+                                        MemoryTheme.Colors.goldenMemory,
+                                        MemoryTheme.Colors.goldenMemoryDark
                                     ]),
                                     startPoint: .topLeading,
                                     endPoint: .bottomTrailing

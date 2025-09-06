@@ -7,6 +7,7 @@ struct BookDetailView: View {
     @State private var book: Book?
     @State private var isLoading = false
     @State private var showingEditSheet = false
+    @State private var showingBookInfoEdit = false
     @State private var showingDeleteAlert = false
     @State private var showingSummaryView = false
     @State private var showingMemoryView = false
@@ -29,7 +30,12 @@ struct BookDetailView: View {
                 ScrollView {
                     VStack(spacing: 0) {
                         // Hero Section with Book Info
-                        BookDetailHeroSection(book: book)
+                        BookDetailHeroSection(
+                            book: book,
+                            onCoverTapped: {
+                                showingBookInfoEdit = true
+                            }
+                        )
                         
                         VStack(spacing: MemorySpacing.lg) {
                             // Action Buttons
@@ -78,8 +84,16 @@ struct BookDetailView: View {
                     Button {
                         showingEditSheet = true
                     } label: {
-                        Label("編集", systemImage: "pencil")
+                        Label("読書状態を編集", systemImage: "slider.horizontal.3")
                     }
+                    
+                    Button {
+                        showingBookInfoEdit = true
+                    } label: {
+                        Label("本の情報を編集", systemImage: "pencil")
+                    }
+                    
+                    Divider()
                     
                     Button(role: .destructive) {
                         showingDeleteAlert = true
@@ -102,6 +116,18 @@ struct BookDetailView: View {
                 EditBookView(book: book) { _ in
                     Task {
                         await loadBook()
+                    }
+                }
+            }
+        }
+        .sheet(isPresented: $showingBookInfoEdit) {
+            if let book = book {
+                BookInfoEditView(book: book) { updatedBook in
+                    do {
+                        try await bookRepository.updateBook(updatedBook)
+                        await loadBook()
+                    } catch {
+                        print("Error updating book: \(error)")
                     }
                 }
             }

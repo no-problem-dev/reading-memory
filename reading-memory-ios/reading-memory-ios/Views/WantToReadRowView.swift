@@ -7,11 +7,11 @@ struct WantToReadRowView: View {
         guard let priority = book.priority else { return .gray }
         switch priority {
         case 0...2:
-            return .red
+            return MemoryTheme.Colors.primaryBlue
         case 3...5:
-            return .orange
+            return MemoryTheme.Colors.goldenMemory
         case 6...8:
-            return .yellow
+            return MemoryTheme.Colors.info
         default:
             return .gray
         }
@@ -67,7 +67,7 @@ struct WantToReadRowView: View {
                             }
                         }
                         .font(.caption2)
-                        .foregroundColor(days < 0 ? .red : .blue)
+                        .foregroundColor(days < 0 ? MemoryTheme.Colors.warning : MemoryTheme.Colors.primaryBlue)
                     }
                     
                     // リマインダーアイコン
