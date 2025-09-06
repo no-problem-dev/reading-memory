@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct BookShelfHomeView: View {
-    @State private var viewModel = BookShelfViewModel()
+    @Environment(BookStore.self) private var bookStore
     @State private var showAddBook = false
     @State private var navigationPath = NavigationPath()
     @State private var chatBook: Book?
@@ -24,24 +24,24 @@ struct BookShelfHomeView: View {
                     // Status tabs
                     ScrollView(.horizontal, showsIndicators: false) {
                         HStack(spacing: MemorySpacing.sm) {
-                            ForEach(BookShelfViewModel.BookFilter.allCases, id: \.self) { filter in
+                            ForEach(BookStore.BookFilter.allCases, id: \.self) { filter in
                                 Button(action: {
                                     withAnimation(.spring(response: 0.3)) {
-                                        viewModel.setFilter(filter)
+                                        bookStore.setFilter(filter)
                                     }
                                 }) {
                                     Text(filter.rawValue)
                                         .font(MemoryTheme.Fonts.body())
-                                        .fontWeight(viewModel.currentFilter == filter ? .semibold : .regular)
+                                        .fontWeight(bookStore.currentFilter == filter ? .semibold : .regular)
                                         .foregroundColor(
-                                            viewModel.currentFilter == filter
+                                            bookStore.currentFilter == filter
                                                 ? MemoryTheme.Colors.primaryBlue
                                                 : MemoryTheme.Colors.inkGray
                                         )
                                         .padding(.horizontal, MemorySpacing.md)
                                         .padding(.vertical, MemorySpacing.xs)
                                         .background(
-                                            viewModel.currentFilter == filter
+                                            bookStore.currentFilter == filter
                                                 ? MemoryTheme.Colors.primaryBlue.opacity(0.1)
                                                 : Color.clear
                                         )
@@ -60,13 +60,13 @@ struct BookShelfHomeView: View {
                         HStack(spacing: 0) {
                             Button(action: {
                                 withAnimation(.spring(response: 0.3)) {
-                                    viewModel.setDisplayMode(.grid)
+                                    bookStore.setDisplayMode(.grid)
                                 }
                             }) {
                                 Image(systemName: "square.grid.3x3.fill")
                                     .font(.system(size: 16))
                                     .foregroundColor(
-                                        viewModel.displayMode == .grid
+                                        bookStore.displayMode == .grid
                                             ? MemoryTheme.Colors.primaryBlue
                                             : MemoryTheme.Colors.inkGray
                                     )
@@ -75,13 +75,13 @@ struct BookShelfHomeView: View {
                             
                             Button(action: {
                                 withAnimation(.spring(response: 0.3)) {
-                                    viewModel.setDisplayMode(.list)
+                                    bookStore.setDisplayMode(.list)
                                 }
                             }) {
                                 Image(systemName: "list.bullet")
                                     .font(.system(size: 16))
                                     .foregroundColor(
-                                        viewModel.displayMode == .list
+                                        bookStore.displayMode == .list
                                             ? MemoryTheme.Colors.primaryBlue
                                             : MemoryTheme.Colors.inkGray
                                     )
@@ -96,15 +96,15 @@ struct BookShelfHomeView: View {
                     .padding(.bottom, MemorySpacing.sm)
                     
                     // Content
-                    if viewModel.filteredBooks.isEmpty {
-                        EmptyStateView(filter: viewModel.currentFilter) {
+                    if bookStore.filteredBooks.isEmpty {
+                        EmptyStateView(filter: bookStore.currentFilter) {
                             showAddBook = true
                         }
                     } else {
-                        switch viewModel.displayMode {
+                        switch bookStore.displayMode {
                         case .grid:
                             BookShelfGridView(
-                                books: viewModel.filteredBooks,
+                                books: bookStore.filteredBooks,
                                 onBookTapped: { book in
                                     navigationPath.append(book)
                                 },
@@ -114,7 +114,7 @@ struct BookShelfHomeView: View {
                             )
                         case .list:
                             BookShelfListView(
-                                books: viewModel.filteredBooks,
+                                books: bookStore.filteredBooks,
                                 onBookTapped: { book in
                                     navigationPath.append(book)
                                 },
@@ -145,7 +145,7 @@ struct BookShelfHomeView: View {
             }
             .navigationBarHidden(true)
             .refreshable {
-                await viewModel.loadBooks()
+                await bookStore.loadBooks()
             }
             .navigationDestination(for: Book.self) { book in
                 BookDetailView(bookId: book.id)
@@ -155,7 +155,7 @@ struct BookShelfHomeView: View {
             }
         }
         .task {
-            await viewModel.loadBooks()
+            await bookStore.loadBooks()
         }
         .sheet(isPresented: $showAddBook) {
             BookAdditionFlowView()
@@ -165,7 +165,7 @@ struct BookShelfHomeView: View {
 
 // Empty state view
 struct EmptyStateView: View {
-    let filter: BookShelfViewModel.BookFilter
+    let filter: BookStore.BookFilter
     let onAddBook: () -> Void
     
     var message: String {

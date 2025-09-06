@@ -13,6 +13,7 @@ extension View {
 
 struct BookRegistrationView: View {
     @Environment(\.dismiss) private var dismiss
+    @Environment(BookStore.self) private var bookStore
     @State private var viewModel = ServiceContainer.shared.makeBookRegistrationViewModel()
     
     @State private var title = ""
@@ -454,34 +455,16 @@ struct BookRegistrationView: View {
                 )
             }
             
-            // searchResultがある場合は専用のメソッドを使用
-            let result: (success: Bool, book: Book?)
-            if let searchResult = searchResult {
-                // 検索結果からの登録（入力された情報で上書き）
-                var updatedSearchResult = searchResult
-                // フォームで編集された情報を反映（簡易的な実装）
-                let modifiedSearchResult = BookSearchResult(
-                    isbn: isbn.isEmpty ? searchResult.isbn : isbn,
-                    title: title.trimmingCharacters(in: .whitespacesAndNewlines),
-                    author: author.trimmingCharacters(in: .whitespacesAndNewlines),
-                    publisher: publisher.isEmpty ? searchResult.publisher : publisher.trimmingCharacters(in: .whitespacesAndNewlines),
-                    publishedDate: hasPublishedDate ? publishedDate : searchResult.publishedDate,
-                    pageCount: Int(pageCount) ?? searchResult.pageCount,
-                    description: description.isEmpty ? searchResult.description : description.trimmingCharacters(in: .whitespacesAndNewlines),
-                    coverImageUrl: searchResult.coverImageUrl,
-                    dataSource: searchResult.dataSource,
-                    affiliateUrl: searchResult.affiliateUrl
-                )
-                result = await viewModel.registerBookFromSearchResult(modifiedSearchResult, status: selectedStatus)
-            } else {
-                result = await viewModel.registerBook(book)
-            }
-            
-            if result.success, let createdBook = result.book {
-                onCompletion?(createdBook)
+            // BookStoreを使用して本を追加
+            do {
+                try await bookStore.addBook(book)
+                
+                // 成功時の処理
+                onCompletion?(book)
                 dismiss()
-            } else {
+            } catch {
                 // 登録失敗時はフラグをリセット
+                print("Error adding book: \(error)")
                 isRegistering = false
             }
         }

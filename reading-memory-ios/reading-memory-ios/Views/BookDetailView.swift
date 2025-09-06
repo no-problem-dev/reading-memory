@@ -4,6 +4,7 @@ import PhotosUI
 struct BookDetailView: View {
     let bookId: String
     
+    @Environment(BookStore.self) private var bookStore
     @State private var book: Book?
     @State private var isLoading = false
     @State private var showingEditSheet = false
@@ -15,7 +16,6 @@ struct BookDetailView: View {
     @State private var showPaywall = false
     @Environment(\.dismiss) private var dismiss
     
-    private let bookRepository = BookRepository.shared
     private let authService = AuthService.shared
     
     var body: some View {
@@ -108,9 +108,14 @@ struct BookDetailView: View {
         }
         .sheet(isPresented: $showingEditSheet) {
             if let book = book {
-                EditBookView(book: book) { _ in
+                EditBookView(book: book) { updatedBook in
                     Task {
-                        await loadBook()
+                        do {
+                            try await bookStore.updateBook(updatedBook)
+                            self.book = updatedBook
+                        } catch {
+                            print("Error updating book: \(error)")
+                        }
                     }
                 }
             }
@@ -119,8 +124,8 @@ struct BookDetailView: View {
             if let book = book {
                 BookInfoEditView(book: book) { updatedBook in
                     do {
-                        try await bookRepository.updateBook(updatedBook)
-                        await loadBook()
+                        try await bookStore.updateBook(updatedBook)
+                        self.book = updatedBook
                     } catch {
                         print("Error updating book: \(error)")
                     }
@@ -153,20 +158,21 @@ struct BookDetailView: View {
     private func loadBook() async {
         guard let userId = authService.currentUser?.uid else { return }
         
-        isLoading = true
-        do {
-            book = try await bookRepository.getBook(bookId: bookId)
-        } catch {
-            print("Error loading book: \(error)")
+        // BookStoreから本を取得
+        book = bookStore.getBook(id: bookId)
+        
+        // もしBookStoreにない場合はロード
+        if book == nil {
+            await bookStore.loadBooks()
+            book = bookStore.getBook(id: bookId)
         }
-        isLoading = false
     }
     
     private func deleteBook() async {
         guard let userId = authService.currentUser?.uid else { return }
         
         do {
-            try await bookRepository.deleteBook(bookId: bookId)
+            try await bookStore.deleteBook(id: bookId)
             dismiss()
         } catch {
             print("Error deleting book: \(error)")
@@ -203,7 +209,7 @@ struct BookDetailView: View {
                 )
             }
             
-            try await bookRepository.updateBook(updatedBook)
+            try await bookStore.updateBook(updatedBook)
             
             withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
                 self.book = updatedBook

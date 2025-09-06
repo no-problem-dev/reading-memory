@@ -12,6 +12,13 @@ final class ServiceContainer {
     private lazy var bookChatRepository = BookChatRepository.shared
     private lazy var userProfileRepository = UserProfileRepository.shared
     
+    // Stores - 環境オブジェクトとして使用
+    @MainActor
+    private lazy var bookStore = BookStore(
+        bookRepository: bookRepository,
+        authService: AuthService.shared
+    )
+    
     // ViewModels
     @MainActor
     func makeAuthViewModel() -> AuthViewModel {
@@ -41,6 +48,12 @@ final class ServiceContainer {
     @MainActor
     func makeBookChatViewModel(book: Book) -> BookChatViewModel {
         return BookChatViewModel(book: book)
+    }
+    
+    // Store accessors
+    @MainActor
+    func getBookStore() -> BookStore {
+        return bookStore
     }
     
     // Repository accessors
