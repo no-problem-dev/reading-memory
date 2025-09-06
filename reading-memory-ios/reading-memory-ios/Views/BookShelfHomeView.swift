@@ -6,18 +6,6 @@ struct BookShelfHomeView: View {
     @State private var navigationPath = NavigationPath()
     @State private var chatBook: Book?
     
-    var currentlyReadingBooks: [Book] {
-        viewModel.filteredBooks.filter { $0.status == .reading }
-    }
-    
-    var completedBooks: [Book] {
-        viewModel.filteredBooks.filter { $0.status == .completed }
-    }
-    
-    var dnfBooks: [Book] {
-        viewModel.filteredBooks.filter { $0.status == .dnf }
-    }
-    
     var body: some View {
         NavigationStack(path: $navigationPath) {
             ZStack {
@@ -25,51 +13,116 @@ struct BookShelfHomeView: View {
                 MemoryTheme.Colors.secondaryBackground
                     .ignoresSafeArea()
                 
-                ScrollView {
-                    VStack(spacing: 0) {
-                        // Header using new component with updated subtitle
-                        TabHeaderView(
-                            title: "本棚",
-                            subtitle: "本との出会いと読書体験を大切に記録",
-                            iconName: "books.vertical.circle.fill"
-                        )
-                        
-                        VStack(spacing: MemorySpacing.xl) {
-                            // 現在読書中セクション
-                            if !currentlyReadingBooks.isEmpty {
-                                CurrentlyReadingSection(
-                                    books: currentlyReadingBooks,
-                                    onChatTapped: { book in
-                                        chatBook = book
-                                    },
-                                    onBookTapped: { book in
-                                        navigationPath.append(book)
+                VStack(spacing: 0) {
+                    // Header using new component with updated subtitle
+                    TabHeaderView(
+                        title: "本棚",
+                        subtitle: "本との出会いと読書体験を大切に記録",
+                        iconName: "books.vertical.circle.fill"
+                    )
+                    
+                    // Status tabs
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        HStack(spacing: MemorySpacing.sm) {
+                            ForEach(BookShelfViewModel.BookFilter.allCases, id: \.self) { filter in
+                                Button(action: {
+                                    withAnimation(.spring(response: 0.3)) {
+                                        viewModel.setFilter(filter)
                                     }
-                                )
-                            } else {
-                                EmptyReadingCard(onAddBook: {
-                                    showAddBook = true
-                                })
-                                .padding(.horizontal, MemorySpacing.md)
-                            }
-                            
-                            // 読み終わった本セクション
-                            if !completedBooks.isEmpty {
-                                MemoryShelfSection(books: completedBooks) { book in
-                                    navigationPath.append(book)
+                                }) {
+                                    Text(filter.rawValue)
+                                        .font(MemoryTheme.Fonts.body())
+                                        .fontWeight(viewModel.currentFilter == filter ? .semibold : .regular)
+                                        .foregroundColor(
+                                            viewModel.currentFilter == filter
+                                                ? MemoryTheme.Colors.primaryBlue
+                                                : MemoryTheme.Colors.inkGray
+                                        )
+                                        .padding(.horizontal, MemorySpacing.md)
+                                        .padding(.vertical, MemorySpacing.xs)
+                                        .background(
+                                            viewModel.currentFilter == filter
+                                                ? MemoryTheme.Colors.primaryBlue.opacity(0.1)
+                                                : Color.clear
+                                        )
+                                        .cornerRadius(20)
                                 }
-                                .padding(.horizontal, MemorySpacing.md)
-                            }
-                            
-                            // 途中で読むのをやめた本セクション
-                            if !dnfBooks.isEmpty {
-                                DNFShelfSection(books: dnfBooks) { book in
-                                    navigationPath.append(book)
-                                }
-                                .padding(.horizontal, MemorySpacing.md)
                             }
                         }
-                        .padding(.bottom, 100)
+                        .padding(.horizontal, MemorySpacing.md)
+                    }
+                    .padding(.vertical, MemorySpacing.sm)
+                    
+                    // Display mode toggle
+                    HStack {
+                        Spacer()
+                        
+                        HStack(spacing: 0) {
+                            Button(action: {
+                                withAnimation(.spring(response: 0.3)) {
+                                    viewModel.setDisplayMode(.grid)
+                                }
+                            }) {
+                                Image(systemName: "square.grid.3x3.fill")
+                                    .font(.system(size: 16))
+                                    .foregroundColor(
+                                        viewModel.displayMode == .grid
+                                            ? MemoryTheme.Colors.primaryBlue
+                                            : MemoryTheme.Colors.inkGray
+                                    )
+                                    .padding(MemorySpacing.xs)
+                            }
+                            
+                            Button(action: {
+                                withAnimation(.spring(response: 0.3)) {
+                                    viewModel.setDisplayMode(.list)
+                                }
+                            }) {
+                                Image(systemName: "list.bullet")
+                                    .font(.system(size: 16))
+                                    .foregroundColor(
+                                        viewModel.displayMode == .list
+                                            ? MemoryTheme.Colors.primaryBlue
+                                            : MemoryTheme.Colors.inkGray
+                                    )
+                                    .padding(MemorySpacing.xs)
+                            }
+                        }
+                        .background(MemoryTheme.Colors.cardBackground)
+                        .cornerRadius(8)
+                        .shadow(color: Color.black.opacity(0.05), radius: 2, y: 1)
+                        .padding(.horizontal, MemorySpacing.md)
+                    }
+                    .padding(.bottom, MemorySpacing.sm)
+                    
+                    // Content
+                    if viewModel.filteredBooks.isEmpty {
+                        EmptyStateView(filter: viewModel.currentFilter) {
+                            showAddBook = true
+                        }
+                    } else {
+                        switch viewModel.displayMode {
+                        case .grid:
+                            BookShelfGridView(
+                                books: viewModel.filteredBooks,
+                                onBookTapped: { book in
+                                    navigationPath.append(book)
+                                },
+                                onChatTapped: { book in
+                                    chatBook = book
+                                }
+                            )
+                        case .list:
+                            BookShelfListView(
+                                books: viewModel.filteredBooks,
+                                onBookTapped: { book in
+                                    navigationPath.append(book)
+                                },
+                                onChatTapped: { book in
+                                    chatBook = book
+                                }
+                            )
+                        }
                     }
                 }
                 
@@ -96,10 +149,10 @@ struct BookShelfHomeView: View {
             }
             .navigationDestination(for: Book.self) { book in
                 BookDetailView(bookId: book.id)
-                            }
+            }
             .fullScreenCover(item: $chatBook) { book in
                 BookMemoryTabView(bookId: book.id)
-                            }
+            }
         }
         .task {
             await viewModel.loadBooks()
@@ -107,6 +160,59 @@ struct BookShelfHomeView: View {
         .sheet(isPresented: $showAddBook) {
             BookAdditionFlowView()
         }
+    }
+}
+
+// Empty state view
+struct EmptyStateView: View {
+    let filter: BookShelfViewModel.BookFilter
+    let onAddBook: () -> Void
+    
+    var message: String {
+        switch filter {
+        case .all:
+            return "まだ本が登録されていません"
+        case .reading:
+            return "現在読書中の本はありません"
+        case .completed:
+            return "読了した本はまだありません"
+        case .dnf:
+            return "積読の本はありません"
+        case .wantToRead:
+            return "読みたい本はまだありません"
+        }
+    }
+    
+    var body: some View {
+        VStack(spacing: MemorySpacing.lg) {
+            Spacer()
+            
+            Image(systemName: "books.vertical")
+                .font(.system(size: 60))
+                .foregroundColor(MemoryTheme.Colors.inkGray.opacity(0.5))
+            
+            Text(message)
+                .font(MemoryTheme.Fonts.body())
+                .foregroundColor(MemoryTheme.Colors.inkGray)
+                .multilineTextAlignment(.center)
+            
+            Button(action: onAddBook) {
+                HStack {
+                    Image(systemName: "plus")
+                    Text("本を追加")
+                }
+                .font(MemoryTheme.Fonts.body())
+                .fontWeight(.medium)
+                .foregroundColor(.white)
+                .padding(.horizontal, MemorySpacing.lg)
+                .padding(.vertical, MemorySpacing.md)
+                .background(MemoryTheme.Colors.primaryBlue)
+                .cornerRadius(24)
+            }
+            
+            Spacer()
+        }
+        .padding()
     }
 }
 

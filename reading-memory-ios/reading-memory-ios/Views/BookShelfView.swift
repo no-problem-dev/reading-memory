@@ -24,7 +24,15 @@ struct BookShelfView: View {
                     EmptyBookShelfView()
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                 } else {
-                    BookShelfGridView(books: viewModel.filteredBooks)
+                    BookShelfGridView(
+                        books: viewModel.filteredBooks,
+                        onBookTapped: { book in
+                            // Navigate to book detail
+                        },
+                        onChatTapped: { book in
+                            // Open chat
+                        }
+                    )
                 }
                 
                 // Floating Action Button
@@ -101,9 +109,6 @@ struct BookShelfView: View {
             }
             .task {
                 await viewModel.loadBooks()
-            }
-            .onChange(of: selectedFilter) { _, newValue in
-                viewModel.filterBooks(by: newValue)
             }
             .onChange(of: selectedSort) { _, newValue in
                 viewModel.sortBooks(by: newValue)
@@ -255,28 +260,6 @@ struct EmptyBookShelfView: View {
         }
         .sheet(isPresented: $showPaywall) {
             PaywallView()
-        }
-    }
-}
-
-struct BookShelfGridView: View {
-    let books: [Book]
-    
-    private let columns = [
-        GridItem(.adaptive(minimum: 110, maximum: 130), spacing: 16)
-    ]
-    
-    var body: some View {
-        ScrollView {
-            LazyVGrid(columns: columns, spacing: 20) {
-                ForEach(books) { book in
-                    NavigationLink(destination: BookDetailView(bookId: book.id)) {
-                        BookCoverView(imageId: book.coverImageId, size: .medium)
-                    }
-                    .buttonStyle(PlainButtonStyle())
-                }
-            }
-            .padding()
         }
     }
 }
