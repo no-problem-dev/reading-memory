@@ -18,7 +18,6 @@ struct BookInfoEditView: View {
     @State private var isLoading = false
     @State private var showError = false
     @State private var errorMessage = ""
-    @State private var showImagePicker = false
     
     init(book: Book, onSave: @escaping (Book) async -> Void) {
         self.book = book
@@ -273,83 +272,36 @@ struct BookInfoEditView: View {
             } message: {
                 Text(errorMessage)
             }
-            .sheet(isPresented: $showImagePicker) {
-                // TODO: 画像選択機能の実装
-                Text("画像選択機能は後日実装予定")
-            }
         }
     }
     
     private var coverImageSection: some View {
         VStack(spacing: MemorySpacing.md) {
-            // 現在の表紙画像
-            Button(action: {
-                showImagePicker = true
-            }) {
-                ZStack {
-                    if let imageId = coverImageId {
-                        RemoteImage(imageId: imageId, contentMode: .fit)
-                            .frame(width: 150, height: 210)
-                            .cornerRadius(12)
-                            .shadow(color: MemoryTheme.Colors.primaryBlue.opacity(0.2), radius: 8, y: 4)
-                    } else {
-                        RoundedRectangle(cornerRadius: 12)
-                            .fill(
-                                LinearGradient(
-                                    gradient: Gradient(colors: [
-                                        MemoryTheme.Colors.primaryBlue.opacity(0.05),
-                                        MemoryTheme.Colors.primaryBlue.opacity(0.1)
-                                    ]),
-                                    startPoint: .topLeading,
-                                    endPoint: .bottomTrailing
-                                )
-                            )
-                            .frame(width: 150, height: 210)
-                            .overlay(
-                                VStack(spacing: MemorySpacing.xs) {
-                                    Image(systemName: "photo.on.rectangle.angled")
-                                        .font(.system(size: 36))
-                                        .foregroundColor(MemoryTheme.Colors.primaryBlue)
-                                    Text("タップして画像を選択")
-                                        .font(MemoryTheme.Fonts.caption())
-                                        .fontWeight(.medium)
-                                        .foregroundColor(MemoryTheme.Colors.primaryBlue)
-                                }
-                            )
-                    }
-                    
-                    // ホバーオーバーレイ
-                    RoundedRectangle(cornerRadius: 12)
-                        .fill(
-                            LinearGradient(
-                                gradient: Gradient(colors: [
-                                    MemoryTheme.Colors.primaryBlue.opacity(0.7),
-                                    MemoryTheme.Colors.primaryBlue.opacity(0.5)
-                                ]),
-                                startPoint: .top,
-                                endPoint: .bottom
-                            )
+            // 現在の表紙画像（表示のみ）
+            if let imageId = coverImageId {
+                RemoteImage(imageId: imageId, contentMode: .fit)
+                    .frame(width: 150, height: 210)
+                    .cornerRadius(12)
+                    .shadow(color: MemoryTheme.Colors.primaryBlue.opacity(0.2), radius: 8, y: 4)
+            } else {
+                RoundedRectangle(cornerRadius: 12)
+                    .fill(
+                        LinearGradient(
+                            gradient: Gradient(colors: [
+                                MemoryTheme.Colors.primaryBlue.opacity(0.05),
+                                MemoryTheme.Colors.primaryBlue.opacity(0.1)
+                            ]),
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
                         )
-                        .frame(width: 150, height: 210)
-                        .overlay(
-                            VStack(spacing: MemorySpacing.xs) {
-                                Image(systemName: "camera.fill")
-                                    .font(.system(size: 32))
-                                    .foregroundColor(.white)
-                                Text("変更")
-                                    .font(MemoryTheme.Fonts.body())
-                                    .fontWeight(.medium)
-                                    .foregroundColor(.white)
-                            }
-                        )
-                        .opacity(0)
-                }
+                    )
+                    .frame(width: 150, height: 210)
+                    .overlay(
+                        Image(systemName: "photo.on.rectangle.angled")
+                            .font(.system(size: 36))
+                            .foregroundColor(MemoryTheme.Colors.primaryBlue.opacity(0.3))
+                    )
             }
-            .buttonStyle(PlainButtonStyle())
-            
-            Text("表紙画像をタップして変更")
-                .font(MemoryTheme.Fonts.footnote())
-                .foregroundColor(MemoryTheme.Colors.inkGray.opacity(0.8))
         }
     }
     

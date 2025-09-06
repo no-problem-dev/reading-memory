@@ -30,12 +30,7 @@ struct BookDetailView: View {
                 ScrollView {
                     VStack(spacing: 0) {
                         // Hero Section with Book Info
-                        BookDetailHeroSection(
-                            book: book,
-                            onCoverTapped: {
-                                showingBookInfoEdit = true
-                            }
-                        )
+                        BookDetailHeroSection(book: book)
                         
                         VStack(spacing: MemorySpacing.lg) {
                             // Action Buttons
