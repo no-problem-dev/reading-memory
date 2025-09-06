@@ -27,15 +27,15 @@ struct MainTabView: View {
                     .tag(0)
                 
                 // 記録（統計・目標・アチーブメント）
-                RecordsHubView()
-                    .tabItem {
-                        Label {
-                            Text("記録")
-                        } icon: {
-                            Image(systemName: selectedTab == 1 ? "chart.line.uptrend.xyaxis.circle.fill" : "chart.line.uptrend.xyaxis.circle")
-                        }
-                    }
-                    .tag(1)
+//                RecordsHubView()
+//                    .tabItem {
+//                        Label {
+//                            Text("記録")
+//                        } icon: {
+//                            Image(systemName: selectedTab == 1 ? "chart.line.uptrend.xyaxis.circle.fill" : "chart.line.uptrend.xyaxis.circle")
+//                        }
+//                    }
+//                    .tag(1)
                 
                 // 発見（読みたいリスト・検索）
                 DiscoveryView()

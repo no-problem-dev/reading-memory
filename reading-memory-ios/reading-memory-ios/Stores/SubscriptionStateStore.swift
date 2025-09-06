@@ -162,10 +162,10 @@ extension SubscriptionStateStore {
         case aiChat = "AI対話・要約機能"
         case photoAttachment = "写真付きメモ"
         case barcodeScanning = "バーコードスキャン"
-        case fullStatistics = "全期間の統計分析"
-        case yearlyGoals = "年間読書目標"
-        case premiumBadges = "プレミアムバッジ"
-        case unlimitedPublicShelf = "無制限の公開本棚"
+//        case fullStatistics = "全期間の統計分析"
+//        case yearlyGoals = "年間読書目標"
+//        case premiumBadges = "プレミアムバッジ"
+//        case unlimitedPublicShelf = "無制限の公開本棚"
         
         public var icon: String {
             switch self {
@@ -173,10 +173,10 @@ extension SubscriptionStateStore {
             case .aiChat: return "sparkles"
             case .photoAttachment: return "photo"
             case .barcodeScanning: return "barcode"
-            case .fullStatistics: return "chart.line.uptrend.xyaxis"
-            case .yearlyGoals: return "calendar"
-            case .premiumBadges: return "medal"
-            case .unlimitedPublicShelf: return "books.vertical"
+//            case .fullStatistics: return "chart.line.uptrend.xyaxis"
+//            case .yearlyGoals: return "calendar"
+//            case .premiumBadges: return "medal"
+//            case .unlimitedPublicShelf: return "books.vertical"
             }
         }
         
@@ -186,10 +186,10 @@ extension SubscriptionStateStore {
             case .aiChat: return "AIと本について対話し、要約を生成"
             case .photoAttachment: return "メモに写真を添付して記録"
             case .barcodeScanning: return "バーコードで簡単に本を登録"
-            case .fullStatistics: return "全期間の読書統計を分析"
-            case .yearlyGoals: return "年間読書目標を設定して進捗管理"
-            case .premiumBadges: return "特別なアチーブメントバッジを獲得"
-            case .unlimitedPublicShelf: return "公開本棚に無制限で本を追加"
+//            case .fullStatistics: return "全期間の読書統計を分析"
+//            case .yearlyGoals: return "年間読書目標を設定して進捗管理"
+//            case .premiumBadges: return "特別なアチーブメントバッジを獲得"
+//            case .unlimitedPublicShelf: return "公開本棚に無制限で本を追加"
             }
         }
     }

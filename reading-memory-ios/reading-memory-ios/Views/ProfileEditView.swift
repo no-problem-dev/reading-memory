@@ -18,18 +18,17 @@ struct ProfileEditView: View {
     @State private var errorMessage: String?
     
     var body: some View {
-        NavigationStack {
-            ZStack {
-                // Background gradient
-                LinearGradient(
-                    gradient: Gradient(colors: [
-                        MemoryTheme.Colors.background,
-                        MemoryTheme.Colors.secondaryBackground
-                    ]),
-                    startPoint: .top,
-                    endPoint: .bottom
-                )
-                .ignoresSafeArea()
+        ZStack {
+            // Background gradient
+            LinearGradient(
+                gradient: Gradient(colors: [
+                    MemoryTheme.Colors.background,
+                    MemoryTheme.Colors.secondaryBackground
+                ]),
+                startPoint: .top,
+                endPoint: .bottom
+            )
+            .ignoresSafeArea()
                 
                 VStack(spacing: 0) {
                     ScrollView {
@@ -92,33 +91,26 @@ struct ProfileEditView: View {
                     .background(MemoryTheme.Colors.cardBackground)
                 }
             }
-            .navigationTitle("プロフィール編集")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarLeading) {
-                    Button("キャンセル") {
-                        dismiss()
-                    }
-                }
+        .navigationTitle("プロフィール編集")
+        .navigationBarTitleDisplayMode(.inline)
+        .navigationBarBackButtonHidden(false)
+        .memoryLoading(isLoading: isLoading, message: "保存中...")
+        .alert("エラー", isPresented: .constant(errorMessage != nil)) {
+            Button("OK") {
+                errorMessage = nil
             }
-            .memoryLoading(isLoading: isLoading, message: "保存中...")
-            .alert("エラー", isPresented: .constant(errorMessage != nil)) {
-                Button("OK") {
-                    errorMessage = nil
-                }
-            } message: {
-                if let errorMessage = errorMessage {
-                    Text(errorMessage)
-                }
+        } message: {
+            if let errorMessage = errorMessage {
+                Text(errorMessage)
             }
-            .scrollDismissesKeyboard(.interactively)
-            .onAppear {
-                loadInitialValues()
-            }
-            .onChange(of: selectedPhoto) { oldValue, newValue in
-                Task {
-                    await loadImage(from: newValue)
-                }
+        }
+        .scrollDismissesKeyboard(.interactively)
+        .onAppear {
+            loadInitialValues()
+        }
+        .onChange(of: selectedPhoto) { oldValue, newValue in
+            Task {
+                await loadImage(from: newValue)
             }
         }
     }
@@ -264,8 +256,12 @@ struct ProfileEditView: View {
                 }
                 
                 // Available genres
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: MemorySpacing.sm) {
+                VStack(alignment: .leading, spacing: MemorySpacing.xs) {
+                    Text("選択可能なジャンル")
+                        .font(MemoryTheme.Fonts.caption())
+                        .foregroundColor(MemoryTheme.Colors.inkGray)
+                    
+                    FlowLayout(spacing: MemorySpacing.sm) {
                         ForEach(BookGenre.allCases, id: \.self) { genre in
                             if !editFavoriteGenres.contains(genre) {
                                 genreChip(genre: genre, isSelected: false)
@@ -320,7 +316,7 @@ struct ProfileEditView: View {
             }
         } label: {
             HStack(spacing: MemorySpacing.xs) {
-                Text(genre.rawValue)
+                Text(genre.displayName)
                     .font(MemoryTheme.Fonts.caption())
                     .foregroundColor(isSelected ? .white : MemoryTheme.Colors.inkBlack)
                 
