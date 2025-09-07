@@ -84,7 +84,7 @@ struct BookDetailView: View {
                     Button {
                         showingEditSheet = true
                     } label: {
-                        Label("読書状態を編集", systemImage: "slider.horizontal.3")
+                        Label("読書の進捗を更新", systemImage: "slider.horizontal.3")
                     }
                     
                     Divider()

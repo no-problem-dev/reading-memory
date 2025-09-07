@@ -45,7 +45,7 @@ struct EditBookView: View {
                             VStack(alignment: .leading, spacing: MemorySpacing.lg) {
                                 // Status selector
                                 VStack(alignment: .leading, spacing: MemorySpacing.sm) {
-                                    Label("読書ステータス", systemImage: "book.fill")
+                                    Label("読書の状況", systemImage: "book.fill")
                                         .font(MemoryTheme.Fonts.headline())
                                         .foregroundColor(MemoryTheme.Colors.inkBlack)
                                     
@@ -92,7 +92,7 @@ struct EditBookView: View {
                     .padding(.bottom, MemorySpacing.xxl)
                 }
             }
-            .navigationTitle("読書状態を編集")
+            .navigationTitle("読書の進捗を更新")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
