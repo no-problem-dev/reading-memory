@@ -2,6 +2,7 @@ import SwiftUI
 
 struct BookSearchView: View {
     @Environment(\.dismiss) private var dismiss
+    @Environment(AnalyticsService.self) private var analytics
     @State private var viewModel = BookSearchViewModel()
     @State private var searchText = ""
     @State private var selectedSearchResult: BookSearchResult?
@@ -49,6 +50,7 @@ struct BookSearchView: View {
             }
             .onAppear {
                 isSearchFieldFocused = true
+                analytics.track(AnalyticsEvent.screenView(screen: .searchBooks))
             }
         }
         .keyboardAware()

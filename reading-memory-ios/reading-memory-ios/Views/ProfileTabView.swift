@@ -4,6 +4,7 @@ import MessageUI
 
 struct ProfileTabView: View {
     @Environment(SubscriptionStateStore.self) private var subscriptionState
+    @Environment(AnalyticsService.self) private var analytics
     @State private var showLogout = false
     @State private var showDeleteAccount = false
     @State private var showPaywall = false
@@ -59,11 +60,15 @@ struct ProfileTabView: View {
                             } label: {
                                 Label("プロフィールを編集", systemImage: "person.fill")
                             }
+                            .onTapGesture {
+                                analytics.track(AnalyticsEvent.userAction(action: .sectionTapped(section: "edit_profile")))
+                            }
                         }
                         
                         // サポート
                         Section("サポート") {
                             Button {
+                                analytics.track(AnalyticsEvent.userAction(action: .sectionTapped(section: "feedback")))
                                 if MFMailComposeViewController.canSendMail() {
                                     showMailComposer = true
                                 } else {
@@ -86,6 +91,7 @@ struct ProfileTabView: View {
                         // その他
                         Section("その他") {
                             Button {
+                                analytics.track(AnalyticsEvent.userAction(action: .sectionTapped(section: "logout")))
                                 showLogout = true
                             } label: {
                                 Label("ログアウト", systemImage: "rectangle.portrait.and.arrow.forward")
@@ -124,6 +130,9 @@ struct ProfileTabView: View {
         }
         .task {
             await profileViewModel.loadProfile()
+        }
+        .onAppear {
+            analytics.track(AnalyticsEvent.screenView(screen: .profile))
         }
     }
     

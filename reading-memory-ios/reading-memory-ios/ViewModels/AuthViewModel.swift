@@ -10,6 +10,7 @@ import FirebaseCore
 @Observable
 final class AuthViewModel: BaseViewModel {
     private let authService = AuthService.shared
+    private let analytics = AnalyticsService.shared
     var currentUser: User?
     
     private var currentNonce: String?
@@ -31,8 +32,12 @@ final class AuthViewModel: BaseViewModel {
                     createdAt: Date(),
                     lastLoginAt: Date()
                 )
+                // アナリティクスのユーザーIDを設定
+                self?.analytics.setUserId(authUser.uid)
             } else {
                 self?.currentUser = nil
+                // ログアウト時はユーザーIDをクリア
+                self?.analytics.setUserId(nil)
             }
         }
     }
@@ -67,12 +72,19 @@ final class AuthViewModel: BaseViewModel {
             
             _ = try await Auth.auth().signIn(with: credential)
             // AuthService の AuthStateListener が自動的に currentUser を更新する
+            
+            // ログインイベントを送信
+            self?.analytics.track(AnalyticsEvent.userAction(action: .login(method: "google")))
         }
     }
     
     func signOut() async {
         await withLoadingNoThrow { [weak self] in
             guard let self = self else { return }
+            
+            // ログアウトイベントを送信
+            self.analytics.track(AnalyticsEvent.userAction(action: .logout))
+            
             try authService.signOut()
             currentUser = nil
         }
@@ -112,6 +124,9 @@ final class AuthViewModel: BaseViewModel {
             
             _ = try await Auth.auth().signIn(with: credential)
             // AuthService の AuthStateListener が自動的に currentUser を更新する
+            
+            // ログインイベントを送信
+            self.analytics.track(AnalyticsEvent.userAction(action: .login(method: "apple")))
         }
     }
     

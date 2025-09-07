@@ -2,6 +2,7 @@ import SwiftUI
 
 struct BookShelfHomeView: View {
     @Environment(BookStore.self) private var bookStore
+    @Environment(AnalyticsService.self) private var analytics
     @State private var showAddBook = false
     @State private var navigationPath = NavigationPath()
     @State private var chatBook: Book?
@@ -27,6 +28,7 @@ struct BookShelfHomeView: View {
                                 Button(action: {
                                     withAnimation(.spring(response: 0.3)) {
                                         bookStore.setFilter(filter)
+                                        analytics.track(AnalyticsEvent.userAction(action: .filterApplied(filterType: filter.rawValue)))
                                     }
                                 }) {
                                     Text(filter.rawValue)
@@ -105,6 +107,7 @@ struct BookShelfHomeView: View {
                             BookShelfGridView(
                                 books: bookStore.filteredBooks,
                                 onBookTapped: { book in
+                                    analytics.track(AnalyticsEvent.bookEvent(event: .bookSelected(bookId: book.id, fromScreen: "book_shelf")))
                                     navigationPath.append(book)
                                 },
                                 onChatTapped: { book in
@@ -115,6 +118,7 @@ struct BookShelfHomeView: View {
                             BookShelfListView(
                                 books: bookStore.filteredBooks,
                                 onBookTapped: { book in
+                                    analytics.track(AnalyticsEvent.bookEvent(event: .bookSelected(bookId: book.id, fromScreen: "book_shelf")))
                                     navigationPath.append(book)
                                 },
                                 onChatTapped: { book in
@@ -155,6 +159,9 @@ struct BookShelfHomeView: View {
         }
         .task {
             await bookStore.loadBooks()
+        }
+        .onAppear {
+            analytics.track(AnalyticsEvent.screenView(screen: .bookShelf))
         }
         .sheet(isPresented: $showAddBook) {
             BookAdditionFlowView()

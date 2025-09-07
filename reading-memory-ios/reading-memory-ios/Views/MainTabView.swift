@@ -6,6 +6,7 @@ struct MainTabView: View {
     @State private var bookStore = ServiceContainer.shared.getBookStore()
     @State private var userProfileStore = ServiceContainer.shared.getUserProfileStore()
     @State private var subscriptionStateStore = ServiceContainer.shared.getSubscriptionStateStore()
+    @State private var analyticsService = ServiceContainer.shared.getAnalyticsService()
     
     var body: some View {
         ZStack {
@@ -69,6 +70,7 @@ struct MainTabView: View {
         .environment(bookStore)
         .environment(userProfileStore)
         .environment(subscriptionStateStore)
+        .environment(analyticsService)
         .task {
             // プロフィールを初回ロード
             await userProfileStore.loadProfile()

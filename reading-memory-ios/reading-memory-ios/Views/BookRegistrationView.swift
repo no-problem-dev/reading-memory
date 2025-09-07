@@ -15,6 +15,7 @@ struct BookRegistrationView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(BookStore.self) private var bookStore
     @Environment(SubscriptionStateStore.self) private var subscriptionState
+    @Environment(AnalyticsService.self) private var analytics
     @State private var viewModel = ServiceContainer.shared.makeBookRegistrationViewModel()
     
     @State private var title = ""
@@ -33,12 +34,14 @@ struct BookRegistrationView: View {
     let searchResult: BookSearchResult?
     let defaultStatus: ReadingStatus
     let onCompletion: ((Book) -> Void)?
+    let registrationSource: String
     
     init(prefilledBook: Book? = nil, defaultStatus: ReadingStatus = .wantToRead, onCompletion: ((Book) -> Void)? = nil) {
         self.prefilledBook = prefilledBook
         self.searchResult = nil
         self.defaultStatus = defaultStatus
         self.onCompletion = onCompletion
+        self.registrationSource = "manual_entry"
         if let book = prefilledBook {
             _selectedStatus = State(initialValue: book.status)
         } else {
@@ -46,11 +49,12 @@ struct BookRegistrationView: View {
         }
     }
     
-    init(searchResult: BookSearchResult, defaultStatus: ReadingStatus = .wantToRead, onCompletion: ((Book) -> Void)? = nil) {
+    init(searchResult: BookSearchResult, defaultStatus: ReadingStatus = .wantToRead, registrationSource: String = "manual_search", onCompletion: ((Book) -> Void)? = nil) {
         self.prefilledBook = nil
         self.searchResult = searchResult
         self.defaultStatus = defaultStatus
         self.onCompletion = onCompletion
+        self.registrationSource = registrationSource
         _selectedStatus = State(initialValue: defaultStatus)
     }
     
@@ -465,6 +469,14 @@ struct BookRegistrationView: View {
             let (success, registeredBook) = await viewModel.registerBook(book)
             
             if success, let registeredBook = registeredBook {
+                // 本追加イベントを送信
+                let dataSource = searchResult?.dataSource.rawValue ?? "manual"
+                analytics.track(AnalyticsEvent.bookEvent(event: .added(
+                    bookId: registeredBook.id,
+                    method: registrationSource,
+                    source: dataSource
+                )))
+                
                 // 成功時の処理
                 onCompletion?(registeredBook)
                 dismiss()

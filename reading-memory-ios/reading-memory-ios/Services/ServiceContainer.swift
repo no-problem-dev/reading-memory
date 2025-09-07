@@ -31,6 +31,10 @@ final class ServiceContainer {
         bookRepository: bookRepository
     )
     
+    // Analytics Service
+    @MainActor
+    private lazy var analyticsService = AnalyticsService.shared
+    
     // ViewModels
     @MainActor
     func makeAuthViewModel() -> AuthViewModel {
@@ -76,6 +80,12 @@ final class ServiceContainer {
     @MainActor
     func getSubscriptionStateStore() -> SubscriptionStateStore {
         return subscriptionStateStore
+    }
+
+    
+    @MainActor
+    func getAnalyticsService() -> AnalyticsService {
+        return analyticsService
     }
     
     // Repository accessors

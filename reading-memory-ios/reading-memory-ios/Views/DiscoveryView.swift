@@ -2,6 +2,7 @@ import SwiftUI
 
 struct DiscoveryView: View {
     @Environment(SubscriptionStateStore.self) private var subscriptionState
+    @Environment(AnalyticsService.self) private var analytics
     @State private var viewModel = WantToReadViewModel()
     @State private var searchText = ""
     @State private var showSearch = false
@@ -79,6 +80,19 @@ struct DiscoveryView: View {
             }
             .task {
                 await viewModel.loadBooks()
+            }
+            .onAppear {
+                analytics.track(AnalyticsEvent.screenView(screen: .discovery))
+            }
+            .onChange(of: showSearch) { _, newValue in
+                if newValue {
+                    analytics.track(AnalyticsEvent.userAction(action: .tabSelected(tabName: "search")))
+                }
+            }
+            .onChange(of: showFullList) { _, newValue in
+                if newValue {
+                    analytics.track(AnalyticsEvent.userAction(action: .tabSelected(tabName: "want_to_read")))
+                }
             }
         }
     }

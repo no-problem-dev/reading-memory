@@ -6,6 +6,7 @@ final class BookRegistrationViewModel: BaseViewModel {
     private let bookRepository = BookRepository.shared
     private let authService = AuthService.shared
     private let activityRepository = ActivityRepository.shared
+    private let analytics = AnalyticsService.shared
     
     private(set) var monthlyBookCount = 0
     private(set) var canAddBook = true
@@ -133,6 +134,15 @@ final class BookRegistrationViewModel: BaseViewModel {
             
             // 登録後にカウントを更新
             await self.checkBookQuota()
+            
+            // 本追加イベントを送信
+            if let book = createdBook {
+                self.analytics.track(AnalyticsEvent.bookEvent(event: .added(
+                    bookId: book.id,
+                    method: "manual_search",
+                    source: searchResult.dataSource.rawValue
+                )))
+            }
             
             result = true
         }
