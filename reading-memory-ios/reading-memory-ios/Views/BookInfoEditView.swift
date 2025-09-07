@@ -52,17 +52,10 @@ struct BookInfoEditView: View {
                                     .fontWeight(.medium)
                                     .foregroundColor(MemoryTheme.Colors.primaryBlue)
                                 
-                                TextField("本のタイトル", text: $title)
-                                    .font(MemoryTheme.Fonts.body())
-                                    .padding(12)
-                                    .background(
-                                        RoundedRectangle(cornerRadius: 10)
-                                            .fill(MemoryTheme.Colors.inkPale.opacity(0.5))
-                                    )
-                                    .overlay(
-                                        RoundedRectangle(cornerRadius: 10)
-                                            .stroke(title.isEmpty ? Color.clear : MemoryTheme.Colors.primaryBlue.opacity(0.3), lineWidth: 1)
-                                    )
+                                MemoryTextField(
+                                    placeholder: "本のタイトル",
+                                    text: $title
+                                )
                             }
                             
                             // 著者
@@ -72,17 +65,10 @@ struct BookInfoEditView: View {
                                     .fontWeight(.medium)
                                     .foregroundColor(MemoryTheme.Colors.primaryBlue)
                                 
-                                TextField("著者名", text: $author)
-                                    .font(MemoryTheme.Fonts.body())
-                                    .padding(12)
-                                    .background(
-                                        RoundedRectangle(cornerRadius: 10)
-                                            .fill(MemoryTheme.Colors.inkPale.opacity(0.5))
-                                    )
-                                    .overlay(
-                                        RoundedRectangle(cornerRadius: 10)
-                                            .stroke(author.isEmpty ? Color.clear : MemoryTheme.Colors.primaryBlue.opacity(0.3), lineWidth: 1)
-                                    )
+                                MemoryTextField(
+                                    placeholder: "著者名",
+                                    text: $author
+                                )
                             }
                             
                             // 出版社
@@ -92,17 +78,10 @@ struct BookInfoEditView: View {
                                     .fontWeight(.medium)
                                     .foregroundColor(MemoryTheme.Colors.primaryBlue)
                                 
-                                TextField("出版社名", text: $publisher)
-                                    .font(MemoryTheme.Fonts.body())
-                                    .padding(12)
-                                    .background(
-                                        RoundedRectangle(cornerRadius: 10)
-                                            .fill(MemoryTheme.Colors.inkPale.opacity(0.5))
-                                    )
-                                    .overlay(
-                                        RoundedRectangle(cornerRadius: 10)
-                                            .stroke(publisher.isEmpty ? Color.clear : MemoryTheme.Colors.primaryBlue.opacity(0.3), lineWidth: 1)
-                                    )
+                                MemoryTextField(
+                                    placeholder: "出版社名",
+                                    text: $publisher
+                                )
                             }
                             
                             // 出版日
@@ -150,18 +129,11 @@ struct BookInfoEditView: View {
                                     .fontWeight(.medium)
                                     .foregroundColor(MemoryTheme.Colors.primaryBlue)
                                 
-                                TextField("ISBN番号", text: $isbn)
-                                    .font(MemoryTheme.Fonts.body())
-                                    .padding(12)
-                                    .background(
-                                        RoundedRectangle(cornerRadius: 10)
-                                            .fill(MemoryTheme.Colors.inkPale.opacity(0.5))
-                                    )
-                                    .overlay(
-                                        RoundedRectangle(cornerRadius: 10)
-                                            .stroke(isbn.isEmpty ? Color.clear : MemoryTheme.Colors.primaryBlue.opacity(0.3), lineWidth: 1)
-                                    )
-                                    .keyboardType(.numberPad)
+                                MemoryTextField(
+                                    placeholder: "ISBN番号",
+                                    text: $isbn,
+                                    keyboardType: .numberPad
+                                )
                             }
                             
                             // ページ数
@@ -171,18 +143,11 @@ struct BookInfoEditView: View {
                                     .fontWeight(.medium)
                                     .foregroundColor(MemoryTheme.Colors.primaryBlue)
                                 
-                                TextField("ページ数", text: $pageCount)
-                                    .font(MemoryTheme.Fonts.body())
-                                    .padding(12)
-                                    .background(
-                                        RoundedRectangle(cornerRadius: 10)
-                                            .fill(MemoryTheme.Colors.inkPale.opacity(0.5))
-                                    )
-                                    .overlay(
-                                        RoundedRectangle(cornerRadius: 10)
-                                            .stroke(pageCount.isEmpty ? Color.clear : MemoryTheme.Colors.primaryBlue.opacity(0.3), lineWidth: 1)
-                                    )
-                                    .keyboardType(.numberPad)
+                                MemoryTextField(
+                                    placeholder: "ページ数",
+                                    text: $pageCount,
+                                    keyboardType: .numberPad
+                                )
                             }
                             
                             // 説明
@@ -192,29 +157,10 @@ struct BookInfoEditView: View {
                                     .fontWeight(.medium)
                                     .foregroundColor(MemoryTheme.Colors.primaryBlue)
                                 
-                                ZStack(alignment: .topLeading) {
-                                    if description.isEmpty {
-                                        Text("本の内容や感想をメモできます")
-                                            .font(MemoryTheme.Fonts.body())
-                                            .foregroundColor(MemoryTheme.Colors.inkGray.opacity(0.5))
-                                            .padding(.horizontal, 12)
-                                            .padding(.top, 12)
-                                    }
-                                    
-                                    TextEditor(text: $description)
-                                        .font(MemoryTheme.Fonts.body())
-                                        .scrollContentBackground(.hidden)
-                                        .padding(8)
-                                        .background(Color.clear)
-                                }
-                                .frame(minHeight: 120)
-                                .background(
-                                    RoundedRectangle(cornerRadius: 10)
-                                        .fill(MemoryTheme.Colors.inkPale.opacity(0.5))
-                                )
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: 10)
-                                        .stroke(description.isEmpty ? Color.clear : MemoryTheme.Colors.primaryBlue.opacity(0.3), lineWidth: 1)
+                                MemoryTextEditor(
+                                    placeholder: "本の内容や感想をメモできます",
+                                    text: $description,
+                                    minHeight: 120
                                 )
                             }
                         }
@@ -245,18 +191,14 @@ struct BookInfoEditView: View {
                             await saveChanges()
                         }
                     }) {
-                        HStack(spacing: 4) {
-                            Image(systemName: "checkmark")
-                                .font(.system(size: 14, weight: .semibold))
-                            Text("保存")
-                                .fontWeight(.semibold)
-                        }
-                        .foregroundColor(
-                            isLoading || title.isEmpty || author.isEmpty
-                                ? MemoryTheme.Colors.inkGray
-                                : MemoryTheme.Colors.primaryBlue
-                        )
+                        Text("保存")
+                            .fontWeight(.semibold)
                     }
+                    .foregroundColor(
+                        isLoading || title.isEmpty || author.isEmpty
+                            ? MemoryTheme.Colors.inkGray
+                            : MemoryTheme.Colors.primaryBlue
+                    )
                     .disabled(isLoading || title.isEmpty || author.isEmpty)
                 }
             }

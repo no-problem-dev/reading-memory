@@ -30,7 +30,12 @@ struct BookDetailView: View {
                 ScrollView {
                     VStack(spacing: 0) {
                         // Hero Section with Book Info
-                        BookDetailHeroSection(book: book)
+                        BookDetailHeroSection(
+                            book: book,
+                            onCoverTap: {
+                                showingBookInfoEdit = true
+                            }
+                        )
                         
                         VStack(spacing: MemorySpacing.lg) {
                             // Action Buttons
@@ -80,12 +85,6 @@ struct BookDetailView: View {
                         showingEditSheet = true
                     } label: {
                         Label("読書状態を編集", systemImage: "slider.horizontal.3")
-                    }
-                    
-                    Button {
-                        showingBookInfoEdit = true
-                    } label: {
-                        Label("本の情報を編集", systemImage: "pencil")
                     }
                     
                     Divider()
@@ -156,7 +155,6 @@ struct BookDetailView: View {
     }
 
     private func loadBook() async {
-        guard let userId = authService.currentUser?.uid else { return }
         
         // BookStoreから本を取得
         book = bookStore.getBook(id: bookId)
@@ -169,7 +167,6 @@ struct BookDetailView: View {
     }
     
     private func deleteBook() async {
-        guard let userId = authService.currentUser?.uid else { return }
         
         do {
             try await bookStore.deleteBook(id: bookId)
@@ -181,8 +178,7 @@ struct BookDetailView: View {
     
     
     private func updateStatus(to newStatus: ReadingStatus) async {
-        guard let userId = authService.currentUser?.uid,
-              let book = book,
+        guard let book = book,
               book.status != newStatus else { return }
         
         do {

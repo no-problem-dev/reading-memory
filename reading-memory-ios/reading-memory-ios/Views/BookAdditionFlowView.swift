@@ -73,12 +73,25 @@ struct BookAdditionFlowView: View {
                     // Options
                     ScrollView {
                         VStack(spacing: MemorySpacing.md) {
+                            // Header text moved here for better proximity
+                            VStack(spacing: MemorySpacing.xs) {
+                                Text("本の登録方法を選択")
+                                    .font(MemoryTheme.Fonts.title3())
+                                    .foregroundColor(MemoryTheme.Colors.inkBlack)
+                                
+                                Text("お好みの方法で本を追加できます")
+                                    .font(MemoryTheme.Fonts.subheadline())
+                                    .foregroundColor(MemoryTheme.Colors.inkGray)
+                            }
+                            .padding(.bottom, MemorySpacing.lg)
+                            
                             ForEach(AdditionOption.allCases, id: \.self) { option in
                                 optionCard(for: option)
                                     .padding(.horizontal, MemorySpacing.md)
                             }
                         }
-                        .padding(.vertical, MemorySpacing.lg)
+                        .padding(.top, MemorySpacing.md)
+                        .padding(.bottom, MemorySpacing.xl)
                     }
                 }
             }
@@ -118,48 +131,22 @@ struct BookAdditionFlowView: View {
     // MARK: - Components
     
     private var headerSection: some View {
-        VStack(spacing: MemorySpacing.md) {
-            // Icon
+        VStack(spacing: 0) {
+            // 本棚に本を追加するイメージのアイコン構成
             ZStack {
+                // 背景の薄い円
                 Circle()
-                    .fill(
-                        LinearGradient(
-                            gradient: Gradient(colors: [
-                                MemoryTheme.Colors.primaryBlueLight.opacity(0.2),
-                                MemoryTheme.Colors.primaryBlue.opacity(0.1)
-                            ]),
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        )
-                    )
-                    .frame(width: 80, height: 80)
+                    .fill(MemoryTheme.Colors.inkPale.opacity(0.1))
+                    .frame(width: 60, height: 60)
                 
-                Image(systemName: "plus.circle.fill")
-                    .font(.system(size: 40))
-                    .foregroundStyle(
-                        LinearGradient(
-                            gradient: Gradient(colors: [
-                                MemoryTheme.Colors.primaryBlue,
-                                MemoryTheme.Colors.primaryBlueDark
-                            ]),
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        )
-                    )
+                // 本のアイコン（装飾的で押せないことが明確）
+                Image(systemName: "books.vertical")
+                    .font(.system(size: 28))
+                    .foregroundColor(MemoryTheme.Colors.inkGray.opacity(0.7))
             }
-            
-            // Text
-            VStack(spacing: MemorySpacing.xs) {
-                Text("どのように本を追加しますか？")
-                    .font(MemoryTheme.Fonts.title3())
-                    .foregroundColor(MemoryTheme.Colors.inkBlack)
-                
-                Text("最適な方法を選択してください")
-                    .font(MemoryTheme.Fonts.subheadline())
-                    .foregroundColor(MemoryTheme.Colors.inkGray)
-            }
+            .padding(.top, MemorySpacing.lg)
+            .padding(.bottom, MemorySpacing.md)
         }
-        .padding(.vertical, MemorySpacing.xl)
     }
     
     private func optionCard(for option: AdditionOption) -> some View {
@@ -173,14 +160,14 @@ struct BookAdditionFlowView: View {
             selectedOption = option
         } label: {
             HStack(spacing: MemorySpacing.md) {
-                // Icon
+                // Larger, more prominent icon
                 ZStack {
-                    Circle()
+                    RoundedRectangle(cornerRadius: MemoryRadius.medium)
                         .fill(iconBackground(for: option))
-                        .frame(width: 56, height: 56)
+                        .frame(width: 64, height: 64)
                     
                     Image(systemName: option.icon)
-                        .font(.system(size: 24))
+                        .font(.system(size: 28))
                         .foregroundColor(iconColor(for: option))
                 }
                 
@@ -219,26 +206,30 @@ struct BookAdditionFlowView: View {
                 
                 Spacer()
                 
-                // Arrow
+                // Larger arrow for better tap indication
                 Image(systemName: "chevron.right")
-                    .font(.system(size: 14))
-                    .foregroundColor(MemoryTheme.Colors.inkLightGray)
+                    .font(.system(size: 16, weight: .semibold))
+                    .foregroundColor(MemoryTheme.Colors.primaryBlue)
             }
-            .padding(MemorySpacing.md)
+            .padding(MemorySpacing.lg)
             .background(
                 RoundedRectangle(cornerRadius: MemoryRadius.large)
                     .fill(MemoryTheme.Colors.cardBackground)
                     .overlay(
                         RoundedRectangle(cornerRadius: MemoryRadius.large)
                             .stroke(
-                                option.isRecommended ? MemoryTheme.Colors.primaryBlue.opacity(0.3) : Color.clear,
-                                lineWidth: 1
+                                option.isRecommended 
+                                    ? MemoryTheme.Colors.primaryBlue.opacity(0.5) 
+                                    : MemoryTheme.Colors.inkPale.opacity(0.3),
+                                lineWidth: option.isRecommended ? 2 : 1
                             )
                     )
             )
-            .memoryShadow(option.isRecommended ? .medium : .soft)
+            .memoryShadow(option.isRecommended ? .strong : .medium)
         }
         .buttonStyle(PlainButtonStyle())
+        .scaleEffect(1)
+        .animation(.spring(response: 0.3, dampingFraction: 0.6), value: selectedOption)
     }
     
     private func iconBackground(for option: AdditionOption) -> LinearGradient {

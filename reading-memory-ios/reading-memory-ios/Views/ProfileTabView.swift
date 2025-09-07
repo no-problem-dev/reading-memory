@@ -21,8 +21,7 @@ struct ProfileTabView: View {
                     // Header using new component
                     TabHeaderView(
                         title: "設定",
-                        subtitle: "アプリを自分好みに",
-                        iconName: "gearshape.circle.fill"
+                        subtitle: "アプリを自分好みに"
                     )
                     
                     // Content

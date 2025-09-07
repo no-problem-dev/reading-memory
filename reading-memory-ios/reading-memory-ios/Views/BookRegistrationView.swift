@@ -365,6 +365,7 @@ struct BookRegistrationView: View {
                                 showDatePicker.toggle()
                             }
                         }
+                        .padding(.horizontal, MemorySpacing.md)
                 } else {
                     Button {
                         withAnimation(MemoryTheme.Animation.fast) {
@@ -441,7 +442,7 @@ struct BookRegistrationView: View {
                 )
             } else {
                 // 手動入力の本の場合
-                guard let userId = AuthService.shared.currentUser?.uid else { return }
+                // APIはidTokenで認証するため、userIdのチェックは不要
                 book = Book(
                     id: UUID().uuidString,
                     isbn: isbn.isEmpty ? nil : isbn.trimmingCharacters(in: .whitespacesAndNewlines),

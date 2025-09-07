@@ -70,15 +70,16 @@ struct ProfileSetupStep: View {
                     Text("表示名")
                         .font(.headline)
                     
-                    TextField("あなたの名前", text: $displayName)
-                        .memoryTextFieldStyle()
-                        .textFieldStyle(.roundedBorder)
-                        .textContentType(.name)
-                        .submitLabel(.done)
-                        .focused($isNameFieldFocused)
-                        .onSubmit {
-                            isNameFieldFocused = false
-                        }
+                    MemoryTextField(
+                        placeholder: "あなたの名前",
+                        text: $displayName
+                    )
+                    .textContentType(.name)
+                    .submitLabel(.done)
+                    .focused($isNameFieldFocused)
+                    .onSubmit {
+                        isNameFieldFocused = false
+                    }
                     
                     Text("この名前は公開本棚で他のユーザーに表示されます")
                         .font(.caption)

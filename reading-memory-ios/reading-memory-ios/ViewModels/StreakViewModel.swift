@@ -109,8 +109,6 @@ class StreakViewModel: BaseViewModel {
     }
     
     func recordMemoActivity() async {
-        guard let userId = userId else { return }
-        
         do {
             // メモ作成アクティビティを記録
             try await activityRepository.recordMemoWritten()
@@ -145,8 +143,6 @@ class StreakViewModel: BaseViewModel {
     
     // アクティビティサマリーを取得
     func getActivitySummary(days: Int) async -> (totalBooks: Int, totalMemos: Int, activeDays: Int) {
-        guard let userId = userId else { return (0, 0, 0) }
-        
         do {
             return try await activityRepository.getActivitySummary(days: days)
         } catch {
@@ -157,8 +153,6 @@ class StreakViewModel: BaseViewModel {
     
     // カレンダー用：特定月のアクティビティを取得
     func getMonthlyActivities(year: Int, month: Int) async -> [Date] {
-        guard let userId = userId else { return [] }
-        
         let calendar = Calendar.current
         let components = DateComponents(year: year, month: month)
         

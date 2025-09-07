@@ -32,8 +32,6 @@ class AchievementViewModel: BaseViewModel {
     
     @MainActor
     private func fetchAchievementData() async {
-        guard let user = authService.currentUser else { return }
-        
         isLoading = true
         errorMessage = nil
         
@@ -65,8 +63,6 @@ class AchievementViewModel: BaseViewModel {
     }
     
     func updateAchievementProgress(shouldReload: Bool = true) async {
-        guard let user = authService.currentUser else { return }
-        
         do {
             // 必要なデータを取得
             let books = try await bookRepository.getBooks()

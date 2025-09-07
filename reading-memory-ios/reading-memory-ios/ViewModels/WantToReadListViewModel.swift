@@ -48,12 +48,6 @@ class WantToReadListViewModel {
         isLoading = true
         error = nil
         
-        guard let userId = authService.currentUser?.uid else {
-            self.error = AppError.authenticationRequired
-            isLoading = false
-            return
-        }
-        
         do {
             let allBooks = try await bookRepository.getBooks()
             self.books = allBooks.filter { $0.status == ReadingStatus.wantToRead }
@@ -160,9 +154,6 @@ class WantToReadListViewModel {
         let book = books[index]
         
         do {
-            guard let userId = authService.currentUser?.uid else {
-                throw AppError.authenticationRequired
-            }
             try await bookRepository.deleteBook(bookId: book.id)
             books.remove(at: index)
         } catch {

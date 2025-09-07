@@ -40,8 +40,6 @@ struct RatingSelector: View {
     }
     
     private func updateRating(to newRating: Double) async {
-        guard let userId = authService.currentUser?.uid else { return }
-        
         let targetRating = rating == newRating ? nil : newRating
         
         do {

@@ -17,8 +17,7 @@ struct BookShelfHomeView: View {
                     // Header using new component with updated subtitle
                     TabHeaderView(
                         title: "本棚",
-                        subtitle: "本との出会いと読書体験を大切に記録",
-                        iconName: "books.vertical.circle.fill"
+                        subtitle: "本との出会いと読書体験を大切に記録"
                     )
                     
                     // Status tabs

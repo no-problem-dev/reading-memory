@@ -43,9 +43,10 @@ final class AuthViewModel: BaseViewModel {
     
     func signInWithGoogle() async {
         await withLoadingNoThrow { [weak self] in
-            guard let self = self else { return }
+            guard self != nil else { return }
             
-            guard let presentingViewController = UIApplication.shared.windows.first?.rootViewController else {
+            guard let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+                  let presentingViewController = windowScene.windows.first?.rootViewController else {
                 throw AppError.custom("画面の取得に失敗しました")
             }
             
