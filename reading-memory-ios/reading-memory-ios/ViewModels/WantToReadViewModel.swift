@@ -22,8 +22,8 @@ enum WantToReadSortOption: String, CaseIterable {
 }
 
 @Observable
+@MainActor
 class WantToReadViewModel {
-    private(set) var books: [Book] = []
     private(set) var isLoading = false
     private(set) var errorMessage: String?
     var selectedSortOption: WantToReadSortOption = .smart
@@ -34,25 +34,15 @@ class WantToReadViewModel {
         self.bookStore = store
     }
     
-    func loadBooks() async {
-        guard let bookStore = bookStore else {
-            errorMessage = "BookStoreが設定されていません"
-            return
-        }
-        
-        isLoading = true
-        errorMessage = nil
-        
-        // BookStoreが既に読み込まれている場合は再利用
-        let allBooks = bookStore.allBooks
+    // 読みたいリストの本を取得（フィルタリング＆ソート済み）
+    var wantToReadBooks: [Book] {
+        guard let bookStore = bookStore else { return [] }
         
         // 読みたいリストの本のみフィルタリング
-        let wantToReadBooks = allBooks.filter { $0.status == .wantToRead }
+        let filteredBooks = bookStore.allBooks.filter { $0.status == .wantToRead }
         
         // 選択されたソートオプションに基づいて並び替え
-        books = sortBooks(wantToReadBooks, by: selectedSortOption)
-        
-        isLoading = false
+        return sortBooks(filteredBooks, by: selectedSortOption)
     }
     
     private func sortBooks(_ books: [Book], by option: WantToReadSortOption) -> [Book] {
@@ -180,7 +170,6 @@ class WantToReadViewModel {
     
     func changeSortOption(_ option: WantToReadSortOption) {
         selectedSortOption = option
-        books = sortBooks(books, by: option)
     }
     
     func updateBookPriority(_ book: Book, priority: Int) async {
@@ -192,7 +181,6 @@ class WantToReadViewModel {
         do {
             let updatedBook = book.updated(priority: priority)
             try await bookStore.updateBook(updatedBook)
-            await loadBooks()
         } catch {
             errorMessage = "優先度の更新に失敗しました: \(error.localizedDescription)"
         }
@@ -207,7 +195,6 @@ class WantToReadViewModel {
         do {
             let updatedBook = book.updated(status: .reading, startDate: Date())
             try await bookStore.updateBook(updatedBook)
-            await loadBooks()
         } catch {
             errorMessage = "ステータスの更新に失敗しました: \(error.localizedDescription)"
         }
@@ -221,7 +208,6 @@ class WantToReadViewModel {
         
         do {
             try await bookStore.deleteBook(id: book.id)
-            await loadBooks()
         } catch {
             errorMessage = "本の削除に失敗しました: \(error.localizedDescription)"
         }

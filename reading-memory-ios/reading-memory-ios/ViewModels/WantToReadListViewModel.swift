@@ -2,18 +2,14 @@ import Foundation
 import Observation
 
 @Observable
+@MainActor
 class WantToReadListViewModel {
     private var bookStore: BookStore?
     
-    private(set) var books: [Book] = []
     private(set) var isLoading = false
     private(set) var error: Error?
     
-    var sortOption: SortOption = .smart {
-        didSet {
-            sortBooks()
-        }
-    }
+    var sortOption: SortOption = .smart
     
     enum SortOption: String, CaseIterable {
         case smart = "おすすめ順"
@@ -45,9 +41,17 @@ class WantToReadListViewModel {
         self.bookStore = store
     }
     
-    @MainActor
+    // 読みたいリストの本を取得（フィルタリング＆ソート済み）
+    var books: [Book] {
+        guard let bookStore = bookStore else { return [] }
+        
+        let filteredBooks = bookStore.allBooks.filter { $0.status == ReadingStatus.wantToRead }
+        return sortedBooks(filteredBooks)
+    }
+    
     func loadWantToReadBooks() async {
-        guard let bookStore = bookStore else {
+        // BookStoreが設定されているか確認
+        guard bookStore != nil else {
             print("Error: BookStore not set")
             return
         }
@@ -55,93 +59,71 @@ class WantToReadListViewModel {
         isLoading = true
         error = nil
         
-        // BookStoreが既に読み込まれている場合は再利用
-        let allBooks = bookStore.allBooks
-        
-        self.books = allBooks.filter { $0.status == ReadingStatus.wantToRead }
-        sortBooks()
+        // BookStoreのallBooksが更新されたら自動的にbooksプロパティも更新される
         
         isLoading = false
     }
     
-    @MainActor
     func updatePriority(bookId: String, priority: Int?) async {
         guard let bookStore = bookStore else { return }
-        guard let index = books.firstIndex(where: { $0.id == bookId }) else { return }
+        guard let book = books.first(where: { $0.id == bookId }) else { return }
         
-        let book = books[index]
         let updatedBook = book.updated(priority: priority)
         
         do {
             try await bookStore.updateBook(updatedBook)
-            books[index] = updatedBook
-            sortBooks()
         } catch {
             self.error = error
             print("Error updating priority: \(error)")
         }
     }
     
-    @MainActor
     func updatePlannedReadingDate(bookId: String, date: Date?) async {
         guard let bookStore = bookStore else { return }
-        guard let index = books.firstIndex(where: { $0.id == bookId }) else { return }
+        guard let book = books.first(where: { $0.id == bookId }) else { return }
         
-        let book = books[index]
         let updatedBook = book.updated(plannedReadingDate: date)
         
         do {
             try await bookStore.updateBook(updatedBook)
-            books[index] = updatedBook
-            if sortOption == .plannedDate {
-                sortBooks()
-            }
         } catch {
             self.error = error
             print("Error updating planned reading date: \(error)")
         }
     }
     
-    @MainActor
     func toggleReminder(bookId: String) async {
         guard let bookStore = bookStore else { return }
-        guard let index = books.firstIndex(where: { $0.id == bookId }) else { return }
+        guard let book = books.first(where: { $0.id == bookId }) else { return }
         
-        let book = books[index]
         let updatedBook = book.updated(reminderEnabled: !book.reminderEnabled)
         
         do {
             try await bookStore.updateBook(updatedBook)
-            books[index] = updatedBook
         } catch {
             self.error = error
             print("Error toggling reminder: \(error)")
         }
     }
     
-    @MainActor
     func updatePurchaseLinks(bookId: String, links: [PurchaseLink]) async {
         guard let bookStore = bookStore else { return }
-        guard let index = books.firstIndex(where: { $0.id == bookId }) else { return }
+        guard let book = books.first(where: { $0.id == bookId }) else { return }
         
-        let book = books[index]
         let updatedBook = book.updated(purchaseLinks: links)
         
         do {
             try await bookStore.updateBook(updatedBook)
-            books[index] = updatedBook
         } catch {
             self.error = error
             print("Error updating purchase links: \(error)")
         }
     }
     
-    @MainActor
     func startReading(bookId: String) async {
         guard let bookStore = bookStore else { return }
-        guard let index = books.firstIndex(where: { $0.id == bookId }) else { return }
+        guard let book = books.first(where: { $0.id == bookId }) else { return }
         
-        let book = books[index]
         let updatedBook = book.updated(
             status: .reading,
             startDate: Date()
@@ -149,59 +131,33 @@ class WantToReadListViewModel {
         
         do {
             try await bookStore.updateBook(updatedBook)
-            // 読書中になったら、リストから削除
-            books.remove(at: index)
+            // BookStoreが更新されれば、booksプロパティも自動的に更新される
         } catch {
             self.error = error
             print("Error starting reading: \(error)")
         }
     }
     
-    @MainActor
     func deleteBook(bookId: String) async {
         guard let bookStore = bookStore else { return }
-        guard let index = books.firstIndex(where: { $0.id == bookId }) else { return }
-        let book = books[index]
         
         do {
-            try await bookStore.deleteBook(id: book.id)
-            books.remove(at: index)
+            try await bookStore.deleteBook(id: bookId)
+            // BookStoreが更新されれば、booksプロパティも自動的に更新される
         } catch {
             self.error = error
             print("Error deleting book: \(error)")
         }
     }
     
-    @MainActor
-    func reorderBooks(from source: IndexSet, to destination: Int) async {
-        // 一時的にローカルで並び替え
-        books.move(fromOffsets: source, toOffset: destination)
-        
-        // 優先度を再計算
-        for (index, book) in books.enumerated() {
-            let updatedBook = book.updated(priority: index)
-            books[index] = updatedBook
-            
-            // 非同期でサーバーに反映
-            Task {
-                do {
-                    if let bookStore = bookStore {
-                        try await bookStore.updateBook(updatedBook)
-                    }
-                } catch {
-                    print("Error updating book priority: \(error)")
-                }
-            }
-        }
-    }
     
-    private func sortBooks() {
+    private func sortedBooks(_ books: [Book]) -> [Book] {
         switch sortOption {
         case .smart:
-            sortBooksBySmart()
+            return sortBooksBySmart(books)
         case .priority:
             // 優先度順（高い順、nilは最後に）
-            books.sort { book1, book2 in
+            return books.sorted { book1, book2 in
                 if let p1 = book1.priority, let p2 = book2.priority {
                     if p1 != p2 {
                         return p1 > p2  // 高い優先度が先
@@ -215,14 +171,14 @@ class WantToReadListViewModel {
             }
         case .addedDate:
             // 追加日順（新しい順）
-            books.sort { book1, book2 in
+            return books.sorted { book1, book2 in
                 let date1 = book1.addedDate
                 let date2 = book2.addedDate
                 return date1 > date2
             }
         case .plannedDate:
             // 予定日順（nilは最後に）
-            books.sort { book1, book2 in
+            return books.sorted { book1, book2 in
                 if let d1 = book1.plannedReadingDate, let d2 = book2.plannedReadingDate {
                     return d1 < d2
                 } else if book1.plannedReadingDate != nil {
@@ -235,15 +191,15 @@ class WantToReadListViewModel {
             }
         case .title:
             // タイトル順
-            books.sort { $0.title < $1.title }
+            return books.sorted { $0.title < $1.title }
         }
     }
     
-    private func sortBooksBySmart() {
+    private func sortBooksBySmart(_ books: [Book]) -> [Book] {
         let now = Date()
         let calendar = Calendar.current
         
-        books.sort { lhs, rhs in
+        return books.sorted { lhs, rhs in
             let lhsScore = calculateSmartScore(for: lhs, now: now, calendar: calendar)
             let rhsScore = calculateSmartScore(for: rhs, now: now, calendar: calendar)
             

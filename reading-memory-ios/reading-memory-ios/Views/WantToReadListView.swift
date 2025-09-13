@@ -44,11 +44,6 @@ struct WantToReadListView: View {
                         startReadingButton(for: book)
                     }
                 }
-                // .onMove { source, destination in
-                //     Task {
-                //         await viewModel.reorderBooks(from: source, to: destination)
-                //     }
-                // }
             }
             .listStyle(PlainListStyle())
             // .environment(\.editMode, $editMode)

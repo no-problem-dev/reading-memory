@@ -39,13 +39,13 @@ struct DiscoveryView: View {
                         .padding(.top, MemorySpacing.lg)
                         
                         // メインコンテンツ
-                        if viewModel.books.isEmpty {
+                        if viewModel.wantToReadBooks.isEmpty {
                             EmptyWantToReadStateView(showSearch: $showSearch)
                                 .padding(.top, MemorySpacing.xxl)
                         } else {
                             // 読みたいリスト表示
                             WantToReadContentView(
-                                books: viewModel.books,
+                                books: viewModel.wantToReadBooks,
                                 navigationPath: $navigationPath,
                                 selectedBook: $selectedBook,
                                 showFullList: $showFullList
@@ -81,7 +81,6 @@ struct DiscoveryView: View {
             }
             .task {
                 viewModel.setBookStore(bookStore)
-                await viewModel.loadBooks()
             }
             .onAppear {
                 analytics.track(AnalyticsEvent.screenView(screen: .discovery))
