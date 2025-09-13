@@ -1,6 +1,7 @@
 import SwiftUI
 
 struct WantToReadListView: View {
+    @Environment(BookStore.self) private var bookStore
     @State private var viewModel = WantToReadListViewModel()
     @State private var showingSortOptions = false
     @State private var editMode: EditMode = .inactive
@@ -138,6 +139,7 @@ struct WantToReadListView: View {
             }
         }
         .task {
+            viewModel.setBookStore(bookStore)
             await viewModel.loadWantToReadBooks()
         }
     }
@@ -226,4 +228,5 @@ struct WantToReadStatCard: View {
 
 #Preview {
     WantToReadListView()
+        .environment(ServiceContainer.shared.getBookStore())
 }

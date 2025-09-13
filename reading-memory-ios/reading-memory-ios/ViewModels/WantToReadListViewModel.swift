@@ -3,8 +3,7 @@ import Observation
 
 @Observable
 class WantToReadListViewModel {
-    private let bookRepository: BookRepository
-    @MainActor private let authService = AuthService.shared
+    private var bookStore: BookStore?
     
     private(set) var books: [Book] = []
     private(set) var isLoading = false
@@ -39,36 +38,42 @@ class WantToReadListViewModel {
         }
     }
     
-    init(bookRepository: BookRepository = BookRepository.shared) {
-        self.bookRepository = bookRepository
+    init() {
+    }
+    
+    func setBookStore(_ store: BookStore) {
+        self.bookStore = store
     }
     
     @MainActor
     func loadWantToReadBooks() async {
+        guard let bookStore = bookStore else {
+            print("Error: BookStore not set")
+            return
+        }
+        
         isLoading = true
         error = nil
         
-        do {
-            let allBooks = try await bookRepository.getBooks()
-            self.books = allBooks.filter { $0.status == ReadingStatus.wantToRead }
-            sortBooks()
-        } catch {
-            self.error = error
-            print("Error loading want to read books: \(error)")
-        }
+        // BookStoreが既に読み込まれている場合は再利用
+        let allBooks = bookStore.allBooks
+        
+        self.books = allBooks.filter { $0.status == ReadingStatus.wantToRead }
+        sortBooks()
         
         isLoading = false
     }
     
     @MainActor
     func updatePriority(bookId: String, priority: Int?) async {
+        guard let bookStore = bookStore else { return }
         guard let index = books.firstIndex(where: { $0.id == bookId }) else { return }
         
         let book = books[index]
         let updatedBook = book.updated(priority: priority)
         
         do {
-            try await bookRepository.updateBook(updatedBook)
+            try await bookStore.updateBook(updatedBook)
             books[index] = updatedBook
             sortBooks()
         } catch {
@@ -79,13 +84,14 @@ class WantToReadListViewModel {
     
     @MainActor
     func updatePlannedReadingDate(bookId: String, date: Date?) async {
+        guard let bookStore = bookStore else { return }
         guard let index = books.firstIndex(where: { $0.id == bookId }) else { return }
         
         let book = books[index]
         let updatedBook = book.updated(plannedReadingDate: date)
         
         do {
-            try await bookRepository.updateBook(updatedBook)
+            try await bookStore.updateBook(updatedBook)
             books[index] = updatedBook
             if sortOption == .plannedDate {
                 sortBooks()
@@ -98,13 +104,14 @@ class WantToReadListViewModel {
     
     @MainActor
     func toggleReminder(bookId: String) async {
+        guard let bookStore = bookStore else { return }
         guard let index = books.firstIndex(where: { $0.id == bookId }) else { return }
         
         let book = books[index]
         let updatedBook = book.updated(reminderEnabled: !book.reminderEnabled)
         
         do {
-            try await bookRepository.updateBook(updatedBook)
+            try await bookStore.updateBook(updatedBook)
             books[index] = updatedBook
         } catch {
             self.error = error
@@ -114,13 +121,14 @@ class WantToReadListViewModel {
     
     @MainActor
     func updatePurchaseLinks(bookId: String, links: [PurchaseLink]) async {
+        guard let bookStore = bookStore else { return }
         guard let index = books.firstIndex(where: { $0.id == bookId }) else { return }
         
         let book = books[index]
         let updatedBook = book.updated(purchaseLinks: links)
         
         do {
-            try await bookRepository.updateBook(updatedBook)
+            try await bookStore.updateBook(updatedBook)
             books[index] = updatedBook
         } catch {
             self.error = error
@@ -130,6 +138,7 @@ class WantToReadListViewModel {
     
     @MainActor
     func startReading(bookId: String) async {
+        guard let bookStore = bookStore else { return }
         guard let index = books.firstIndex(where: { $0.id == bookId }) else { return }
         
         let book = books[index]
@@ -139,7 +148,7 @@ class WantToReadListViewModel {
         )
         
         do {
-            try await bookRepository.updateBook(updatedBook)
+            try await bookStore.updateBook(updatedBook)
             // 読書中になったら、リストから削除
             books.remove(at: index)
         } catch {
@@ -150,11 +159,12 @@ class WantToReadListViewModel {
     
     @MainActor
     func deleteBook(bookId: String) async {
+        guard let bookStore = bookStore else { return }
         guard let index = books.firstIndex(where: { $0.id == bookId }) else { return }
         let book = books[index]
         
         do {
-            try await bookRepository.deleteBook(bookId: book.id)
+            try await bookStore.deleteBook(id: book.id)
             books.remove(at: index)
         } catch {
             self.error = error
@@ -175,7 +185,9 @@ class WantToReadListViewModel {
             // 非同期でサーバーに反映
             Task {
                 do {
-                    try await bookRepository.updateBook(updatedBook)
+                    if let bookStore = bookStore {
+                        try await bookStore.updateBook(updatedBook)
+                    }
                 } catch {
                     print("Error updating book priority: \(error)")
                 }

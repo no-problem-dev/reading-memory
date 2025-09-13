@@ -105,4 +105,3 @@ final class BookRegistrationViewModel: BaseViewModel {
         return (result, createdBook)
     }
 }
-

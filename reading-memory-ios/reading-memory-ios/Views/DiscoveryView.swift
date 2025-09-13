@@ -3,6 +3,7 @@ import SwiftUI
 struct DiscoveryView: View {
     @Environment(SubscriptionStateStore.self) private var subscriptionState
     @Environment(AnalyticsService.self) private var analytics
+    @Environment(BookStore.self) private var bookStore
     @State private var viewModel = WantToReadViewModel()
     @State private var searchText = ""
     @State private var showSearch = false
@@ -79,6 +80,7 @@ struct DiscoveryView: View {
                 PurchaseOptionsView(book: book)
             }
             .task {
+                viewModel.setBookStore(bookStore)
                 await viewModel.loadBooks()
             }
             .onAppear {
@@ -563,4 +565,5 @@ struct EmptyWantToReadStateView: View {
 #Preview {
     DiscoveryView()
         .environment(ServiceContainer.shared.getSubscriptionStateStore())
+        .environment(ServiceContainer.shared.getBookStore())
 }
