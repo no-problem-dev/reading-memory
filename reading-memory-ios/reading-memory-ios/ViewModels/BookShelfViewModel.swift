@@ -4,12 +4,41 @@ import Foundation
 
 @Observable
 class BookShelfViewModel: BaseViewModel {
+    enum BookFilter: String, CaseIterable {
+        case all = "すべて"
+        case reading = "読書中"
+        case completed = "読了"
+        case dnf = "積読"
+        case wantToRead = "読みたい"
+        
+        var status: ReadingStatus? {
+            switch self {
+            case .all:
+                return nil
+            case .reading:
+                return .reading
+            case .completed:
+                return .completed
+            case .dnf:
+                return .dnf
+            case .wantToRead:
+                return .wantToRead
+            }
+        }
+    }
+    
+    enum DisplayMode {
+        case grid
+        case list
+    }
+    
     private let bookRepository: BookRepository
     private let authService = AuthService.shared
     
     private(set) var allBooks: [Book] = []
     private(set) var filteredBooks: [Book] = []
-    private var currentFilter: ReadingStatus? = nil
+    var currentFilter: BookFilter = .all
+    var displayMode: DisplayMode = .grid
     private var currentSort: BookShelfView.SortOption = .dateAdded
     
     override init() {
@@ -29,9 +58,13 @@ class BookShelfViewModel: BaseViewModel {
         }
     }
     
-    func filterBooks(by status: ReadingStatus?) {
-        currentFilter = status
+    func setFilter(_ filter: BookFilter) {
+        currentFilter = filter
         applyFilterAndSort()
+    }
+    
+    func setDisplayMode(_ mode: DisplayMode) {
+        displayMode = mode
     }
     
     func sortBooks(by option: BookShelfView.SortOption) {
@@ -42,8 +75,8 @@ class BookShelfViewModel: BaseViewModel {
     private func applyFilterAndSort() {
         // Apply filter
         var books = allBooks
-        if let filter = currentFilter {
-            books = books.filter { $0.status == filter }
+        if let status = currentFilter.status {
+            books = books.filter { $0.status == status }
         }
         
         // Apply sort

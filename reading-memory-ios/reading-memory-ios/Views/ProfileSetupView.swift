@@ -80,11 +80,12 @@ struct ProfileSetupView: View {
                             .font(.headline)
                             .foregroundColor(.primary)
                         
-                        TextField("あなたの名前を入力してください", text: $displayName)
-                            .memoryTextFieldStyle()
-                            .textFieldStyle(.roundedBorder)
-                            .textContentType(.name)
-                            .submitLabel(.done)
+                        MemoryTextField(
+                            placeholder: "あなたの名前を入力してください",
+                            text: $displayName
+                        )
+                        .textContentType(.name)
+                        .submitLabel(.done)
                     }
                     
                     Text("この名前は他のユーザーに表示されます")

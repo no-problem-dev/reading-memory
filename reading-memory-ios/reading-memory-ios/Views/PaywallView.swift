@@ -2,12 +2,15 @@ import SwiftUI
 import RevenueCat
 
 struct PaywallView: View {
-    @State private var store = SubscriptionStore.shared
+    @Environment(SubscriptionStateStore.self) private var subscriptionState
     @Environment(\.dismiss) private var dismiss
     @State private var selectedPackage: Package?
     @State private var isPurchasing = false
     @State private var showError = false
     @State private var errorMessage = ""
+    @State private var offerings: Offerings?
+    
+    private let subscriptionService = SubscriptionService.shared
     
     var body: some View {
         NavigationStack {
@@ -20,7 +23,7 @@ struct PaywallView: View {
                     featuresSection
                     
                     // 価格オプション
-                    if let offerings = store.offerings {
+                    if let offerings = offerings {
                         pricingSection(offerings)
                     } else {
                         ProgressView()
@@ -43,12 +46,21 @@ struct PaywallView: View {
                 }
             }
             .task {
-                await store.loadOfferings()
-                // デフォルトで年額プランを選択
-                if let yearlyPackage = store.offerings?.current?.availablePackages.first(where: { 
-                    $0.storeProduct.productIdentifier.contains("yearly") 
-                }) {
-                    selectedPackage = yearlyPackage
+                do {
+                    offerings = try await subscriptionService.loadOfferings()
+                    // デフォルトで年額プランを選択
+                    if let yearlyPackage = offerings?.current?.availablePackages.first(where: { 
+                        $0.storeProduct.productIdentifier.contains("yearly") 
+                    }) {
+                        selectedPackage = yearlyPackage
+                    }
+                } catch {
+                    print("Error loading offerings: \(error)")
+                }
+            }
+            .onChange(of: subscriptionState.isSubscribed) { _, isSubscribed in
+                if isSubscribed {
+                    dismiss()
                 }
             }
             .alert("エラー", isPresented: $showError) {
@@ -83,7 +95,7 @@ struct PaywallView: View {
     
     private var featuresSection: some View {
         VStack(alignment: .leading, spacing: 16) {
-            ForEach(FeatureGate.Feature.allCases, id: \.self) { feature in
+            ForEach(SubscriptionStateStore.PremiumFeature.allCases, id: \.self) { feature in
                 FeatureRow(feature: feature)
             }
         }
@@ -170,8 +182,10 @@ struct PaywallView: View {
         defer { isPurchasing = false }
         
         do {
-            try await store.purchase(package)
-            if store.isSubscribed {
+            let success = try await subscriptionService.purchase(package)
+            if success {
+                // 状態更新を待つ
+                await subscriptionState.refreshStatus()
                 dismiss()
             }
         } catch {
@@ -196,8 +210,10 @@ struct PaywallView: View {
         defer { isPurchasing = false }
         
         do {
-            try await store.restore()
-            if store.isSubscribed {
+            let success = try await subscriptionService.restore()
+            if success {
+                // 状態更新を待つ
+                await subscriptionState.refreshStatus()
                 dismiss()
             } else {
                 errorMessage = "復元できるサブスクリプションが見つかりませんでした"
@@ -211,7 +227,7 @@ struct PaywallView: View {
 }
 
 struct FeatureRow: View {
-    let feature: FeatureGate.Feature
+    let feature: SubscriptionStateStore.PremiumFeature
     
     var body: some View {
         HStack(spacing: 16) {
@@ -220,9 +236,15 @@ struct FeatureRow: View {
                 .foregroundColor(.blue)
                 .frame(width: 32, height: 32)
             
-            Text(feature.rawValue)
-                .font(.body)
-                .foregroundColor(.primary)
+            VStack(alignment: .leading, spacing: 4) {
+                Text(feature.rawValue)
+                    .font(.body)
+                    .foregroundColor(.primary)
+                
+                Text(feature.description)
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+            }
             
             Spacer()
         }
@@ -273,7 +295,7 @@ struct PriceOptionView: View {
                 
                 // RevenueCat's StoreProduct has a different subscriptionPeriod type
                 // Show package type instead
-                Text(package.packageType.description)
+                Text(PaywallView.packageDescription(package.packageType))
                     .font(.caption)
                     .foregroundColor(.secondary)
             }
@@ -291,10 +313,10 @@ struct PriceOptionView: View {
     }
 }
 
-// PackageType拡張
-extension PackageType: CustomStringConvertible {
-    public var description: String {
-        switch self {
+// PackageType拡張を削除（RevenueCatの将来の更新と競合する可能性があるため）
+extension PaywallView {
+    static func packageDescription(_ type: PackageType) -> String {
+        switch type {
         case .monthly:
             return "月額プラン"
         case .annual:
@@ -311,6 +333,8 @@ extension PackageType: CustomStringConvertible {
             return "買い切りプラン"
         case .custom:
             return "カスタムプラン"
+        case .unknown:
+            return "プラン"
         @unknown default:
             return "プラン"
         }

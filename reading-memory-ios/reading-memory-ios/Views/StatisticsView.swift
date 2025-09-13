@@ -3,6 +3,7 @@ import Charts
 
 struct StatisticsView: View {
     @State private var viewModel = StatisticsViewModel()
+    @Environment(SubscriptionStateStore.self) private var subscriptionState
     @State private var selectedPeriod: StatisticsPeriod = .month
     @State private var showPaywall = false
     
@@ -28,7 +29,7 @@ struct StatisticsView: View {
                     // Summary Cards - Always visible
                     summaryCardsSection
                     
-                    if FeatureGate.canViewFullStatistics {
+                    if subscriptionState.canViewFullStatistics {
                         // Premium content
                         // Reading Trend Chart
                         readingTrendChart
@@ -143,7 +144,7 @@ struct StatisticsView: View {
                     value: "\(viewModel.periodStats.totalMemos)",
                     trend: viewModel.periodStats.memosTrend,
                     icon: "bubble.left.fill",
-                    color: MemoryTheme.Colors.warmCoral
+                    color: MemoryTheme.Colors.goldenMemory
                 )
                 
                 SummaryCard(
@@ -349,7 +350,7 @@ struct StatisticsView: View {
     }
     
     private func genreColor(for genre: String) -> Color {
-        let colors: [Color] = [.blue, .green, .orange, .purple, .pink, .yellow, .indigo, .red]
+        let colors: [Color] = [.blue, .green, .orange, .purple, .pink, .yellow, .indigo, .brown]
         let index = abs(genre.hashValue) % colors.count
         return colors[index]
     }
@@ -436,7 +437,7 @@ struct SummaryCard: View {
                         Text("\(abs(Int(trend)))%")
                             .font(.caption)
                     }
-                    .foregroundColor(trend > 0 ? .green : .red)
+                    .foregroundColor(trend > 0 ? MemoryTheme.Colors.success : MemoryTheme.Colors.warning)
                 }
             }
             

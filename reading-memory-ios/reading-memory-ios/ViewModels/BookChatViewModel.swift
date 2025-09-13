@@ -88,22 +88,20 @@ final class BookChatViewModel: BaseViewModel {
                 message: message
             )
             
-            // AI応答のチャットオブジェクトを作成
-            let aiChat = BookChat(
-                id: UUID().uuidString, // 一時的なID
-                bookId: book.id,
-                message: aiResponse,
-                messageType: .ai,
-                imageId: nil,
-                createdAt: Date(),
-                updatedAt: Date()
-            )
+            print("🤖 AI Response received: \(aiResponse)")
             
-            // AIのチャットをリストに追加
-            chats.append(aiChat)
+            // チャットを再読み込みして、サーバーに保存されたAI応答を含める
+            await loadChats()
+            
         } catch {
             // AI応答のエラーは静かに処理（ユーザーのチャット体験を妨げない）
-            print("AI response error: \(error)")
+            print("🚨 AI response error: \(error)")
+            print("🚨 Error details: \(error.localizedDescription)")
+            
+            // デバッグ用：詳細なエラー情報をログ出力
+            if let appError = error as? AppError {
+                print("🚨 AppError: \(appError)")
+            }
         }
     }
     

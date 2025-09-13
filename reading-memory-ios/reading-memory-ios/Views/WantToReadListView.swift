@@ -1,6 +1,7 @@
 import SwiftUI
 
 struct WantToReadListView: View {
+    @Environment(BookStore.self) private var bookStore
     @State private var viewModel = WantToReadListViewModel()
     @State private var showingSortOptions = false
     @State private var editMode: EditMode = .inactive
@@ -43,11 +44,6 @@ struct WantToReadListView: View {
                         startReadingButton(for: book)
                     }
                 }
-                // .onMove { source, destination in
-                //     Task {
-                //         await viewModel.reorderBooks(from: source, to: destination)
-                //     }
-                // }
             }
             .listStyle(PlainListStyle())
             // .environment(\.editMode, $editMode)
@@ -138,6 +134,7 @@ struct WantToReadListView: View {
             }
         }
         .task {
+            viewModel.setBookStore(bookStore)
             await viewModel.loadWantToReadBooks()
         }
     }
@@ -226,4 +223,5 @@ struct WantToReadStatCard: View {
 
 #Preview {
     WantToReadListView()
+        .environment(ServiceContainer.shared.getBookStore())
 }

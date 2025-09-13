@@ -23,11 +23,6 @@ class OnboardingViewModel {
     
     @MainActor
     func completeOnboarding() async -> Bool {
-        guard let currentUser = authViewModel.currentUser else {
-            errorMessage = "ユーザー情報が見つかりません"
-            return false
-        }
-        
         isLoading = true
         errorMessage = nil
         

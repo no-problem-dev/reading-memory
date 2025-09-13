@@ -2,7 +2,7 @@ import SwiftUI
 import PhotosUI
 
 struct ProfileView: View {
-    @State private var viewModel = ProfileViewModel()
+    @Environment(UserProfileStore.self) private var profileStore
     @State private var showingEditView = false
     @State private var showingGoalSetting = false
     @Environment(\.dismiss) var dismiss
@@ -22,12 +22,12 @@ struct ProfileView: View {
                 .ignoresSafeArea()
                 
                 ScrollView {
-                    if viewModel.isLoading {
+                    if profileStore.isLoading {
                         ProgressView()
                             .tint(MemoryTheme.Colors.primaryBlue)
                             .frame(maxWidth: .infinity, maxHeight: .infinity)
                             .padding(.top, 100)
-                    } else if let profile = viewModel.userProfile {
+                    } else if let profile = profileStore.userProfile {
                         VStack(spacing: 0) {
                             // Header section with gradient
                             profileHeaderSection(profile: profile)
@@ -64,8 +64,7 @@ struct ProfileView: View {
                     }
                 }
                 .refreshable {
-                    viewModel.forceRefresh()
-                    await viewModel.loadProfile()
+                    await profileStore.forceRefresh()
                 }
             }
             .navigationBarTitleDisplayMode(.inline)
@@ -91,30 +90,24 @@ struct ProfileView: View {
                 }
             }
             .navigationDestination(isPresented: $showingEditView) {
-                ProfileEditView(viewModel: viewModel)
+                ProfileEditView()
             }
             .sheet(isPresented: $showingGoalSetting) {
                 GoalSettingView()
             }
             .task {
-                if !viewModel.hasLoadedInitialData {
-                    await viewModel.loadProfile()
-                }
+                // 初回ロードはMainTabViewで実行済み
             }
             .onAppear {
-                if viewModel.hasLoadedInitialData && viewModel.shouldRefreshData() {
-                    Task {
-                        await viewModel.loadProfile()
-                    }
-                }
+                // 自動リフレッシュはUserProfileStoreが管理
             }
-            .alert("エラー", isPresented: .constant(viewModel.errorMessage != nil)) {
+            .alert("エラー", isPresented: .constant(profileStore.error != nil)) {
                 Button("OK") {
-                    viewModel.errorMessage = nil
+                    // エラーのクリアは必要に応じて実装
                 }
             } message: {
-                if let errorMessage = viewModel.errorMessage {
-                    Text(errorMessage)
+                if let error = profileStore.error {
+                    Text(error.localizedDescription)
                 }
             }
         }
@@ -150,7 +143,16 @@ struct ProfileView: View {
                         .frame(width: 120, height: 120)
                         .memoryShadow(.medium)
                     
-                    ProfileImageView(imageId: profile.avatarImageId, size: 110)
+                    if let imageId = profile.avatarImageId {
+                        RemoteImage(imageId: imageId, contentMode: .fill)
+                            .frame(width: 110, height: 110)
+                            .clipShape(Circle())
+                    } else {
+                        Image(systemName: "person.circle.fill")
+                            .font(.system(size: 77))
+                            .foregroundColor(MemoryTheme.Colors.primaryBlue)
+                            .frame(width: 110, height: 110)
+                    }
                 }
                 
                 VStack(spacing: MemorySpacing.xs) {
@@ -179,14 +181,14 @@ struct ProfileView: View {
             HStack(spacing: MemorySpacing.sm) {
                 MemoryStatCard(
                     title: "総冊数",
-                    value: "\(viewModel.statistics.totalBooks)",
+                    value: "\(profileStore.statistics.totalBooks)",
                     icon: "books.vertical.fill",
                     color: MemoryTheme.Colors.primaryBlue
                 )
                 
                 MemoryStatCard(
                     title: "読了",
-                    value: "\(viewModel.statistics.completedBooks)",
+                    value: "\(profileStore.statistics.completedBooks)",
                     icon: "checkmark.circle.fill",
                     color: Color(.systemGreen)
                 )
@@ -195,14 +197,14 @@ struct ProfileView: View {
             HStack(spacing: MemorySpacing.sm) {
                 MemoryStatCard(
                     title: "読書中",
-                    value: "\(viewModel.statistics.readingBooks)",
+                    value: "\(profileStore.statistics.readingBooks)",
                     icon: "book.fill",
-                    color: MemoryTheme.Colors.warmCoral
+                    color: MemoryTheme.Colors.goldenMemory
                 )
                 
                 MemoryStatCard(
                     title: "読みたい",
-                    value: "\(viewModel.statistics.wantToReadBooks)",
+                    value: "\(profileStore.statistics.wantToReadBooks)",
                     icon: "bookmark.fill",
                     color: MemoryTheme.Colors.goldenMemory
                 )
@@ -211,14 +213,14 @@ struct ProfileView: View {
             HStack(spacing: MemorySpacing.sm) {
                 MemoryStatCard(
                     title: "総メモ数",
-                    value: "\(viewModel.statistics.totalMemos)",
+                    value: "\(profileStore.statistics.totalMemos)",
                     icon: "bubble.left.and.bubble.right.fill",
                     color: MemoryTheme.Colors.primaryBlue
                 )
                 
                 MemoryStatCard(
                     title: "平均評価",
-                    value: viewModel.statistics.averageRating > 0 ? String(format: "%.1f", viewModel.statistics.averageRating) : "-",
+                    value: profileStore.statistics.averageRating > 0 ? String(format: "%.1f", profileStore.statistics.averageRating) : "-",
                     icon: "star.fill",
                     color: MemoryTheme.Colors.goldenMemory
                 )
@@ -232,7 +234,7 @@ struct ProfileView: View {
                 HStack(spacing: MemorySpacing.xs) {
                     Image(systemName: "tag.fill")
                         .font(.system(size: 18))
-                        .foregroundColor(MemoryTheme.Colors.warmCoral)
+                        .foregroundColor(MemoryTheme.Colors.goldenMemory)
                     Text("お気に入りジャンル")
                         .font(.headline)
                         .foregroundColor(Color(.label))
@@ -247,14 +249,14 @@ struct ProfileView: View {
                             .background(
                                 LinearGradient(
                                     gradient: Gradient(colors: [
-                                        MemoryTheme.Colors.warmCoralLight.opacity(0.15),
-                                        MemoryTheme.Colors.warmCoral.opacity(0.1)
+                                        MemoryTheme.Colors.goldenMemoryLight.opacity(0.15),
+                                        MemoryTheme.Colors.goldenMemory.opacity(0.1)
                                     ]),
                                     startPoint: .topLeading,
                                     endPoint: .bottomTrailing
                                 )
                             )
-                            .foregroundColor(MemoryTheme.Colors.warmCoral)
+                            .foregroundColor(MemoryTheme.Colors.goldenMemory)
                             .cornerRadius(MemoryRadius.full)
                     }
                 }

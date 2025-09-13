@@ -7,6 +7,7 @@ final class BookSearchViewModel: BaseViewModel {
     private let authService = AuthService.shared
     private let searchService = UnifiedBookSearchService.shared
     private let cacheService = BookCacheService.shared
+    private let analytics = AnalyticsService.shared
     
     // 検索結果
     var searchResults: [BookSearchResult] = []
@@ -65,6 +66,12 @@ final class BookSearchViewModel: BaseViewModel {
             }
             
             self.searchResults = uniqueBooks
+            
+            // 検索イベントを送信
+            self.analytics.track(AnalyticsEvent.userAction(action: .search(
+                query: query,
+                resultCount: uniqueBooks.count
+            )))
             
             // TODO: キャッシュ機能をBookSearchResultに対応させる
             // self.cacheService.cacheSearchResults(uniqueBooks, for: query)

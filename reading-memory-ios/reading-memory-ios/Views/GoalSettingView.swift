@@ -3,6 +3,7 @@ import SwiftUI
 struct GoalSettingView: View {
     @State private var viewModel = GoalViewModel()
     @Environment(\.dismiss) private var dismiss
+    @Environment(SubscriptionStateStore.self) private var subscriptionState
     
     @State private var yearlyGoalTarget: Double = 12
     @State private var monthlyGoalTarget: Double = 2
@@ -102,7 +103,7 @@ struct GoalSettingView: View {
                 
                 if viewModel.yearlyGoal == nil {
                     Button(showYearlyGoalSection ? "キャンセル" : "設定") {
-                        guard FeatureGate.canSetYearlyGoals else {
+                        guard subscriptionState.canSetYearlyGoals else {
                             showPaywall = true
                             return
                         }

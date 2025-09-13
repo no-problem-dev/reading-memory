@@ -59,8 +59,8 @@ struct BookDetailActionButtons: View {
                             .fill(
                                 LinearGradient(
                                     gradient: Gradient(colors: [
-                                        MemoryTheme.Colors.warmCoralLight.opacity(0.2),
-                                        MemoryTheme.Colors.warmCoral.opacity(0.1)
+                                        MemoryTheme.Colors.goldenMemoryLight.opacity(0.2),
+                                        MemoryTheme.Colors.goldenMemory.opacity(0.1)
                                     ]),
                                     startPoint: .topLeading,
                                     endPoint: .bottomTrailing
@@ -70,7 +70,7 @@ struct BookDetailActionButtons: View {
                         
                         Image(systemName: "sparkles")
                             .font(.system(size: 22))
-                            .foregroundColor(MemoryTheme.Colors.warmCoral)
+                            .foregroundColor(MemoryTheme.Colors.goldenMemory)
                     }
                     
                     VStack(alignment: .leading, spacing: 2) {

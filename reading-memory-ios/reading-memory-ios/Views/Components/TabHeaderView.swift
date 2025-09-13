@@ -3,7 +3,6 @@ import SwiftUI
 struct TabHeaderView: View {
     let title: String
     let subtitle: String
-    let iconName: String
     var actionButton: (() -> AnyView)? = nil
     var actionButtonNeedsPadding: Bool = true
     var removeBottomPadding: Bool = false
@@ -20,19 +19,6 @@ struct TabHeaderView: View {
                         .foregroundColor(MemoryTheme.Colors.inkGray)
                 }
                 Spacer()
-                
-                Image(systemName: iconName)
-                    .font(.system(size: 40))
-                    .foregroundStyle(
-                        LinearGradient(
-                            gradient: Gradient(colors: [
-                                MemoryTheme.Colors.warmCoralLight,
-                                MemoryTheme.Colors.warmCoral
-                            ]),
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        )
-                    )
             }
             .padding(.horizontal, MemorySpacing.lg)
             .padding(.top, MemorySpacing.lg)
@@ -66,7 +52,6 @@ struct TabHeaderView: View {
 #Preview {
     TabHeaderView(
         title: "発見",
-        subtitle: "新しい本との出会いを",
-        iconName: "sparkle.magnifyingglass"
+        subtitle: "新しい本との出会いを"
     )
 }

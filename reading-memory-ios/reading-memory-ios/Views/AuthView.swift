@@ -10,7 +10,7 @@ struct AuthView: View {
             LinearGradient(
                 gradient: Gradient(colors: [
                     MemoryTheme.Colors.primaryBlue.opacity(0.05),
-                    MemoryTheme.Colors.warmCoral.opacity(0.03),
+                    MemoryTheme.Colors.goldenMemory.opacity(0.03),
                     Color(.systemBackground)
                 ]),
                 startPoint: .topLeading,
@@ -83,7 +83,7 @@ struct AuthView: View {
                         FeatureHighlight(
                             icon: "sparkles",
                             text: "AIが読書体験をサポート",
-                            color: MemoryTheme.Colors.warmCoral
+                            color: MemoryTheme.Colors.goldenMemory
                         )
                         
                         FeatureHighlight(

@@ -5,6 +5,7 @@ struct SummaryView: View {
     let book: Book
     @State private var viewModel: SummaryViewModel
     @Environment(\.dismiss) private var dismiss
+    @Environment(SubscriptionStateStore.self) private var subscriptionState
     @State private var showPaywall = false
     
     // Animation States
@@ -73,7 +74,7 @@ struct SummaryView: View {
                 // 既存の要約がない場合は自動生成
                 if viewModel.existingSummary == nil {
                     // プレミアムチェック
-                    guard FeatureGate.canUseAI else {
+                    guard subscriptionState.canUseAI else {
                         showPaywall = true
                         return
                     }
@@ -120,7 +121,7 @@ struct SummaryView: View {
             ZStack {
                 // Pulse Background
                 Circle()
-                    .fill(MemoryTheme.Colors.warmCoral.opacity(0.1))
+                    .fill(MemoryTheme.Colors.goldenMemory.opacity(0.1))
                     .frame(width: 120, height: 120)
                     .scaleEffect(pulseAnimation ? 1.2 : 1.0)
                     .opacity(pulseAnimation ? 0.3 : 0.6)
@@ -133,7 +134,7 @@ struct SummaryView: View {
                 // Main Icon
                 Image(systemName: "sparkles")
                     .font(.system(size: 50))
-                    .foregroundColor(MemoryTheme.Colors.warmCoral)
+                    .foregroundColor(MemoryTheme.Colors.goldenMemory)
                     .rotationEffect(.degrees(sparkleAnimation ? 10 : -10))
                     .animation(
                         Animation.easeInOut(duration: 1.0)
@@ -155,7 +156,7 @@ struct SummaryView: View {
             
             // Progress Indicator
             ProgressView()
-                .progressViewStyle(CircularProgressViewStyle(tint: MemoryTheme.Colors.warmCoral))
+                .progressViewStyle(CircularProgressViewStyle(tint: MemoryTheme.Colors.goldenMemory))
                 .scaleEffect(1.2)
         }
         .frame(maxWidth: .infinity)
@@ -169,7 +170,7 @@ struct SummaryView: View {
             HStack {
                 Image(systemName: "sparkles")
                     .font(.title2)
-                    .foregroundColor(MemoryTheme.Colors.warmCoral)
+                    .foregroundColor(MemoryTheme.Colors.goldenMemory)
                 
                 Text("AI要約")
                     .font(.title2)
@@ -239,7 +240,7 @@ struct SummaryView: View {
             Button {
                 Task {
                     // プレミアムチェック
-                    guard FeatureGate.canUseAI else {
+                    guard subscriptionState.canUseAI else {
                         showPaywall = true
                         return
                     }
@@ -253,7 +254,7 @@ struct SummaryView: View {
                     .foregroundColor(.white)
                     .padding(.horizontal, MemorySpacing.lg)
                     .padding(.vertical, MemorySpacing.sm)
-                    .background(MemoryTheme.Colors.warmCoral)
+                    .background(MemoryTheme.Colors.goldenMemory)
                     .cornerRadius(MemoryRadius.full)
             }
             .buttonStyle(PlainButtonStyle())
@@ -268,7 +269,7 @@ struct SummaryView: View {
         Button {
             Task {
                 // プレミアムチェック
-                guard FeatureGate.canUseAI else {
+                guard subscriptionState.canUseAI else {
                     showPaywall = true
                     return
                 }
@@ -284,12 +285,12 @@ struct SummaryView: View {
                     .font(.callout)
                     .fontWeight(.medium)
             }
-            .foregroundColor(MemoryTheme.Colors.warmCoral)
+            .foregroundColor(MemoryTheme.Colors.goldenMemory)
             .padding(.horizontal, MemorySpacing.md)
             .padding(.vertical, MemorySpacing.sm)
             .background(
                 RoundedRectangle(cornerRadius: MemoryRadius.full)
-                    .stroke(MemoryTheme.Colors.warmCoral, lineWidth: 1)
+                    .stroke(MemoryTheme.Colors.goldenMemory, lineWidth: 1)
             )
         }
         .buttonStyle(PlainButtonStyle())

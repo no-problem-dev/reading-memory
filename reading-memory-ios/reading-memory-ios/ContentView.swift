@@ -7,6 +7,9 @@ struct ContentView: View {
     @State private var isInitializing = false
     @State private var showSplash = true
     @State private var isDataReady = false
+    @State private var splashOpacity: Double = 1.0
+    @State private var contentScale: CGFloat = 0.95
+    @State private var contentOpacity: Double = 0.0
     
     var body: some View {
         ZStack {
@@ -28,16 +31,17 @@ struct ContentView: View {
                         .environment(authViewModel)
                 }
             }
+            .scaleEffect(contentScale)
+            .opacity(contentOpacity)
             
             // Splash screen overlay
             if showSplash {
                 SplashScreenView {
-                    // Splash animation completed
-                    withAnimation(.easeOut(duration: 0.3)) {
-                        showSplash = false
-                    }
+                    // Splash animation completed - start transition
+                    performTransition()
                 }
-                .transition(.opacity)
+                .opacity(splashOpacity)
+                .allowsHitTesting(showSplash)
             }
         }
         .task {
@@ -104,6 +108,20 @@ struct ContentView: View {
             isCheckingProfile = false
             isInitializing = false
             isDataReady = true
+        }
+    }
+    
+    private func performTransition() {
+        // クロスフェードアニメーション
+        withAnimation(.easeInOut(duration: 0.5)) {
+            splashOpacity = 0
+            contentScale = 1.0
+            contentOpacity = 1.0
+        }
+        
+        // スプラッシュを完全に非表示にする
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
+            showSplash = false
         }
     }
 }

@@ -68,12 +68,14 @@ struct ChatExperienceStep: View {
                 
                 // Input field
                 HStack(spacing: 12) {
-                    TextField("メッセージを入力...", text: $firstMessage)
-                        .textFieldStyle(.roundedBorder)
-                        .focused($isTextFieldFocused)
-                        .onSubmit {
-                            sendMessage()
-                        }
+                    MemoryTextField(
+                        placeholder: "メッセージを入力...",
+                        text: $firstMessage
+                    )
+                    .focused($isTextFieldFocused)
+                    .onSubmit {
+                        sendMessage()
+                    }
                     
                     Button(action: sendMessage) {
                         Image(systemName: "paperplane.fill")

@@ -3,6 +3,10 @@ import SwiftUI
 struct MainTabView: View {
     @Environment(AuthViewModel.self) private var authViewModel
     @State private var selectedTab = 0
+    @State private var bookStore = ServiceContainer.shared.getBookStore()
+    @State private var userProfileStore = ServiceContainer.shared.getUserProfileStore()
+    @State private var subscriptionStateStore = ServiceContainer.shared.getSubscriptionStateStore()
+    @State private var analyticsService = ServiceContainer.shared.getAnalyticsService()
     
     var body: some View {
         ZStack {
@@ -24,15 +28,15 @@ struct MainTabView: View {
                     .tag(0)
                 
                 // 記録（統計・目標・アチーブメント）
-                RecordsHubView()
-                    .tabItem {
-                        Label {
-                            Text("記録")
-                        } icon: {
-                            Image(systemName: selectedTab == 1 ? "chart.line.uptrend.xyaxis.circle.fill" : "chart.line.uptrend.xyaxis.circle")
-                        }
-                    }
-                    .tag(1)
+//                RecordsHubView()
+//                    .tabItem {
+//                        Label {
+//                            Text("記録")
+//                        } icon: {
+//                            Image(systemName: selectedTab == 1 ? "chart.line.uptrend.xyaxis.circle.fill" : "chart.line.uptrend.xyaxis.circle")
+//                        }
+//                    }
+//                    .tag(1)
                 
                 // 発見（読みたいリスト・検索）
                 DiscoveryView()
@@ -63,10 +67,24 @@ struct MainTabView: View {
             }
             .tint(MemoryTheme.Colors.primaryBlue)
         }
+        .environment(bookStore)
+        .environment(userProfileStore)
+        .environment(subscriptionStateStore)
+        .environment(analyticsService)
+        .task {
+            // プロフィールを初回ロード
+            await userProfileStore.loadProfile()
+            // 本一覧を初回ロード
+            await bookStore.loadBooks()
+            // 購読状態を初回ロード（BookStoreのロード後に実行）
+            await subscriptionStateStore.initialize()
+        }
     }
 }
 
 #Preview {
     MainTabView()
         .environment(AuthViewModel())
+        .environment(ServiceContainer.shared.getBookStore())
+        .environment(ServiceContainer.shared.getUserProfileStore())
 }

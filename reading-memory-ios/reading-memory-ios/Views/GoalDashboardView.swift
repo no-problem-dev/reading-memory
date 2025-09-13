@@ -117,7 +117,7 @@ struct GoalDashboardView: View {
                         } else {
                             Text("ストリークが途切れました")
                                 .font(.caption)
-                                .foregroundColor(.red)
+                                .foregroundColor(MemoryTheme.Colors.warning)
                         }
                     }
                 }

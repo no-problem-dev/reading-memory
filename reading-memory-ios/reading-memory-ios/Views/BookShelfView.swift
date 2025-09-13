@@ -2,6 +2,7 @@ import SwiftUI
 
 struct BookShelfView: View {
     @State private var viewModel = BookShelfViewModel()
+    @Environment(SubscriptionStateStore.self) private var subscriptionState
     @State private var selectedFilter: ReadingStatus? = nil
     @State private var selectedSort: SortOption = .dateAdded
     @State private var showingAddBook = false
@@ -24,7 +25,15 @@ struct BookShelfView: View {
                     EmptyBookShelfView()
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                 } else {
-                    BookShelfGridView(books: viewModel.filteredBooks)
+                    BookShelfGridView(
+                        books: viewModel.filteredBooks,
+                        onBookTapped: { book in
+                            // Navigate to book detail
+                        },
+                        onChatTapped: { book in
+                            // Open chat
+                        }
+                    )
                 }
                 
                 // Floating Action Button
@@ -83,7 +92,7 @@ struct BookShelfView: View {
             }
             .confirmationDialog("本を検索", isPresented: $showingAddBookOptions) {
                 Button("バーコードでスキャン", action: {
-                    guard FeatureGate.canScanBarcode else {
+                    guard subscriptionState.canScanBarcode else {
                         showPaywall = true
                         return
                     }
@@ -101,9 +110,6 @@ struct BookShelfView: View {
             }
             .task {
                 await viewModel.loadBooks()
-            }
-            .onChange(of: selectedFilter) { _, newValue in
-                viewModel.filterBooks(by: newValue)
             }
             .onChange(of: selectedSort) { _, newValue in
                 viewModel.sortBooks(by: newValue)
@@ -178,6 +184,7 @@ struct BookShelfView: View {
 }
 
 struct EmptyBookShelfView: View {
+    @Environment(SubscriptionStateStore.self) private var subscriptionState
     @State private var showingAddBook = false
     @State private var showingAddBookOptions = false
     @State private var showingBarcodeScanner = false
@@ -237,7 +244,7 @@ struct EmptyBookShelfView: View {
         }
         .confirmationDialog("本を検索", isPresented: $showingAddBookOptions) {
             Button("バーコードでスキャン", action: {
-                guard FeatureGate.canScanBarcode else {
+                guard subscriptionState.canScanBarcode else {
                     showPaywall = true
                     return
                 }
@@ -255,28 +262,6 @@ struct EmptyBookShelfView: View {
         }
         .sheet(isPresented: $showPaywall) {
             PaywallView()
-        }
-    }
-}
-
-struct BookShelfGridView: View {
-    let books: [Book]
-    
-    private let columns = [
-        GridItem(.adaptive(minimum: 110, maximum: 130), spacing: 16)
-    ]
-    
-    var body: some View {
-        ScrollView {
-            LazyVGrid(columns: columns, spacing: 20) {
-                ForEach(books) { book in
-                    NavigationLink(destination: BookDetailView(bookId: book.id)) {
-                        BookCoverView(imageId: book.coverImageId, size: .medium)
-                    }
-                    .buttonStyle(PlainButtonStyle())
-                }
-            }
-            .padding()
         }
     }
 }

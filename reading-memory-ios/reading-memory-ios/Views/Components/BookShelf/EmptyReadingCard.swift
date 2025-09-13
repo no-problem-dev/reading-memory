@@ -11,8 +11,8 @@ struct EmptyReadingCard: View {
                     .fill(
                         LinearGradient(
                             gradient: Gradient(colors: [
-                                MemoryTheme.Colors.warmCoralLight.opacity(0.2),
-                                MemoryTheme.Colors.warmCoral.opacity(0.1)
+                                MemoryTheme.Colors.goldenMemoryLight.opacity(0.2),
+                                MemoryTheme.Colors.goldenMemory.opacity(0.1)
                             ]),
                             startPoint: .topLeading,
                             endPoint: .bottomTrailing
@@ -25,8 +25,8 @@ struct EmptyReadingCard: View {
                     .foregroundStyle(
                         LinearGradient(
                             gradient: Gradient(colors: [
-                                MemoryTheme.Colors.warmCoralLight,
-                                MemoryTheme.Colors.warmCoral
+                                MemoryTheme.Colors.goldenMemoryLight,
+                                MemoryTheme.Colors.goldenMemory
                             ]),
                             startPoint: .topLeading,
                             endPoint: .bottomTrailing

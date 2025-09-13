@@ -22,30 +22,27 @@ enum WantToReadSortOption: String, CaseIterable {
 }
 
 @Observable
+@MainActor
 class WantToReadViewModel {
-    private(set) var books: [Book] = []
     private(set) var isLoading = false
     private(set) var errorMessage: String?
     var selectedSortOption: WantToReadSortOption = .smart
     
-    private let apiClient = APIClient.shared
+    private var bookStore: BookStore?
     
-    func loadBooks() async {
-        isLoading = true
-        errorMessage = nil
+    func setBookStore(_ store: BookStore) {
+        self.bookStore = store
+    }
+    
+    // 読みたいリストの本を取得（フィルタリング＆ソート済み）
+    var wantToReadBooks: [Book] {
+        guard let bookStore = bookStore else { return [] }
         
-        do {
-            let allBooks = try await apiClient.getBooks()
-            // 読みたいリストの本のみフィルタリング
-            let wantToReadBooks = allBooks.filter { $0.status == .wantToRead }
-            
-            // 選択されたソートオプションに基づいて並び替え
-            books = sortBooks(wantToReadBooks, by: selectedSortOption)
-        } catch {
-            errorMessage = "読みたいリストの読み込みに失敗しました: \(error.localizedDescription)"
-        }
+        // 読みたいリストの本のみフィルタリング
+        let filteredBooks = bookStore.allBooks.filter { $0.status == .wantToRead }
         
-        isLoading = false
+        // 選択されたソートオプションに基づいて並び替え
+        return sortBooks(filteredBooks, by: selectedSortOption)
     }
     
     private func sortBooks(_ books: [Book], by option: WantToReadSortOption) -> [Book] {
@@ -173,33 +170,44 @@ class WantToReadViewModel {
     
     func changeSortOption(_ option: WantToReadSortOption) {
         selectedSortOption = option
-        books = sortBooks(books, by: option)
     }
     
     func updateBookPriority(_ book: Book, priority: Int) async {
+        guard let bookStore = bookStore else {
+            errorMessage = "BookStoreが設定されていません"
+            return
+        }
+        
         do {
             let updatedBook = book.updated(priority: priority)
-            _ = try await apiClient.updateBook(updatedBook)
-            await loadBooks()
+            try await bookStore.updateBook(updatedBook)
         } catch {
             errorMessage = "優先度の更新に失敗しました: \(error.localizedDescription)"
         }
     }
     
     func moveToReading(_ book: Book) async {
+        guard let bookStore = bookStore else {
+            errorMessage = "BookStoreが設定されていません"
+            return
+        }
+        
         do {
             let updatedBook = book.updated(status: .reading, startDate: Date())
-            _ = try await apiClient.updateBook(updatedBook)
-            await loadBooks()
+            try await bookStore.updateBook(updatedBook)
         } catch {
             errorMessage = "ステータスの更新に失敗しました: \(error.localizedDescription)"
         }
     }
     
     func removeFromWantToRead(_ book: Book) async {
+        guard let bookStore = bookStore else {
+            errorMessage = "BookStoreが設定されていません"
+            return
+        }
+        
         do {
-            try await apiClient.deleteBook(id: book.id)
-            await loadBooks()
+            try await bookStore.deleteBook(id: book.id)
         } catch {
             errorMessage = "本の削除に失敗しました: \(error.localizedDescription)"
         }

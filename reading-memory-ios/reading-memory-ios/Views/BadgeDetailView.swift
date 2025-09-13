@@ -366,7 +366,7 @@ struct BadgeDetailView: View {
                     Text("ヒント")
                         .font(.subheadline)
                         .fontWeight(.medium)
-                        .foregroundColor(MemoryTheme.Colors.warmCoral)
+                        .foregroundColor(MemoryTheme.Colors.goldenMemory)
                     
                     Text(getTips(for: badge))
                         .font(.caption)
@@ -374,7 +374,7 @@ struct BadgeDetailView: View {
                         .fixedSize(horizontal: false, vertical: true)
                 }
                 .padding(16)
-                .background(MemoryTheme.Colors.warmCoral.opacity(0.1))
+                .background(MemoryTheme.Colors.goldenMemory.opacity(0.1))
                 .cornerRadius(MemoryRadius.medium)
             }
         }

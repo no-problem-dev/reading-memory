@@ -3,6 +3,7 @@ import AVFoundation
 
 struct BarcodeScannerView: View {
     @Environment(\.dismiss) private var dismiss
+    @Environment(AnalyticsService.self) private var analytics
     @State private var viewModel = ServiceContainer.shared.makeBookRegistrationViewModel()
     @State private var scannedISBN: String?
     @State private var isSearching = false
@@ -11,7 +12,6 @@ struct BarcodeScannerView: View {
     @State private var errorMessage = ""
     @State private var showBookRegistration = false
     @State private var foundSearchResult: BookSearchResult?
-    private let authService = AuthService.shared
     
     let defaultStatus: ReadingStatus
     let onBookRegistered: ((Book) -> Void)?
@@ -149,8 +149,13 @@ struct BarcodeScannerView: View {
                 }
             }
         }
+        .onAppear {
+            analytics.track(AnalyticsEvent.screenView(screen: .searchBooks))
+        }
                 .onChange(of: scannedISBN) { oldValue, newValue in
             if let isbn = newValue {
+                // バーコードスキャン成功イベントを送信
+                analytics.track(AnalyticsEvent.userAction(action: .barcodeScan(success: true, isbn: isbn)))
                 searchBook(isbn: isbn)
             }
         }
@@ -171,6 +176,7 @@ struct BarcodeScannerView: View {
                 BookRegistrationView(
                     searchResult: searchResult, 
                     defaultStatus: defaultStatus,
+                    registrationSource: "barcode_scan",
                     onCompletion: { book in
                         onBookRegistered?(book)
                         dismiss()
@@ -209,13 +215,6 @@ struct BarcodeScannerView: View {
     private func searchBook(isbn: String) {
         isSearching = true
         
-        // Check if user is authenticated
-        guard AuthService.shared.currentUser != nil else {
-            isSearching = false
-            showError(message: "ログインが必要です")
-            return
-        }
-        
         Task {
             // 統合検索サービスを使用
             let searchService = UnifiedBookSearchService.shared
@@ -230,7 +229,9 @@ struct BarcodeScannerView: View {
                     showBookRegistration = true
                 } else {
                     // 見つからない場合は手動入力を促す
-                    guard let userId = authService.currentUser?.uid else { return }
+                    // 書籍が見つからなかった場合もバーコードスキャンイベントとして記録
+                    analytics.track(AnalyticsEvent.userAction(action: .barcodeScan(success: false, isbn: isbn)))
+                    
                     let manualSearchResult = BookSearchResult(
                         isbn: isbn,
                         title: "",

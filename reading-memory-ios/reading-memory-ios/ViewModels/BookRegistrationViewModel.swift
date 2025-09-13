@@ -4,43 +4,26 @@ import Foundation
 @MainActor
 final class BookRegistrationViewModel: BaseViewModel {
     private let bookRepository = BookRepository.shared
-    private let authService = AuthService.shared
     private let activityRepository = ActivityRepository.shared
+    private let analytics = AnalyticsService.shared
     
-    private(set) var monthlyBookCount = 0
-    private(set) var canAddBook = true
     var showPaywall = false
+    
+    // 環境オブジェクト用のプロパティ
+    private var subscriptionStateStore: SubscriptionStateStore?
     
     // 処理中のISBNを記録して二重登録を防ぐ
     private var processingISBNs = Set<String>()
     
     override init() {
         super.init()
-        Task {
-            await checkBookQuota()
-        }
     }
     
-    func checkBookQuota() async {
-        guard let userId = authService.currentUser?.uid else { return }
-        
-        // 今月の本登録数を取得
-        let startOfMonth = Calendar.current.dateInterval(of: .month, for: Date())?.start ?? Date()
-        monthlyBookCount = await bookRepository.getBookCount(userId: userId, since: startOfMonth)
-        
-        // プレミアムチェック
-        canAddBook = FeatureGate.canAddBook(currentMonthlyCount: monthlyBookCount)
+    func setSubscriptionStateStore(_ store: SubscriptionStateStore) {
+        self.subscriptionStateStore = store
     }
     
     func registerBook(_ book: Book) async -> (success: Bool, book: Book?) {
-        // まず制限チェック
-        await checkBookQuota()
-        
-        guard canAddBook else {
-            showPaywall = true
-            return (false, nil)
-        }
-        
         var result = false
         var createdBook: Book?
         
@@ -64,9 +47,6 @@ final class BookRegistrationViewModel: BaseViewModel {
                 try? await self.activityRepository.recordBookRead()
             }
             
-            // 登録後にカウントを更新
-            await self.checkBookQuota()
-            
             result = true
         }
         return (result, createdBook)
@@ -80,17 +60,6 @@ final class BookRegistrationViewModel: BaseViewModel {
                 return (false, nil)
             }
             processingISBNs.insert(isbn)
-        }
-        
-        // まず制限チェック
-        await checkBookQuota()
-        
-        guard canAddBook else {
-            showPaywall = true
-            if let isbn = searchResult.isbn {
-                processingISBNs.remove(isbn)
-            }
-            return (false, nil)
         }
         
         var result = false
@@ -116,8 +85,14 @@ final class BookRegistrationViewModel: BaseViewModel {
                 try? await self.activityRepository.recordBookRead()
             }
             
-            // 登録後にカウントを更新
-            await self.checkBookQuota()
+            // 本追加イベントを送信
+            if let book = createdBook {
+                self.analytics.track(AnalyticsEvent.bookEvent(event: .added(
+                    bookId: book.id,
+                    method: "manual_search",
+                    source: searchResult.dataSource.rawValue
+                )))
+            }
             
             result = true
         }

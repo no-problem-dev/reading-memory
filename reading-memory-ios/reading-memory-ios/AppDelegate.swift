@@ -8,11 +8,16 @@ class AppDelegate: NSObject, UIApplicationDelegate {
     
     func application(_ application: UIApplication,
                      didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey : Any]? = nil) -> Bool {
+        // デバッグビルド時のみFirebase DebugViewを有効化
+        #if DEBUG
+        // iOS 18での問題に対応するため、UserDefaultsも設定
+        UserDefaults.standard.set(true, forKey: "/google/firebase/debug_mode")
+        UserDefaults.standard.set(true, forKey: "/google/measurement/debug_mode")
+        print("🔧 Firebase Analytics DebugView enabled for DEBUG build")
+        #endif
+        
         // Firebase初期化
         FirebaseApp.configure()
-        
-        // RevenueCat初期化
-        SubscriptionStore.shared.initialize()
         
         // 初回起動チェック
         checkFirstLaunchAndSignOut()

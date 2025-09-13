@@ -115,16 +115,11 @@ struct BookListView: View {
                 // 検索バー
                 if books.count > 3 {
                     HStack {
-                        HStack {
-                            Image(systemName: "magnifyingglass")
-                                .foregroundColor(MemoryTheme.Colors.inkGray)
-                            TextField("本を検索...", text: $searchText)
-                                .font(MemoryTheme.Fonts.body())
-                        }
-                        .padding(.horizontal, MemorySpacing.md)
-                        .padding(.vertical, MemorySpacing.sm)
-                        .background(MemoryTheme.Colors.secondaryBackground)
-                        .cornerRadius(MemoryRadius.medium)
+                        MemoryTextField(
+                            placeholder: "本を検索...",
+                            text: $searchText,
+                            icon: "magnifyingglass"
+                        )
                         
                         Button {
                             showingSortOptions = true

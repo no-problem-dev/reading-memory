@@ -13,6 +13,9 @@ extension View {
 
 struct BookRegistrationView: View {
     @Environment(\.dismiss) private var dismiss
+    @Environment(BookStore.self) private var bookStore
+    @Environment(SubscriptionStateStore.self) private var subscriptionState
+    @Environment(AnalyticsService.self) private var analytics
     @State private var viewModel = ServiceContainer.shared.makeBookRegistrationViewModel()
     
     @State private var title = ""
@@ -31,12 +34,14 @@ struct BookRegistrationView: View {
     let searchResult: BookSearchResult?
     let defaultStatus: ReadingStatus
     let onCompletion: ((Book) -> Void)?
+    let registrationSource: String
     
     init(prefilledBook: Book? = nil, defaultStatus: ReadingStatus = .wantToRead, onCompletion: ((Book) -> Void)? = nil) {
         self.prefilledBook = prefilledBook
         self.searchResult = nil
         self.defaultStatus = defaultStatus
         self.onCompletion = onCompletion
+        self.registrationSource = "manual_entry"
         if let book = prefilledBook {
             _selectedStatus = State(initialValue: book.status)
         } else {
@@ -44,11 +49,12 @@ struct BookRegistrationView: View {
         }
     }
     
-    init(searchResult: BookSearchResult, defaultStatus: ReadingStatus = .wantToRead, onCompletion: ((Book) -> Void)? = nil) {
+    init(searchResult: BookSearchResult, defaultStatus: ReadingStatus = .wantToRead, registrationSource: String = "manual_search", onCompletion: ((Book) -> Void)? = nil) {
         self.prefilledBook = nil
         self.searchResult = searchResult
         self.defaultStatus = defaultStatus
         self.onCompletion = onCompletion
+        self.registrationSource = registrationSource
         _selectedStatus = State(initialValue: defaultStatus)
     }
     
@@ -142,7 +148,7 @@ struct BookRegistrationView: View {
                                 sectionHeader(
                                     icon: "info.circle.fill",
                                     title: "詳細情報",
-                                    color: MemoryTheme.Colors.warmCoral
+                                    color: MemoryTheme.Colors.goldenMemory
                                 )
                                 
                                 VStack(spacing: MemorySpacing.md) {
@@ -203,7 +209,18 @@ struct BookRegistrationView: View {
             }
         }
         .scrollDismissesKeyboard(.interactively)
+        .sheet(isPresented: $viewModel.showPaywall) {
+            PaywallView()
+        }
         .onAppear {
+            viewModel.setSubscriptionStateStore(subscriptionState)
+            
+            // デバッグ：初期状態をチェック
+            subscriptionState.updateTotalBookCount()
+            print("DEBUG onAppear: Total book count: \(subscriptionState.totalBookCount)")
+            print("DEBUG onAppear: Can add book: \(subscriptionState.canAddBook())")
+            print("DEBUG onAppear: Total books in store: \(bookStore.allBooks.count)")
+            
             if let book = prefilledBook {
                 title = book.title
                 author = book.author
@@ -359,6 +376,7 @@ struct BookRegistrationView: View {
                                 showDatePicker.toggle()
                             }
                         }
+                        .padding(.horizontal, MemorySpacing.md)
                 } else {
                     Button {
                         withAnimation(MemoryTheme.Animation.fast) {
@@ -435,7 +453,7 @@ struct BookRegistrationView: View {
                 )
             } else {
                 // 手動入力の本の場合
-                guard let userId = AuthService.shared.currentUser?.uid else { return }
+                // APIはidTokenで認証するため、userIdのチェックは不要
                 book = Book(
                     id: UUID().uuidString,
                     isbn: isbn.isEmpty ? nil : isbn.trimmingCharacters(in: .whitespacesAndNewlines),
@@ -454,35 +472,51 @@ struct BookRegistrationView: View {
                 )
             }
             
-            // searchResultがある場合は専用のメソッドを使用
-            let result: (success: Bool, book: Book?)
-            if let searchResult = searchResult {
-                // 検索結果からの登録（入力された情報で上書き）
-                var updatedSearchResult = searchResult
-                // フォームで編集された情報を反映（簡易的な実装）
-                let modifiedSearchResult = BookSearchResult(
-                    isbn: isbn.isEmpty ? searchResult.isbn : isbn,
-                    title: title.trimmingCharacters(in: .whitespacesAndNewlines),
-                    author: author.trimmingCharacters(in: .whitespacesAndNewlines),
-                    publisher: publisher.isEmpty ? searchResult.publisher : publisher.trimmingCharacters(in: .whitespacesAndNewlines),
-                    publishedDate: hasPublishedDate ? publishedDate : searchResult.publishedDate,
-                    pageCount: Int(pageCount) ?? searchResult.pageCount,
-                    description: description.isEmpty ? searchResult.description : description.trimmingCharacters(in: .whitespacesAndNewlines),
-                    coverImageUrl: searchResult.coverImageUrl,
-                    dataSource: searchResult.dataSource,
-                    affiliateUrl: searchResult.affiliateUrl
-                )
-                result = await viewModel.registerBookFromSearchResult(modifiedSearchResult, status: selectedStatus)
-            } else {
-                result = await viewModel.registerBook(book)
+            // 制限チェック
+            subscriptionState.updateTotalBookCount()
+            
+            print("DEBUG: Total book count: \(subscriptionState.totalBookCount)")
+            print("DEBUG: Can add book: \(subscriptionState.canAddBook())")
+            print("DEBUG: Is premium: \(subscriptionState.isPremium)")
+            
+            guard subscriptionState.canAddBook() else {
+                print("DEBUG: Book limit reached, showing paywall")
+                viewModel.showPaywall = true
+                isRegistering = false
+                return
             }
             
-            if result.success, let createdBook = result.book {
-                onCompletion?(createdBook)
+            do {
+                let registeredBook: Book
+                
+                // 検索結果から来た場合と手動入力の場合で処理を分ける
+                if let searchResult = searchResult {
+                    // 検索結果から本を登録（画像のダウンロード・アップロードを含む）
+                    registeredBook = try await bookStore.addBookFromSearchResult(searchResult, status: selectedStatus)
+                } else {
+                    // 手動入力の本を登録
+                    registeredBook = try await bookStore.addBook(book)
+                }
+                
+                // SubscriptionStateStoreのカウントを即座に更新
+                subscriptionState.updateTotalBookCount()
+                
+                // 本追加イベントを送信
+                let dataSource = searchResult?.dataSource.rawValue ?? "manual"
+                analytics.track(AnalyticsEvent.bookEvent(event: .added(
+                    bookId: registeredBook.id,
+                    method: registrationSource,
+                    source: dataSource
+                )))
+                
+                // 成功時の処理
+                onCompletion?(registeredBook)
                 dismiss()
-            } else {
-                // 登録失敗時はフラグをリセット
+            } catch {
+                print("Error registering book: \(error)")
                 isRegistering = false
+                // エラー表示
+                viewModel.handleError(error)
             }
         }
     }

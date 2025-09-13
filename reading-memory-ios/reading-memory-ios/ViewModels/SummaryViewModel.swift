@@ -38,7 +38,7 @@ final class SummaryViewModel {
         viewState = .loading
         
         do {
-            let summary = try await aiService.generateBookSummaryAPI(bookId: bookId)
+            let summary = try await aiService.generateBookSummary(bookId: bookId)
             
             // アニメーションで表示
             withAnimation(.easeInOut(duration: 0.3)) {

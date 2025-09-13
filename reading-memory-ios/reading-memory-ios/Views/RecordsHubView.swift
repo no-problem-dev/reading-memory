@@ -15,7 +15,6 @@ struct RecordsHubView: View {
                     TabHeaderView(
                         title: "記録",
                         subtitle: "読書の成長を振り返る",
-                        iconName: "chart.line.uptrend.xyaxis.circle.fill",
                         actionButton: {
                             AnyView(
                                 VStack(spacing: 0) {

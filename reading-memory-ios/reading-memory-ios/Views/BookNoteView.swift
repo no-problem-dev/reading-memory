@@ -202,7 +202,7 @@ struct BookNoteView: View {
         case .wantToRead:
             return MemoryTheme.Colors.primaryBlue
         case .reading:
-            return MemoryTheme.Colors.warmCoral
+            return MemoryTheme.Colors.goldenMemory
         case .completed:
             return MemoryTheme.Colors.success
         case .dnf:
