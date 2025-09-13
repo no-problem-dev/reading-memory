@@ -57,11 +57,11 @@ struct ProfileTabView: View {
                         Section("アカウント") {
                             NavigationLink {
                                 ProfileEditView()
+                                    .onAppear {
+                                        analytics.track(AnalyticsEvent.userAction(action: .sectionTapped(section: "edit_profile")))
+                                    }
                             } label: {
                                 Label("プロフィールを編集", systemImage: "person.fill")
-                            }
-                            .onTapGesture {
-                                analytics.track(AnalyticsEvent.userAction(action: .sectionTapped(section: "edit_profile")))
                             }
                         }
                         
@@ -515,7 +515,16 @@ struct ProfileHeaderSection: View {
                     .frame(width: 80, height: 80)
                     .memoryShadow(.soft)
                 
-                ProfileImageView(imageId: profile?.avatarImageId, size: 72)
+                if let imageId = profile?.avatarImageId {
+                    RemoteImage(imageId: imageId, contentMode: .fill)
+                        .frame(width: 72, height: 72)
+                        .clipShape(Circle())
+                } else {
+                    Image(systemName: "person.circle.fill")
+                        .font(.system(size: 50))
+                        .foregroundColor(MemoryTheme.Colors.primaryBlue)
+                        .frame(width: 72, height: 72)
+                }
             }
             
             // 名前

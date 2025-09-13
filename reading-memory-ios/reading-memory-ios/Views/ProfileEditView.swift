@@ -141,8 +141,19 @@ struct ProfileEditView: View {
                                     Circle()
                                         .stroke(MemoryTheme.Colors.cardBackground, lineWidth: 4)
                                 )
+                        } else if let imageId = profileStore.userProfile?.avatarImageId {
+                            RemoteImage(imageId: imageId, contentMode: .fill)
+                                .frame(width: 120, height: 120)
+                                .clipShape(Circle())
+                                .overlay(
+                                    Circle()
+                                        .stroke(MemoryTheme.Colors.cardBackground, lineWidth: 4)
+                                )
                         } else {
-                            ProfileImageView(imageId: profileStore.userProfile?.avatarImageId, size: 120)
+                            Image(systemName: "person.circle.fill")
+                                .font(.system(size: 84))
+                                .foregroundColor(MemoryTheme.Colors.primaryBlue)
+                                .frame(width: 120, height: 120)
                         }
                         
                         // Camera overlay

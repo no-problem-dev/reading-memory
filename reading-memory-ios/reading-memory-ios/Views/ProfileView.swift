@@ -143,7 +143,16 @@ struct ProfileView: View {
                         .frame(width: 120, height: 120)
                         .memoryShadow(.medium)
                     
-                    ProfileImageView(imageId: profile.avatarImageId, size: 110)
+                    if let imageId = profile.avatarImageId {
+                        RemoteImage(imageId: imageId, contentMode: .fill)
+                            .frame(width: 110, height: 110)
+                            .clipShape(Circle())
+                    } else {
+                        Image(systemName: "person.circle.fill")
+                            .font(.system(size: 77))
+                            .foregroundColor(MemoryTheme.Colors.primaryBlue)
+                            .frame(width: 110, height: 110)
+                    }
                 }
                 
                 VStack(spacing: MemorySpacing.xs) {
