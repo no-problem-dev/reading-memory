@@ -8,86 +8,208 @@ struct PurchaseOptionsView: View {
     
     var body: some View {
         NavigationStack {
-            VStack(spacing: 0) {
-                // Header
-                VStack(spacing: MemorySpacing.sm) {
-                    Text("この本をどうしますか？")
-                        .font(MemoryTheme.Fonts.headline())
-                        .foregroundColor(MemoryTheme.Colors.inkBlack)
-                    
-                    Text(book.title)
-                        .font(MemoryTheme.Fonts.callout())
-                        .foregroundColor(MemoryTheme.Colors.inkGray)
-                        .lineLimit(1)
-                }
-                .padding(.top, MemorySpacing.lg)
-                .padding(.bottom, MemorySpacing.xl)
-                
-                // Options
-                VStack(spacing: MemorySpacing.md) {
-                    // 購入オプション
-                    if let isbn = book.isbn, !isbn.isEmpty {
-                        HStack(spacing: MemorySpacing.md) {
-                            purchaseButton(
-                                title: "Amazon",
-                                icon: "cart.fill",
-                                color: .orange,
-                                url: "https://www.amazon.co.jp/s?k=\(isbn)"
-                            )
+            ScrollView {
+                VStack(spacing: 0) {
+                    // ヘッダー部分
+                    VStack(spacing: MemorySpacing.lg) {
+                        // 本の情報カード
+                        HStack(alignment: .top, spacing: MemorySpacing.md) {
+                            BookCoverView(imageId: book.coverImageId, size: .medium)
+                                .frame(width: 80, height: 120)
+                                .cornerRadius(MemoryRadius.medium)
+                                .memoryShadow(.soft)
                             
-                            // dataSourceがrakutenBooksかつpurchaseUrlがある場合はそれを使用
-                            let rakutenUrl: String = {
-                                if book.dataSource == .rakutenBooks,
-                                   let purchaseUrl = book.purchaseUrl,
-                                   !purchaseUrl.isEmpty {
-                                    return purchaseUrl
-                                } else {
-                                    return "https://books.rakuten.co.jp/search?sitem=\(isbn)"
+                            VStack(alignment: .leading, spacing: MemorySpacing.xs) {
+                                Text(book.title)
+                                    .font(MemoryTheme.Fonts.headline())
+                                    .fontWeight(.semibold)
+                                    .foregroundColor(MemoryTheme.Colors.inkBlack)
+                                    .lineLimit(2)
+                                
+                                Text(book.author)
+                                    .font(MemoryTheme.Fonts.callout())
+                                    .foregroundColor(MemoryTheme.Colors.inkGray)
+                                    .lineLimit(1)
+                                
+                                if let isbn = book.isbn {
+                                    Text("ISBN: \(isbn)")
+                                        .font(MemoryTheme.Fonts.caption())
+                                        .foregroundColor(MemoryTheme.Colors.inkLightGray)
                                 }
-                            }()
+                            }
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                        }
+                        .padding(MemorySpacing.lg)
+                        .background(MemoryTheme.Colors.secondaryBackground)
+                        .cornerRadius(MemoryRadius.large)
+                        
+                        // タイトル
+                        Text("購入方法を選ぶ")
+                            .font(MemoryTheme.Fonts.title2())
+                            .fontWeight(.bold)
+                            .foregroundColor(MemoryTheme.Colors.inkBlack)
+                    }
+                    .padding(.top, MemorySpacing.lg)
+                    .padding(.horizontal, MemorySpacing.lg)
+                    
+                    // オプション部分
+                    VStack(spacing: MemorySpacing.lg) {
+                        // オンライン書店セクション
+                        VStack(alignment: .leading, spacing: MemorySpacing.md) {
+                            Label("オンライン書店", systemImage: "cart.fill")
+                                .font(MemoryTheme.Fonts.callout())
+                                .fontWeight(.semibold)
+                                .foregroundColor(MemoryTheme.Colors.inkGray)
                             
-                            purchaseButton(
-                                title: "楽天ブックス",
-                                icon: "cart.fill",
-                                color: .red,
-                                url: rakutenUrl
+                            VStack(spacing: MemorySpacing.sm) {
+                                if let isbn = book.isbn, !isbn.isEmpty {
+                                    // Amazon
+                                    purchaseOptionCard(
+                                        title: "Amazonで購入",
+                                        subtitle: "",
+                                        icon: "cart.fill",
+                                        iconColor: .orange,
+                                        url: "https://www.amazon.co.jp/s?k=\(isbn)"
+                                    )
+                                    
+                                    // 楽天ブックス
+                                    // dataSourceがrakutenBooksかつpurchaseUrlがある場合はそれを使用
+                                    let rakutenUrl: String = {
+                                        if book.dataSource == .rakutenBooks,
+                                           let purchaseUrl = book.purchaseUrl,
+                                           !purchaseUrl.isEmpty {
+                                            return purchaseUrl
+                                        } else {
+                                            return "https://books.rakuten.co.jp/search?sitem=\(isbn)"
+                                        }
+                                    }()
+                                    
+                                    purchaseOptionCard(
+                                        title: "楽天ブックスで購入",
+                                        subtitle: "",
+                                        icon: "cart.fill",
+                                        iconColor: Color.red,
+                                        url: rakutenUrl
+                                    )
+                                } else {
+                                    // タイトル検索
+                                    purchaseOptionCard(
+                                        title: "オンラインで検索",
+                                        subtitle: "",
+                                        icon: "magnifyingglass",
+                                        iconColor: MemoryTheme.Colors.primaryBlue,
+                                        url: "https://www.google.com/search?q=\(book.title.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? book.title)+本"
+                                    )
+                                }
+                                
+                                // 電子書籍
+                                purchaseOptionCard(
+                                    title: "電子書籍で探す",
+                                    subtitle: "",
+                                    icon: "iphone",
+                                    iconColor: MemoryTheme.Colors.primaryBlueDark,
+                                    url: "https://www.google.com/search?q=\(book.title.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? book.title)+電子書籍"
+                                )
+                            }
+                        }
+                        
+                        Divider()
+                            .padding(.horizontal, -MemorySpacing.lg)
+                        
+                        // 図書館セクション
+                        VStack(alignment: .leading, spacing: MemorySpacing.md) {
+                            Label("図書館", systemImage: "building.columns.fill")
+                                .font(MemoryTheme.Fonts.callout())
+                                .fontWeight(.semibold)
+                                .foregroundColor(MemoryTheme.Colors.inkGray)
+                            
+                            purchaseOptionCard(
+                                title: "近くの図書館で探す",
+                                subtitle: "",
+                                icon: "building.columns.fill",
+                                iconColor: MemoryTheme.Colors.goldenMemory,
+                                url: "https://calil.jp/search?q=\((book.isbn ?? book.title).addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? book.title)"
                             )
                         }
-                    } else {
-                        purchaseButton(
-                            title: "オンラインで探す",
-                            icon: "magnifyingglass",
-                            color: MemoryTheme.Colors.primaryBlue,
-                            url: "https://www.google.com/search?q=\(book.title.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? book.title)+本"
-                        )
+                        
+                        Divider()
+                            .padding(.horizontal, -MemorySpacing.lg)
+                        
+                        // 読書開始セクション
+                        VStack(spacing: MemorySpacing.md) {
+                            Text("もう持っている場合")
+                                .font(MemoryTheme.Fonts.caption())
+                                .foregroundColor(MemoryTheme.Colors.inkGray)
+                            
+                            Button(action: {
+                                showingReadingStart = true
+                            }) {
+                                HStack {
+                                    Image(systemName: "book.fill")
+                                        .font(.system(size: 20))
+                                    
+                                    VStack(alignment: .leading, spacing: 2) {
+                                        Text("今すぐ読み始める")
+                                            .font(MemoryTheme.Fonts.headline())
+                                            .fontWeight(.semibold)
+                                        
+                                        Text("ステータスを「読書中」に変更")
+                                            .font(MemoryTheme.Fonts.caption())
+                                            .opacity(0.8)
+                                    }
+                                    
+                                    Spacer()
+                                    
+                                    Image(systemName: "chevron.right")
+                                        .font(.system(size: 14))
+                                        .opacity(0.6)
+                                }
+                                .foregroundColor(.white)
+                                .padding(MemorySpacing.md)
+                                .background(
+                                    RoundedRectangle(cornerRadius: MemoryRadius.medium)
+                                        .fill(
+                                            LinearGradient(
+                                                gradient: Gradient(colors: [
+                                                    MemoryTheme.Colors.primaryBlue,
+                                                    MemoryTheme.Colors.primaryBlueDark
+                                                ]),
+                                                startPoint: .leading,
+                                                endPoint: .trailing
+                                            )
+                                        )
+                                )
+                                .memoryShadow(.medium)
+                            }
+                            .buttonStyle(PlainButtonStyle())
+                        }
                     }
-                    
-                    // 図書館で探す
-                    libraryButton
-                    
-                    Divider()
-                        .padding(.vertical, MemorySpacing.xs)
-                    
-                    // 読書開始
-                    startReadingButton
+                    .padding(.top, MemorySpacing.xl)
+                    .padding(.horizontal, MemorySpacing.lg)
+                    .padding(.bottom, MemorySpacing.xxl)
                 }
-                .padding(.horizontal, MemorySpacing.lg)
-                
-                Spacer()
             }
+            .background(MemoryTheme.Colors.background)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
+                ToolbarItem(placement: .principal) {
+                    Text("購入オプション")
+                        .font(MemoryTheme.Fonts.headline())
+                        .fontWeight(.semibold)
+                }
+                
                 ToolbarItem(placement: .cancellationAction) {
                     Button("閉じる") {
                         dismiss()
                     }
+                    .font(MemoryTheme.Fonts.callout())
+                    .foregroundColor(MemoryTheme.Colors.primaryBlue)
                 }
             }
         }
         .alert("読書を開始しますか？", isPresented: $showingReadingStart) {
             Button("開始する", role: .none) {
                 Task {
-                    // 読書状態を更新
                     let updatedBook = Book(
                         id: book.id,
                         isbn: book.isbn,
@@ -120,12 +242,13 @@ struct PurchaseOptionsView: View {
                         createdAt: book.createdAt,
                         updatedAt: Date()
                     )
+                    
                     do {
                         try await bookRepository.updateBook(updatedBook)
+                        dismiss()
                     } catch {
                         print("Error updating book: \(error)")
                     }
-                    dismiss()
                 }
             }
             Button("キャンセル", role: .cancel) {}
@@ -134,81 +257,48 @@ struct PurchaseOptionsView: View {
         }
     }
     
-    private func purchaseButton(title: String, icon: String, color: Color, url: String) -> some View {
+    private func purchaseOptionCard(title: String, subtitle: String, icon: String, iconColor: Color, url: String) -> some View {
         Link(destination: URL(string: url)!) {
-            VStack(spacing: MemorySpacing.xs) {
-                Image(systemName: icon)
-                    .font(.system(size: 24))
-                    .foregroundColor(.white)
-                    .frame(width: 50, height: 50)
-                    .background(
-                        Circle()
-                            .fill(color)
-                    )
+            HStack(spacing: MemorySpacing.md) {
+                // アイコン
+                ZStack {
+                    Circle()
+                        .fill(iconColor.opacity(0.1))
+                        .frame(width: 48, height: 48)
+                    
+                    Image(systemName: icon)
+                        .font(.system(size: 20))
+                        .foregroundColor(iconColor)
+                }
                 
-                Text(title)
-                    .font(MemoryTheme.Fonts.caption())
-                    .foregroundColor(MemoryTheme.Colors.inkBlack)
+                // テキスト
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(title)
+                        .font(MemoryTheme.Fonts.callout())
+                        .fontWeight(.medium)
+                        .foregroundColor(MemoryTheme.Colors.inkBlack)
+                    
+                    if !subtitle.isEmpty {
+                        Text(subtitle)
+                            .font(MemoryTheme.Fonts.caption())
+                            .foregroundColor(MemoryTheme.Colors.inkGray)
+                    }
+                }
+                
+                Spacer()
+                
+                // 矢印
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 14))
+                    .foregroundColor(MemoryTheme.Colors.inkLightGray)
             }
-            .frame(maxWidth: .infinity)
-            .padding(.vertical, MemorySpacing.md)
+            .padding(MemorySpacing.md)
             .background(
                 RoundedRectangle(cornerRadius: MemoryRadius.medium)
                     .fill(MemoryTheme.Colors.cardBackground)
                     .memoryShadow(.soft)
             )
         }
-    }
-    
-    private var libraryButton: some View {
-        Link(destination: URL(string: "https://calil.jp/search?q=\((book.isbn ?? book.title).addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? book.title)")!) {
-            HStack {
-                Image(systemName: "building.columns.fill")
-                    .font(.system(size: 20))
-                    .foregroundColor(MemoryTheme.Colors.goldenMemory)
-                
-                Text("図書館で探す")
-                    .font(MemoryTheme.Fonts.callout())
-                    .fontWeight(.medium)
-                    .foregroundColor(MemoryTheme.Colors.inkBlack)
-                
-                Spacer()
-                
-                Image(systemName: "arrow.right")
-                    .font(.system(size: 14))
-                    .foregroundColor(MemoryTheme.Colors.inkGray)
-            }
-            .padding(MemorySpacing.md)
-            .background(
-                RoundedRectangle(cornerRadius: MemoryRadius.medium)
-                    .fill(MemoryTheme.Colors.goldenMemory.opacity(0.1))
-            )
-        }
-    }
-    
-    private var startReadingButton: some View {
-        Button(action: {
-            showingReadingStart = true
-        }) {
-            HStack {
-                Image(systemName: "book.fill")
-                    .font(.system(size: 20))
-                    .foregroundColor(.white)
-                
-                Text("今すぐ読み始める")
-                    .font(MemoryTheme.Fonts.callout())
-                    .fontWeight(.semibold)
-                    .foregroundColor(.white)
-            }
-            .frame(maxWidth: .infinity)
-            .padding(.vertical, MemorySpacing.md)
-            .background(
-                RoundedRectangle(cornerRadius: MemoryRadius.medium)
-                    .fill(MemoryTheme.Colors.primaryBlue)
-            )
-            .memoryShadow(.medium)
-        }
-        .buttonStyle(PlainButtonStyle())
     }
 }
 

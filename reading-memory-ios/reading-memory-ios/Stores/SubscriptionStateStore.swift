@@ -11,8 +11,8 @@ public final class SubscriptionStateStore {
     /// 購読状態
     private(set) var isSubscribed = false
     
-    /// 今月の本登録数
-    private(set) var currentMonthBookCount: Int = 0
+    /// 登録済みの本の総数
+    private(set) var totalBookCount: Int = 0
     
     /// ローディング状態
     private(set) var isLoading = false
@@ -22,22 +22,22 @@ public final class SubscriptionStateStore {
     
     // MARK: - Constants
     
-    /// 無料ユーザーの月間本登録制限
-    private let freeMonthlyBookLimit = 10
+    /// 無料ユーザーの本登録制限（総数）
+    private let freeTotalBookLimit = 10
     
     // MARK: - Dependencies
     
     private let subscriptionService: SubscriptionService
-    private let bookRepository: BookRepository
+    private let bookStore: BookStore
     
     // MARK: - Initialization
     
     init(
-        subscriptionService: SubscriptionService = SubscriptionService.shared,
-        bookRepository: BookRepository = BookRepository.shared
+        subscriptionService: SubscriptionService? = nil,
+        bookStore: BookStore
     ) {
-        self.subscriptionService = subscriptionService
-        self.bookRepository = bookRepository
+        self.subscriptionService = subscriptionService ?? SubscriptionService.shared
+        self.bookStore = bookStore
         
         // 購読状態の変更を監視
         setupSubscriptionObserver()
@@ -50,8 +50,8 @@ public final class SubscriptionStateStore {
         // 購読状態をチェック
         await checkSubscriptionStatus()
         
-        // 月間本登録数を更新
-        await updateMonthlyBookCount()
+        // 本の総数を更新
+        updateTotalBookCount()
     }
     
     /// 購読状態を再チェック
@@ -59,24 +59,10 @@ public final class SubscriptionStateStore {
         await checkSubscriptionStatus()
     }
     
-    /// 月間本登録数を更新
-    func updateMonthlyBookCount() async {
-        do {
-            let books = try await bookRepository.getBooks()
-            let calendar = Calendar.current
-            let now = Date()
-            let currentMonth = calendar.component(.month, from: now)
-            let currentYear = calendar.component(.year, from: now)
-            
-            currentMonthBookCount = books.filter { book in
-                let bookMonth = calendar.component(.month, from: book.addedDate)
-                let bookYear = calendar.component(.year, from: book.addedDate)
-                return bookMonth == currentMonth && bookYear == currentYear
-            }.count
-        } catch {
-            print("Error counting monthly books: \(error)")
-            currentMonthBookCount = 0
-        }
+    /// 本の総数を更新
+    func updateTotalBookCount() {
+        // BookStoreから直接総数を取得（通信不要）
+        totalBookCount = bookStore.allBooks.count
     }
     
     // MARK: - Feature Access Methods
@@ -86,13 +72,13 @@ public final class SubscriptionStateStore {
     
     /// 本を追加できるかどうか
     func canAddBook() -> Bool {
-        isPremium || currentMonthBookCount < freeMonthlyBookLimit
+        isPremium || totalBookCount < freeTotalBookLimit
     }
     
-    /// 今月の本登録の残り枠
+    /// 本登録の残り枠
     func remainingBookQuota() -> Int? {
         guard !isPremium else { return nil }
-        return max(0, freeMonthlyBookLimit - currentMonthBookCount)
+        return max(0, freeTotalBookLimit - totalBookCount)
     }
     
     /// AI機能を使用できるか
@@ -144,10 +130,12 @@ public final class SubscriptionStateStore {
             object: nil,
             queue: .main
         ) { [weak self] notification in
-            guard let self = self else { return }
-            
-            if let isSubscribed = notification.userInfo?["isSubscribed"] as? Bool {
-                self.isSubscribed = isSubscribed
+            Task { @MainActor in
+                guard let self = self else { return }
+                
+                if let isSubscribed = notification.userInfo?["isSubscribed"] as? Bool {
+                    self.isSubscribed = isSubscribed
+                }
             }
         }
     }
@@ -182,7 +170,7 @@ extension SubscriptionStateStore {
         
         public var description: String {
             switch self {
-            case .unlimitedBooks: return "月10冊の制限なく、好きなだけ本を登録"
+            case .unlimitedBooks: return "10冊の制限なく、好きなだけ本を登録"
             case .aiChat: return "AIと本について対話し、要約を生成"
             case .photoAttachment: return "メモに写真を添付して記録"
             case .barcodeScanning: return "バーコードで簡単に本を登録"

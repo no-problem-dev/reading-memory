@@ -8,6 +8,7 @@ import FirebaseAuth
 public final class SubscriptionService {
     // MARK: - Singleton
     
+    @MainActor
     public static let shared = SubscriptionService()
     
     // MARK: - Notifications
@@ -28,6 +29,7 @@ public final class SubscriptionService {
     
     /// Delegate Handler
     private var delegateHandler: PurchasesDelegateHandler?
+    private var authStateListener: AuthStateDidChangeListenerHandle?
     
     // MARK: - Initialization
     
@@ -65,7 +67,7 @@ public final class SubscriptionService {
         }
         
         // Auth状態変更の監視
-        Auth.auth().addStateDidChangeListener { [weak self] _, user in
+        authStateListener = Auth.auth().addStateDidChangeListener { [weak self] _, user in
             Task { @MainActor in
                 if let userId = user?.uid {
                     await self?.syncWithUser(userId: userId)

@@ -162,15 +162,4 @@ final class BookRepository {
         let books = try await getBooksByStatus(status: .reading)
         return books.count
     }
-    
-    // 指定日以降の本の数を取得
-    func getBookCount(userId: String, since date: Date) async -> Int {
-        do {
-            let books = try await getBooks()
-            return books.filter { $0.addedDate >= date }.count
-        } catch {
-            print("Error getting book count: \(error)")
-            return 0
-        }
-    }
 }

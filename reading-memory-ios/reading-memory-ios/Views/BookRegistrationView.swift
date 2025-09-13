@@ -214,6 +214,13 @@ struct BookRegistrationView: View {
         }
         .onAppear {
             viewModel.setSubscriptionStateStore(subscriptionState)
+            
+            // デバッグ：初期状態をチェック
+            subscriptionState.updateTotalBookCount()
+            print("DEBUG onAppear: Total book count: \(subscriptionState.totalBookCount)")
+            print("DEBUG onAppear: Can add book: \(subscriptionState.canAddBook())")
+            print("DEBUG onAppear: Total books in store: \(bookStore.allBooks.count)")
+            
             if let book = prefilledBook {
                 title = book.title
                 author = book.author
@@ -465,10 +472,35 @@ struct BookRegistrationView: View {
                 )
             }
             
-            // ViewModelを通じて本を登録（制限チェック含む）
-            let (success, registeredBook) = await viewModel.registerBook(book)
+            // 制限チェック
+            subscriptionState.updateTotalBookCount()
             
-            if success, let registeredBook = registeredBook {
+            print("DEBUG: Total book count: \(subscriptionState.totalBookCount)")
+            print("DEBUG: Can add book: \(subscriptionState.canAddBook())")
+            print("DEBUG: Is premium: \(subscriptionState.isPremium)")
+            
+            guard subscriptionState.canAddBook() else {
+                print("DEBUG: Book limit reached, showing paywall")
+                viewModel.showPaywall = true
+                isRegistering = false
+                return
+            }
+            
+            do {
+                let registeredBook: Book
+                
+                // 検索結果から来た場合と手動入力の場合で処理を分ける
+                if let searchResult = searchResult {
+                    // 検索結果から本を登録（画像のダウンロード・アップロードを含む）
+                    registeredBook = try await bookStore.addBookFromSearchResult(searchResult, status: selectedStatus)
+                } else {
+                    // 手動入力の本を登録
+                    registeredBook = try await bookStore.addBook(book)
+                }
+                
+                // SubscriptionStateStoreのカウントを即座に更新
+                subscriptionState.updateTotalBookCount()
+                
                 // 本追加イベントを送信
                 let dataSource = searchResult?.dataSource.rawValue ?? "manual"
                 analytics.track(AnalyticsEvent.bookEvent(event: .added(
@@ -480,9 +512,11 @@ struct BookRegistrationView: View {
                 // 成功時の処理
                 onCompletion?(registeredBook)
                 dismiss()
-            } else {
-                // 登録失敗時はフラグをリセット
+            } catch {
+                print("Error registering book: \(error)")
                 isRegistering = false
+                // エラー表示
+                viewModel.handleError(error)
             }
         }
     }

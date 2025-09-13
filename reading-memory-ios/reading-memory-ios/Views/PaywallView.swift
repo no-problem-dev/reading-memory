@@ -333,6 +333,8 @@ extension PaywallView {
             return "買い切りプラン"
         case .custom:
             return "カスタムプラン"
+        case .unknown:
+            return "プラン"
         @unknown default:
             return "プラン"
         }

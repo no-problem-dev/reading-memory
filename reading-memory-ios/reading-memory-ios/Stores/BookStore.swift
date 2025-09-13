@@ -66,12 +66,27 @@ final class BookStore {
     }
     
     /// 本を追加
-    func addBook(_ book: Book) async throws {
-        try await bookRepository.createBook(book)
+    func addBook(_ book: Book) async throws -> Book {
+        // リポジトリ経由で本を作成（画像アップロードなども含む）
+        let createdBook = try await bookRepository.createBook(book)
         
         // ローカルの配列に即座に追加（楽観的更新）
-        allBooks.append(book)
+        allBooks.append(createdBook)
         applyFilterAndSort()
+        
+        return createdBook
+    }
+    
+    /// 検索結果から本を追加
+    func addBookFromSearchResult(_ searchResult: BookSearchResult, status: ReadingStatus = .wantToRead) async throws -> Book {
+        // リポジトリ経由で本を作成（画像のダウンロード・アップロードを含む）
+        let createdBook = try await bookRepository.createBookFromSearchResult(searchResult, status: status)
+        
+        // ローカルの配列に即座に追加（楽観的更新）
+        allBooks.append(createdBook)
+        applyFilterAndSort()
+        
+        return createdBook
     }
     
     /// 本を更新

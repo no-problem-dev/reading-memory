@@ -74,7 +74,9 @@ struct MainTabView: View {
         .task {
             // プロフィールを初回ロード
             await userProfileStore.loadProfile()
-            // 購読状態を初回ロード
+            // 本一覧を初回ロード
+            await bookStore.loadBooks()
+            // 購読状態を初回ロード（BookStoreのロード後に実行）
             await subscriptionStateStore.initialize()
         }
     }

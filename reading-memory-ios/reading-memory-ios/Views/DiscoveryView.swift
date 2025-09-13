@@ -76,7 +76,7 @@ struct DiscoveryView: View {
                 }
             }
             .fullScreenCover(item: $selectedBook) { book in
-                ImprovedPurchaseOptionsView(book: book)
+                PurchaseOptionsView(book: book)
             }
             .task {
                 await viewModel.loadBooks()

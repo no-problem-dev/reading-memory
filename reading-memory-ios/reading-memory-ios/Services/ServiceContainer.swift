@@ -28,7 +28,7 @@ final class ServiceContainer {
     @MainActor
     private lazy var subscriptionStateStore = SubscriptionStateStore(
         subscriptionService: SubscriptionService.shared,
-        bookRepository: bookRepository
+        bookStore: bookStore
     )
     
     // Analytics Service

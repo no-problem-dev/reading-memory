@@ -26,8 +26,6 @@ class GoalViewModel {
     }
     
     func loadGoals() async {
-        guard let user = await authService.currentUser else { return }
-        
         // 既存のタスクをキャンセル
         loadTask?.cancel()
         
@@ -74,8 +72,6 @@ class GoalViewModel {
     }
     
     func createYearlyGoal(targetBooks: Int) async {
-        guard let user = await authService.currentUser else { return }
-        
         isLoading = true
         errorMessage = nil
         
@@ -113,8 +109,6 @@ class GoalViewModel {
     }
     
     func createMonthlyGoal(targetBooks: Int) async {
-        guard let user = await authService.currentUser else { return }
-        
         isLoading = true
         errorMessage = nil
         
@@ -166,7 +160,7 @@ class GoalViewModel {
     }
     
     func deleteGoal(_ goal: ReadingGoal) async {
-        guard let user = await authService.currentUser else { return }
+        guard await authService.currentUser != nil else { return }
         
         isLoading = true
         errorMessage = nil
@@ -207,7 +201,7 @@ class GoalViewModel {
     
     // 進捗更新が必要な場合のみ実行
     private func updateGoalProgressIfNeeded() async {
-        guard let user = await authService.currentUser else { return }
+        guard await authService.currentUser != nil else { return }
         
         // 既存のタスクをキャンセル
         updateTask?.cancel()

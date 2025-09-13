@@ -220,7 +220,7 @@ final class UserProfileStore {
             // お気に入りジャンル
             if let profile = userProfile {
                 statistics.favoriteGenres = profile.favoriteGenres
-                statistics.readingStreak = profile.currentStreak ?? 0
+                statistics.readingStreak = profile.currentStreak
             }
             
             // メモ数（必要に応じて遅延取得）
